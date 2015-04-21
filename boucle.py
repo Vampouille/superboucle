@@ -58,26 +58,33 @@ def my_callback(frames, clip):
         if second_clip_offset:
             second_clip_offset = round(second_clip_offset)
 
+        if clip_offset == 0 or second_clip_offset:
+            if clip.state == Clip.STARTING:
+                clip.state = Clip.START
+            if clip.state == Clip.STOPPING:
+                clip.state = Clip.STOP
+
         # is there enough audio data ?
-        if clip_offset < clip.length:
-            length = min(clip.length - clip_offset, frames)
-            outL_buffer[:length] = clip.get_data(0, clip_offset, length)
-            outR_buffer[:length] = clip.get_data(1, clip_offset, length)
-            # print("buffer[:{0}] = sample[{1}:{2}]".
-            #      format(length, clip_offset, clip_offset+length))
-
-        if second_clip_offset:
-            outL_buffer[second_clip_offset:] = clip.get_data(0,
-                                                             0,
-                                                             blocksize -
-                                                             second_clip_offset)
-            outR_buffer[second_clip_offset:] = clip.get_data(1,
-                                                             0,
-                                                             blocksize -
-                                                             second_clip_offset)
-            # print("buffer[{0}:] = sample[:{1}]".
-            #      format(second_clip_offset, blocksize - second_clip_offset))
-
+        if clip.state == Clip.START:
+            if clip_offset < clip.length:
+                length = min(clip.length - clip_offset, frames)
+                outL_buffer[:length] += clip.get_data(0, clip_offset, length)
+                outR_buffer[:length] += clip.get_data(1, clip_offset, length)
+                # print("buffer[:{0}] = sample[{1}:{2}]".
+                #      format(length, clip_offset, clip_offset+length))
+                
+            if second_clip_offset:
+                outL_buffer[second_clip_offset:] += clip.get_data(0,
+                                                                  0,
+                                                                  blocksize -
+                                                                  second_clip_offset)
+                outR_buffer[second_clip_offset:] += clip.get_data(1,
+                                                                  0,
+                                                                  blocksize -
+                                                                  second_clip_offset)
+                # print("buffer[{0}:] = sample[:{1}]".
+                #      format(second_clip_offset, blocksize - second_clip_offset))
+                
     return jack.CALL_AGAIN
 
 client.set_process_callback(my_callback, clip)
@@ -92,6 +99,10 @@ with client:
 
     client.connect(outL, playback[0])
     client.connect(outR, playback[1])
+
+    print("press Return to start clip")
+    input()
+    clip.state = Clip.STARTING
 
     print("#" * 80)
     print("press Return to quit")

@@ -16,7 +16,7 @@ class Clip():
         self.frame_offset = frame_offset
         self.beat_offset = beat_offset
         self.beat_diviser = beat_diviser
-        self.active = Clip.STOP
+        self.state = Clip.STOP
         self.data, self.samplerate = sf.read(audio_file, dtype=np.float32)
         if self.length == 0:
             raise Exception("audio file without sample!")
@@ -39,3 +39,19 @@ class Clip():
                             format(length, offset, self.length))
 
         return self.data[offset:offset+length, channel] * self.volume
+
+
+class Song():
+    
+    def __init__(self, width, height):
+        self.clips_matrix = [[None] * height] * width
+        
+    def add_clip(self, clip, x, y):
+
+        if self.clips_matrix[x][y]:
+            self.clips.remove(self.clips_matrix[x][y])
+
+        self.clips_matrix[x][y] = clip
+        self.clips.push(clip)
+
+        
