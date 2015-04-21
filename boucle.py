@@ -4,7 +4,10 @@
 
 import jack
 import transport
+import sys
 from clip import Clip, Song
+from gui import Gui
+from PyQt5.QtWidgets import QApplication
 
 # Load audio data
 clip = Clip('beep-stereo.wav', beat_diviser=4, frame_offset=0, beat_offset=1)  # 1500
@@ -16,6 +19,8 @@ port = client.midi_inports.register("input")
 outL = client.outports.register("output_L")
 outR = client.outports.register("output_R")
 
+app = QApplication(sys.argv)
+gui = Gui(song)
 
 # def bbt2ticks(bar, beat, tick):
 #    return (7680*(bar-1))+(1920*(beat-1))+tick
@@ -70,8 +75,10 @@ def my_callback(frames, song):
             if clip_offset == 0 or next_clip_offset:
                 if clip.state == Clip.STARTING:
                     clip.state = Clip.START
+                    song.updateUI()
                 if clip.state == Clip.STOPPING:
                     clip.state = Clip.STOP
+                    song.updateUI()
 
             # is there enough audio data ?
             if clip.state == Clip.START:
@@ -114,8 +121,4 @@ with client:
     client.connect(outL, playback[0])
     client.connect(outR, playback[1])
 
-    print("#" * 80)
-    print("press Return to quit")
-    print("#" * 80)
-
-    input()
+    app.exec_()

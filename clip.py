@@ -1,5 +1,11 @@
 import numpy as np
 import soundfile as sf
+from PyQt5 import QtCore
+
+
+class Communicate(QtCore.QObject):
+
+    updateUI = QtCore.pyqtSignal()
 
 
 class Clip():
@@ -8,6 +14,15 @@ class Clip():
     STARTING = 1
     START = 2
     STOPPING = 3
+
+    TRANSITION = {STOP: STARTING,
+                  STARTING: STOP,
+                  START: STOPPING,
+                  STOPPING: START}
+    STATE_DESCRIPTION = {0: "STOP",
+                         1: "STARTING",
+                         2: "START",
+                         3: "STOPPING"}
 
     def __init__(self, audio_file,
                  volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1):
@@ -44,16 +59,36 @@ class Clip():
 class Song():
 
     def __init__(self, width, height):
-        self.clips_matrix = [[None] * height] * width
+        self.clips_matrix = [[None for x in range(height)]
+                             for x in range(width)]
         self.clips = []
         self.volume = 1.0
+        self.width = width
+        self.height = height
+        self.c = Communicate()
 
     def add_clip(self, clip, x, y):
-
         if self.clips_matrix[x][y]:
             self.clips.remove(self.clips_matrix[x][y])
-
         self.clips_matrix[x][y] = clip
         self.clips.append(clip)
+        clip.x = x
+        clip.y = y
 
-        
+    def toogle(self, x, y):
+        print("Toogle {0} {1}".format(x, y))
+        clip = self.clips_matrix[x][y]
+        print(self.clips_matrix)
+        print(self.clips)
+        print("{0} {1}".format(clip.x, clip.y))
+        if clip:
+            print("Old state : {}".format(Clip.STATE_DESCRIPTION[clip.state]))
+            clip.state = Clip.TRANSITION[clip.state]
+            print("New state : {}".format(Clip.STATE_DESCRIPTION[clip.state]))
+            self.c.updateUI.emit()
+    
+    def updateUI(self):
+        self.c.updateUI.emit()
+
+    def registerUI(self, gui_callback):
+        self.c.updateUI.connect(gui_callback)
