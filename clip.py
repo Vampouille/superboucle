@@ -24,9 +24,11 @@ class Clip():
                          2: "START",
                          3: "STOPPING"}
 
-    def __init__(self, audio_file,
+    def __init__(self, audio_file, name=None,
                  volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1):
 
+        if name is None:
+            self.name = audio_file
         self.volume = volume
         self.frame_offset = frame_offset
         self.beat_offset = beat_offset

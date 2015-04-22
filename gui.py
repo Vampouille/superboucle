@@ -16,15 +16,26 @@ last edited: October 2011
 
 
 import sys
-from PyQt5.QtWidgets import (QGridLayout,
-                             QWidget,
+from PyQt5.QtWidgets import (QWidget,
                              QPushButton,
-                             QApplication)
-
+                             QApplication,
+                             QSplitter,
+                             QLabel,
+                             QMainWindow)
+from PyQt5.QtCore import Qt
 import clip
+from ui import Ui_MainWindow
 
 
-class Gui(QWidget):
+class Cell(QWidget):
+    
+    def __init__(self, clip):
+        super(Cell, self).__init__()
+        self.clip = clip
+        self.setupUi(self)
+
+
+class Gui(QMainWindow, Ui_MainWindow):
 
     GREEN = "QPushButton {  background-color: rgb(0,230,0);}"
     BLUE = "QPushButton {  background-color: rgb(0, 130, 240);}"
@@ -43,24 +54,41 @@ class Gui(QWidget):
         song.registerUI(self.update)
 
     def initUI(self):
+        self.setupUi(self)
+        self.groupBox.setEnabled(False)
+        self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
+        self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
+        self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
+        self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
+
+
         self.btn_matrix = [[None for x in range(self.song.height)]
                            for x in range(self.song.width)]
         self.state_matrix = [[-1 for x in range(self.song.height)]
                              for x in range(self.song.width)]
 
-        grid = QGridLayout(self)
-        self.setLayout(grid)
+        grid = self.gridLayout
 
         for x in range(self.song.width):
             for y in range(self.song.height):
-                btn = QPushButton('Dialog', self)
+                splitter = QSplitter(self)
+                splitter.setOrientation(Qt.Vertical)
+
+                # btn = Cell(self.song.clips_matrix[x][y])
+                btn = QPushButton('Start/Stop', splitter)
                 btn.x, btn.y = x, y
                 self.btn_matrix[x][y] = btn
                 btn.clicked.connect(self.onClick)
-                btn.setMinimumSize(75, 75)
-                grid.addWidget(btn, x, y)
+                btn.setMinimumSize(75, 50)
 
-        self.setGeometry(300, 300, 250, 180)
+                edit = QPushButton('Edit', splitter)
+                edit.x, edit.y = x, y
+                edit.clicked.connect(self.onEdit)
+                edit.setMinimumSize(75, 25)
+
+                grid.addWidget(splitter, x, y)
+
+        self.setGeometry(800, 400, 250, 180)
         self.setWindowTitle('Color dialog')
         self.show()
     
@@ -69,6 +97,30 @@ class Gui(QWidget):
         self.song.toogle(btn.x, btn.y)
         
         print("Event {0} {1} {2}".format(btn.x, btn.y, btn))
+
+    def onEdit(self):
+        btn = self.sender()
+        self.last_clip = self.song.clips_matrix[btn.x][btn.y]
+        if clip:
+            self.groupBox.setEnabled(True)
+            self.groupBox.setTitle(self.last_clip.name)
+            self.frame_offset.setValue(self.last_clip.frame_offset)
+            self.beat_offset.setValue(self.last_clip.beat_offset)
+            self.beat_diviser.setValue(self.last_clip.beat_diviser)
+            self.clip_volume.setValue(self.last_clip.volume*256)
+            self.clip_description.setText("Good clip !")
+            
+    def onClipVolumeChange(self):
+        self.last_clip.volume = (self.clip_volume.value() / 256)
+
+    def onBeatDiviserChange(self):
+        self.last_clip.beat_diviser = self.beat_diviser.value()
+
+    def onFrameOffsetChange(self):
+        self.last_clip.frame_offset = self.frame_offset.value()
+
+    def onBeatOffsetChange(self):
+        self.last_clip.beat_offset = self.beat_offset.value()
 
     def update(self):
         for clp in self.song.clips:
