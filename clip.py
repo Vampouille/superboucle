@@ -1,7 +1,7 @@
 import numpy as np
 import soundfile as sf
 from PyQt5 import QtCore
-
+import configparser
 
 class Communicate(QtCore.QObject):
 
@@ -34,6 +34,7 @@ class Clip():
         self.beat_offset = beat_offset
         self.beat_diviser = beat_diviser
         self.state = Clip.STOP
+        self.audio_file = audio_file
         self.data, self.samplerate = sf.read(audio_file, dtype=np.float32)
         if self.length == 0:
             raise Exception("audio file without sample!")
@@ -67,6 +68,7 @@ class Song():
         self.volume = 1.0
         self.width = width
         self.height = height
+        self.file_name = None
         self.c = Communicate()
 
     def add_clip(self, clip, x, y):
@@ -88,3 +90,49 @@ class Song():
 
     def registerUI(self, gui_callback):
         self.c.updateUI.connect(gui_callback)
+
+    def save(self):
+        if self.file_name:
+            self.saveTo(self.file_name)
+
+    def saveTo(self, file):
+        song_file = configparser.ConfigParser()
+        song_file['SONG'] = {'volume': self.volume,
+                             'width': self.width,
+                             'height': self.height}
+        for clip in self.clips:
+            song_file[clip.name] = {'volume': clip.volume,
+                                    'frame_offset': clip.frame_offset,
+                                    'beat_offset': clip.beat_offset,
+                                    'beat_diviser': clip.beat_diviser,
+                                    'audio_file': clip.audio_file,
+                                    'x': clip.x,
+                                    'y': clip.y}
+        with open(file, 'w') as file_res:
+            song_file.write(file_res)
+        self.file_name = file
+
+
+def load_song_from_file(file):
+    song_file = configparser.ConfigParser()
+    song_file.read(file)
+    res = Song(song_file['DEFAULT'].getint('width'),
+               song_file['DEFAULT'].getint('height'))
+    res.file_name = file
+    for section in song_file:
+        if section == 'DEFAULT':
+            continue
+        clip = Clip(song_file[section]['audio_file'],
+                    section,
+                    song_file[section].getfloat('volume', 1.0),
+                    song_file[section].getint('frame_offset', 0),
+                    song_file[section].getfloat('beat_offset', 0.0),
+                    song_file[section].getint('beat_diviser'))
+        res.add_clip(clip,
+                     song_file[section].getint('x'),
+                     song_file[section].getint('y'))
+    return res
+
+
+
+

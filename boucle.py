@@ -9,22 +9,7 @@ from clip import Clip, Song
 from gui import Gui
 from PyQt5.QtWidgets import QApplication
 
-# Load audio data
-kick = Clip('kick.wav', beat_diviser=4, frame_offset=0, beat_offset=0)
-snare = Clip('snare.wav', beat_diviser=4, frame_offset=0, beat_offset=2)
-hithat = Clip('hithat.wav', beat_diviser=1, frame_offset=0, beat_offset=0)
-annonce = Clip('annonce.wav', beat_diviser=8, frame_offset=0, beat_offset=0)
-voix = Clip('voix.wav', beat_diviser=16, frame_offset=0, beat_offset=0)
-obligatoire = Clip('obligatoire.wav', beat_diviser=2, frame_offset=0, beat_offset=0)
-
 song = Song(4, 4)
-song.add_clip(kick, 0, 0)
-song.add_clip(snare, 0, 1)
-song.add_clip(hithat, 0, 2)
-song.add_clip(annonce, 1, 0)
-song.add_clip(voix, 1, 1)
-song.add_clip(obligatoire, 1, 2)
-
 
 client = jack.Client("MIDI-Monitor")
 port = client.midi_inports.register("input")
@@ -43,7 +28,8 @@ def frame2bbt(frame, ticks_per_beat, beats_per_minute, frame_rate):
     return (ticks_per_second * frame) / frame_rate
 
 
-def my_callback(frames, song):
+def my_callback(frames, userdata):
+    song = gui.song
     state, position = client.transport_query()
     outL_buffer = outL.get_array()
     outR_buffer = outR.get_array()
@@ -122,7 +108,7 @@ def my_callback(frames, song):
 
     return jack.CALL_AGAIN
 
-client.set_process_callback(my_callback, song)
+client.set_process_callback(my_callback)
 
 # activate !
 with client:

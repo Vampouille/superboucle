@@ -9,7 +9,8 @@ from PyQt5.QtWidgets import (QWidget,
                              QPushButton,
                              QApplication,
                              QSplitter,
-                             QMainWindow)
+                             QMainWindow,
+                             QFileDialog)
 from PyQt5.QtCore import Qt, QTimer
 import clip
 from ui import Ui_MainWindow
@@ -45,16 +46,27 @@ class Gui(QMainWindow, Ui_MainWindow):
     def __init__(self, song):
         super(Gui, self).__init__()
         self.song = song
+        self.setupUi(self)
+
+        self.actionOpen.triggered.connect(self.onActionOpen)
+        self.actionSave.triggered.connect(self.onActionSave)
+        self.actionSave_As.triggered.connect(self.onActionSaveAs)
+
         self.initUI()
-        song.registerUI(self.update)
+       
+        self.setWindowTitle('Super Boucle')
+        self.show()
+
         self.timer = QTimer()
         self.timer.state = False
         self.timer.timeout.connect(self.toogleBlinkButton)
+
         self.update()
 
     def initUI(self):
-        self.setupUi(self)
+
         self.groupBox.setEnabled(False)
+
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
         self.master_volume.setValue(self.song.volume*256)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
@@ -66,6 +78,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                            for x in range(self.song.width)]
         self.state_matrix = [[-1 for x in range(self.song.height)]
                              for x in range(self.song.width)]
+
 
         grid = self.gridLayout
 
@@ -89,9 +102,9 @@ class Gui(QMainWindow, Ui_MainWindow):
 
                 grid.addWidget(splitter, x, y)
 
-        self.setGeometry(800, 400, 250, 180)
-        self.setWindowTitle('Color dialog')
-        self.show()
+        self.song.registerUI(self.update)
+        self.update()
+
 
     def onClick(self):
         btn = self.sender()
@@ -123,6 +136,33 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onBeatOffsetChange(self):
         self.last_clip.beat_offset = self.beat_offset.value()
+
+    def onActionSave(self):
+        if self.song.file_name:
+            self.song.save()
+            print("File saved")
+        else:
+            self.onActionSaveAs()
+
+    def onActionSaveAs(self):
+        self.song.file_name, a = (
+            QFileDialog.getSaveFileName(self,
+                                        'Save As',
+                                        '/home/joe/git/superboucle/',
+                                        'Super Boucle Song (*.sbl)'))
+        if self.song.file_name:
+            self.song.save()
+            print("File saved to : {}".format(self.song.file_name))
+
+    def onActionOpen(self):
+        file_name, a = (
+            QFileDialog.getOpenFileName(self,
+                                        'Open file',
+                                        '/home/joe/git/superboucle/',
+                                        'Super Boucle Song (*.sbl)'))
+        if file_name:
+            self.song = clip.load_song_from_file(file_name)
+            self.initUI()
 
     def update(self):
         for clp in self.song.clips:
