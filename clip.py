@@ -38,6 +38,7 @@ class Clip():
         self.state = Clip.STOP
         self.audio_file = audio_file
         self.data, self.samplerate = sf.read(audio_file, dtype=np.float32)
+        self.last_offset = 0
         if self.length == 0:
             raise Exception("audio file without sample!")
 

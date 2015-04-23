@@ -78,6 +78,7 @@ def my_callback(frames, userdata):
                     outR_buffer[:length] += clip.get_data(1,
                                                           clip_offset,
                                                           length)
+                    clip.last_offset = clip_offset
                     # print("buffer[:{0}] = sample[{1}:{2}]".
                     #      format(length, clip_offset, clip_offset+length))
 
@@ -90,6 +91,7 @@ def my_callback(frames, userdata):
                 outR_buffer[next_clip_offset:] += clip.get_data(1,
                                                                 0,
                                                                 length)
+                clip.last_offset = next_clip_offset
                 # print("buffer[{0}:] = sample[:{1}]".
                 #      format(next_clip_offset, length))
 
@@ -100,6 +102,7 @@ def my_callback(frames, userdata):
                     song.updateUI()
                 if clip.state == Clip.STOPPING:
                     clip.state = Clip.STOP
+                    clip.last_offset = 0
                     song.updateUI()
 
         # apply master volume

@@ -11,27 +11,43 @@ from PyQt5.QtWidgets import (QWidget,
                              QSplitter,
                              QMainWindow,
                              QFileDialog,
-                             QGridLayout)
+                             QGridLayout,
+                             QFrame)
 from PyQt5.QtCore import Qt, QTimer, QRect
 import clip
 from ui import Ui_MainWindow
+from cell_ui import Ui_Cell
 
 
-class Cell(QWidget):
+class Cell(QWidget, Ui_Cell):
 
-    def __init__(self, clip):
-        super(Cell, self).__init__()
+    def __init__(self, parent, clip, x, y):
+        super(Cell, self).__init__(parent)
+
+        self.pos_x, self.pos_y = x, y
+
         self.clip = clip
+        self.blink, self.color = False, None
         self.setupUi(self)
+
+        if clip:
+            self.clip_name.setText(clip.name)
+            self.start_stop.clicked.connect(parent.onStartStopClick)
+            self.edit.clicked.connect(parent.onEdit)
+        else:
+            self.start_stop.setEnabled(False)
+            self.clip_position.setEnabled(False)
+            self.edit.setText("Add Clip...")
+            self.edit.clicked.connect(parent.onAddClipClick)
 
 
 class Gui(QMainWindow, Ui_MainWindow):
 
-    GREEN = "QPushButton {  background-color: rgb(0,230,0);}"
-    BLUE = "QPushButton {  background-color: rgb(0, 130, 240);}"
-    RED = "QPushButton {  background-color: rgb(240, 0, 0);}"
-    PURPLE = "QPushButton {  background-color: rgb(130, 0, 240);}"
-    WHITE = "QPushButton {  background-color: rgb(255, 255, 255);}"
+    GREEN = "#frame { background-color: rgb(0,230,0);}"
+    BLUE = "#frame { background-color: rgb(0, 130, 240);}"
+    RED = "#frame { background-color: rgb(240, 0, 0);}"
+    PURPLE = "#frame { background-color: rgb(130, 0, 240);}"
+    WHITE = "#frame { background-color: rgb(255, 255, 255);}"
 
     STATE_COLORS = {clip.Clip.STOP: RED,
                     clip.Clip.STARTING: GREEN,
@@ -43,11 +59,13 @@ class Gui(QMainWindow, Ui_MainWindow):
                    clip.Clip.STOPPING: True}
 
     BLINK_DURATION = 200
+    PROGRESS_PERIOD = 100
 
     def __init__(self, song):
         super(Gui, self).__init__()
         self.setupUi(self)
         self.setWindowTitle('Super Boucle')
+        self.gridLayout.setContentsMargins(5, 5, 5, 5)
         self.show()
 
         self.actionOpen.triggered.connect(self.onActionOpen)
@@ -60,9 +78,13 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
 
-        self.timer = QTimer()
-        self.timer.state = False
-        self.timer.timeout.connect(self.toogleBlinkButton)
+        self.blktimer = QTimer()
+        self.blktimer.state = False
+        self.blktimer.timeout.connect(self.toogleBlinkButton)
+
+        self.disptimer = QTimer()
+        self.disptimer.start(self.PROGRESS_PERIOD)
+        self.disptimer.timeout.connect(self.updateProgress)
 
         # Avoid missing song attribute on master volume changed
         self.song = song
@@ -85,36 +107,22 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         for x in range(song.width):
             for y in range(song.height):
-                splitter = QSplitter(self.gridLayoutWidget)
-                splitter.setOrientation(Qt.Vertical)
-
-                # btn = Cell(song.clips_matrix[x][y])
-                btn = QPushButton('Start/Stop', splitter)
-                btn.x, btn.y = x, y
-                btn.blink, btn.color = False, None
-                self.btn_matrix[x][y] = btn
-                btn.clicked.connect(self.onClick)
-                btn.setMinimumSize(75, 50)
-
-                edit = QPushButton('Edit', splitter)
-                edit.x, edit.y = x, y
-                edit.clicked.connect(self.onEdit)
-                edit.setMinimumSize(75, 25)
-
-                self.gridLayout.addWidget(splitter, x, y)
+                clip = song.clips_matrix[x][y]
+                cell = Cell(self, clip, x, y)
+                self.btn_matrix[x][y] = cell
+                self.gridLayout.addWidget(cell, x, y)
 
         song.registerUI(self.update)
         self.song = song
         self.update()
 
-    def onClick(self):
-        btn = self.sender()
-        self.song.toogle(btn.x, btn.y)
+    def onStartStopClick(self):
+        clip = self.sender().parent().parent().clip
+        self.song.toogle(clip.x, clip.y)
 
     def onEdit(self):
-        btn = self.sender()
-        self.last_clip = self.song.clips_matrix[btn.x][btn.y]
-        if clip:
+        self.last_clip = self.sender().parent().parent().clip
+        if self.last_clip:
             self.groupBox.setEnabled(True)
             self.groupBox.setTitle(self.last_clip.name)
             self.clip_name.setText(self.last_clip.name)
@@ -124,12 +132,35 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.clip_volume.setValue(self.last_clip.volume*256)
             self.clip_description.setText("Good clip !")
 
+    def onAddClipClick(self):
+        sender = self.sender().parent().parent()
+        audio_file, a = QFileDialog.getOpenFileName(self,
+                                                    'Open Clip file',
+                                                    ('/home/joe/git'
+                                                     '/superboucle/'),
+                                                    'All files (*.*)')
+        if audio_file:
+            new_clip = clip.Clip(audio_file)
+            sender.clip = new_clip
+            sender.clip_name.setText(new_clip.name)
+            sender.start_stop.clicked.connect(self.onStartStopClick)
+            print(sender.edit.text())
+            sender.edit.setText("Edit")
+            sender.edit.clicked.disconnect(self.onAddClipClick)
+            sender.edit.clicked.connect(self.onEdit)
+            sender.start_stop.setEnabled(True)
+            sender.clip_position.setEnabled(True)
+            self.song.add_clip(new_clip, sender.pos_x, sender.pos_y)
+            self.update()
+
     def onMasterVolumeChange(self):
         self.song.volume = (self.master_volume.value() / 256)
 
     def onClipNameChange(self):
         self.last_clip.name = self.clip_name.text()
         self.groupBox.setTitle(self.last_clip.name)
+        tframe = self.btn_matrix[self.last_clip.x][self.last_clip.y]
+        tframe.clip_name.setText(self.last_clip.name)
 
     def onClipVolumeChange(self):
         self.last_clip.volume = (self.clip_volume.value() / 256)
@@ -185,24 +216,31 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.btn_matrix[x][y].setStyleSheet(color)
         self.btn_matrix[x][y].blink = blink
         self.btn_matrix[x][y].color = color
-        if blink and not self.timer.isActive():
-            self.timer.state = False
-            self.timer.start(self.BLINK_DURATION)
-        if not blink and self.timer.isActive():
+        if blink and not self.blktimer.isActive():
+            self.blktimer.state = False
+            self.blktimer.start(self.BLINK_DURATION)
+        if not blink and self.blktimer.isActive():
             if not any([btn.blink for line in self.btn_matrix
                         for btn in line]):
-                self.timer.stop()
+                self.blktimer.stop()
 
     def toogleBlinkButton(self):
         for line in self.btn_matrix:
             for btn in line:
                 if btn.blink:
-                    if self.timer.state:
+                    if self.blktimer.state:
                         btn.setStyleSheet(btn.color)
                     else:
                         btn.setStyleSheet("")
 
-        self.timer.state = not self.timer.state
+        self.blktimer.state = not self.blktimer.state
+
+    def updateProgress(self):
+        for line in self.btn_matrix:
+            for btn in line:
+                if btn.clip:
+                    btn.clip_position.setValue((
+                        (btn.clip.last_offset / btn.clip.length) * 100))
 
 
 
