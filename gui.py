@@ -45,49 +45,44 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def __init__(self, song):
         super(Gui, self).__init__()
-        self.song = song
         self.setupUi(self)
+        self.setWindowTitle('Super Boucle')
+        self.show()
 
         self.actionOpen.triggered.connect(self.onActionOpen)
         self.actionSave.triggered.connect(self.onActionSave)
         self.actionSave_As.triggered.connect(self.onActionSaveAs)
-
-        self.initUI()
-       
-        self.setWindowTitle('Super Boucle')
-        self.show()
-
-        self.timer = QTimer()
-        self.timer.state = False
-        self.timer.timeout.connect(self.toogleBlinkButton)
-
-        self.update()
-
-    def initUI(self):
-
-        self.groupBox.setEnabled(False)
-
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
-        self.master_volume.setValue(self.song.volume*256)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
 
-        self.btn_matrix = [[None for x in range(self.song.height)]
-                           for x in range(self.song.width)]
-        self.state_matrix = [[-1 for x in range(self.song.height)]
-                             for x in range(self.song.width)]
+        self.timer = QTimer()
+        self.timer.state = False
+        self.timer.timeout.connect(self.toogleBlinkButton)
 
+        # Avoid missing song attribute on master volume changed
+        self.song = song
+        self.initUI(song)
 
-        grid = self.gridLayout
+    def initUI(self, song):
 
-        for x in range(self.song.width):
-            for y in range(self.song.height):
+        self.groupBox.setEnabled(False)
+
+        self.master_volume.setValue(song.volume*256)
+
+        self.btn_matrix = [[None for x in range(song.height)]
+                           for x in range(song.width)]
+        self.state_matrix = [[-1 for x in range(song.height)]
+                             for x in range(song.width)]
+
+        for x in range(song.width):
+            for y in range(song.height):
                 splitter = QSplitter(self)
                 splitter.setOrientation(Qt.Vertical)
 
-                # btn = Cell(self.song.clips_matrix[x][y])
+                # btn = Cell(song.clips_matrix[x][y])
                 btn = QPushButton('Start/Stop', splitter)
                 btn.x, btn.y = x, y
                 btn.blink, btn.color = False, None
@@ -100,11 +95,11 @@ class Gui(QMainWindow, Ui_MainWindow):
                 edit.clicked.connect(self.onEdit)
                 edit.setMinimumSize(75, 25)
 
-                grid.addWidget(splitter, x, y)
+                self.gridLayout.addWidget(splitter, x, y)
 
-        self.song.registerUI(self.update)
+        song.registerUI(self.update)
+        self.song = song
         self.update()
-
 
     def onClick(self):
         btn = self.sender()
@@ -161,8 +156,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                                         '/home/joe/git/superboucle/',
                                         'Super Boucle Song (*.sbl)'))
         if file_name:
-            self.song = clip.load_song_from_file(file_name)
-            self.initUI()
+            self.initUI(clip.load_song_from_file(file_name))
 
     def update(self):
         for clp in self.song.clips:

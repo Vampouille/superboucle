@@ -29,6 +29,8 @@ class Clip():
 
         if name is None:
             self.name = audio_file
+        else:
+            self.name = name
         self.volume = volume
         self.frame_offset = frame_offset
         self.beat_offset = beat_offset
@@ -97,9 +99,9 @@ class Song():
 
     def saveTo(self, file):
         song_file = configparser.ConfigParser()
-        song_file['SONG'] = {'volume': self.volume,
-                             'width': self.width,
-                             'height': self.height}
+        song_file['DEFAULT'] = {'volume': self.volume,
+                                'width': self.width,
+                                'height': self.height}
         for clip in self.clips:
             song_file[clip.name] = {'volume': clip.volume,
                                     'frame_offset': clip.frame_offset,
@@ -119,6 +121,7 @@ def load_song_from_file(file):
     res = Song(song_file['DEFAULT'].getint('width'),
                song_file['DEFAULT'].getint('height'))
     res.file_name = file
+    res.volume = song_file['DEFAULT'].getfloat('volume')
     for section in song_file:
         if section == 'DEFAULT':
             continue
