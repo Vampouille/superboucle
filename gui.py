@@ -53,6 +53,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionSave.triggered.connect(self.onActionSave)
         self.actionSave_As.triggered.connect(self.onActionSaveAs)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
+        self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
@@ -111,6 +112,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         if clip:
             self.groupBox.setEnabled(True)
             self.groupBox.setTitle(self.last_clip.name)
+            self.clip_name.setText(self.last_clip.name)
             self.frame_offset.setValue(self.last_clip.frame_offset)
             self.beat_offset.setValue(self.last_clip.beat_offset)
             self.beat_diviser.setValue(self.last_clip.beat_diviser)
@@ -119,6 +121,10 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onMasterVolumeChange(self):
         self.song.volume = (self.master_volume.value() / 256)
+
+    def onClipNameChange(self):
+        self.last_clip.name = self.clip_name.text()
+        self.groupBox.setTitle(self.last_clip.name)
 
     def onClipVolumeChange(self):
         self.last_clip.volume = (self.clip_volume.value() / 256)
@@ -156,7 +162,9 @@ class Gui(QMainWindow, Ui_MainWindow):
                                         '/home/joe/git/superboucle/',
                                         'Super Boucle Song (*.sbl)'))
         if file_name:
+            self.setEnabled(False)
             self.initUI(clip.load_song_from_file(file_name))
+            self.setEnabled(True)
 
     def update(self):
         for clp in self.song.clips:
