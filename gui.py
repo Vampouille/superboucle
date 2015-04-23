@@ -10,8 +10,9 @@ from PyQt5.QtWidgets import (QWidget,
                              QApplication,
                              QSplitter,
                              QMainWindow,
-                             QFileDialog)
-from PyQt5.QtCore import Qt, QTimer
+                             QFileDialog,
+                             QGridLayout)
+from PyQt5.QtCore import Qt, QTimer, QRect
 import clip
 from ui import Ui_MainWindow
 
@@ -78,9 +79,13 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.state_matrix = [[-1 for x in range(song.height)]
                              for x in range(song.width)]
 
+        for i in reversed(range(self.gridLayout.count())):
+            self.gridLayout.itemAt(i).widget().close()
+            self.gridLayout.itemAt(i).widget().setParent(None)
+
         for x in range(song.width):
             for y in range(song.height):
-                splitter = QSplitter(self)
+                splitter = QSplitter(self.gridLayoutWidget)
                 splitter.setOrientation(Qt.Vertical)
 
                 # btn = Cell(song.clips_matrix[x][y])

@@ -9,7 +9,7 @@ from clip import Clip, Song
 from gui import Gui
 from PyQt5.QtWidgets import QApplication
 
-song = Song(4, 4)
+song = Song(6, 6)
 
 client = jack.Client("MIDI-Monitor")
 port = client.midi_inports.register("input")
