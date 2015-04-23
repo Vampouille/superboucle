@@ -33,7 +33,7 @@ class Clip():
         self.frame_offset = frame_offset
         self.beat_offset = beat_offset
         self.beat_diviser = beat_diviser
-        self.state = Clip.STARTING
+        self.state = Clip.STOP
         self.data, self.samplerate = sf.read(audio_file, dtype=np.float32)
         if self.length == 0:
             raise Exception("audio file without sample!")
@@ -78,15 +78,9 @@ class Song():
         clip.y = y
 
     def toogle(self, x, y):
-        print("Toogle {0} {1}".format(x, y))
         clip = self.clips_matrix[x][y]
-        print(self.clips_matrix)
-        print(self.clips)
-        print("{0} {1}".format(clip.x, clip.y))
         if clip:
-            print("Old state : {}".format(Clip.STATE_DESCRIPTION[clip.state]))
             clip.state = Clip.TRANSITION[clip.state]
-            print("New state : {}".format(Clip.STATE_DESCRIPTION[clip.state]))
             self.c.updateUI.emit()
     
     def updateUI(self):

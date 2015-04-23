@@ -54,8 +54,22 @@
        <property name="orientation">
         <enum>Qt::Vertical</enum>
        </property>
-       <widget class="QSpinBox" name="frame_offset"/>
-       <widget class="QDoubleSpinBox" name="beat_offset"/>
+       <widget class="QSpinBox" name="frame_offset">
+        <property name="minimum">
+         <number>-4410000</number>
+        </property>
+        <property name="maximum">
+         <number>4410000</number>
+        </property>
+       </widget>
+       <widget class="QDoubleSpinBox" name="beat_offset">
+        <property name="maximum">
+         <double>20.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.500000000000000</double>
+        </property>
+       </widget>
       </widget>
       <widget class="QSplitter" name="splitter_3">
        <property name="orientation">
@@ -176,7 +190,11 @@
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
-    <widget class="QDial" name="master_volume"/>
+    <widget class="QDial" name="master_volume">
+     <property name="maximum">
+      <number>256</number>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

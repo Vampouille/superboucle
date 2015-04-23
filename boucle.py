@@ -10,9 +10,21 @@ from gui import Gui
 from PyQt5.QtWidgets import QApplication
 
 # Load audio data
-clip = Clip('beep-stereo.wav', beat_diviser=4, frame_offset=0, beat_offset=1)  # 1500
-song = Song(8, 8)
-song.add_clip(clip, 1, 2)
+kick = Clip('kick.wav', beat_diviser=4, frame_offset=0, beat_offset=0)
+snare = Clip('snare.wav', beat_diviser=4, frame_offset=0, beat_offset=2)
+hithat = Clip('hithat.wav', beat_diviser=1, frame_offset=0, beat_offset=0)
+annonce = Clip('annonce.wav', beat_diviser=8, frame_offset=0, beat_offset=0)
+voix = Clip('voix.wav', beat_diviser=16, frame_offset=0, beat_offset=0)
+obligatoire = Clip('obligatoire.wav', beat_diviser=2, frame_offset=0, beat_offset=0)
+
+song = Song(4, 4)
+song.add_clip(kick, 0, 0)
+song.add_clip(snare, 0, 1)
+song.add_clip(hithat, 0, 2)
+song.add_clip(annonce, 1, 0)
+song.add_clip(voix, 1, 1)
+song.add_clip(obligatoire, 1, 2)
+
 
 client = jack.Client("MIDI-Monitor")
 port = client.midi_inports.register("input")
@@ -71,18 +83,8 @@ def my_callback(frames, song):
             if next_clip_offset:
                 next_clip_offset = round(next_clip_offset)
 
-            # starting or stopping clip
-            if clip_offset == 0 or next_clip_offset:
-                if clip.state == Clip.STARTING:
-                    clip.state = Clip.START
-                    song.updateUI()
-                if clip.state == Clip.STOPPING:
-                    clip.state = Clip.STOP
-                    song.updateUI()
-
-            # is there enough audio data ?
-            if clip.state == Clip.START:
-                if clip_offset < clip.length:
+            if clip.state == Clip.START or clip.state == Clip.STOPPING:
+                if clip_offset < clip.length:  # is there enough audio data ?
                     length = min(clip.length - clip_offset, frames)
                     outL_buffer[:length] += clip.get_data(0,
                                                           clip_offset,
@@ -93,19 +95,31 @@ def my_callback(frames, song):
                     # print("buffer[:{0}] = sample[{1}:{2}]".
                     #      format(length, clip_offset, clip_offset+length))
 
-                if next_clip_offset:
-                    length = min(clip.length, blocksize - next_clip_offset)
-                    outL_buffer[next_clip_offset:] += clip.get_data(0,
-                                                                    0,
-                                                                    length)
-                    outR_buffer[next_clip_offset:] += clip.get_data(1,
-                                                                    0,
-                                                                    length)
-                    # print("buffer[{0}:] = sample[:{1}]".
-                    #      format(next_clip_offset, length))
+            if next_clip_offset and (clip.state == Clip.START
+                                     or clip.state == Clip.STARTING):
+                length = min(clip.length, blocksize - next_clip_offset)
+                outL_buffer[next_clip_offset:] += clip.get_data(0,
+                                                                0,
+                                                                length)
+                outR_buffer[next_clip_offset:] += clip.get_data(1,
+                                                                0,
+                                                                length)
+                # print("buffer[{0}:] = sample[:{1}]".
+                #      format(next_clip_offset, length))
 
-        outL_buffer[next_clip_offset:] *= song.volume
-        outR_buffer[next_clip_offset:] *= song.volume
+            # starting or stopping clip
+            if clip_offset == 0 or next_clip_offset:
+                if clip.state == Clip.STARTING:
+                    clip.state = Clip.START
+                    song.updateUI()
+                if clip.state == Clip.STOPPING:
+                    clip.state = Clip.STOP
+                    song.updateUI()
+
+        # apply master volume
+        outL_buffer[:] *= song.volume
+        outR_buffer[:] *= song.volume
+
     return jack.CALL_AGAIN
 
 client.set_process_callback(my_callback, song)
