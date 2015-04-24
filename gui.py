@@ -17,6 +17,7 @@ from PyQt5.QtCore import Qt, QTimer, QRect
 import clip
 from ui import Ui_MainWindow
 from cell_ui import Ui_Cell
+import struct
 
 
 class Cell(QWidget, Ui_Cell):
@@ -241,6 +242,69 @@ class Gui(QMainWindow, Ui_MainWindow):
                 if btn.clip:
                     btn.clip_position.setValue((
                         (btn.clip.last_offset / btn.clip.length) * 100))
+
+
+class PadUI():
+
+    NOTEON = 0x9
+    NOTEOFF = 0x8
+
+    pad_note_to_coord = {36: (0, 0), 38: (0, 1), 40: (0, 2), 41: (0, 3),
+                         48: (1, 0), 50: (1, 1), 52: (1, 2), 53: (1, 3),
+                         60: (2, 0), 62: (2, 1), 64: (2, 2), 65: (2, 3),
+                         72: (3, 0), 74: (3, 1), 76: (3, 2), 77: (3, 3)}
+
+    pad_coord_to_note = [[36, 38, 40, 41],
+                         [48, 50, 52, 53],
+                         [60, 62, 64, 65],
+                         [72, 74, 76, 77]]
+
+    pad_state_to_color = {clip.Clip.STOP: 12,
+                          clip.Clip.STARTING: 13,
+                          clip.Clip.START: 14,
+                          clip.Clip.STOPPING: 15}
+
+    def __init__(self, width, height):
+        self.state_matrix = [[-1 for x in range(height)]
+                             for x in range(width)]
+
+    def updatePad(self, song):
+        res = []
+        song.updatePadUI = False
+        for x in range(song.width):
+            for y in range(song.height):
+                clip = song.clips_matrix[x][y]
+                if clip:
+                    if clip.state != self.state_matrix[x][y]:
+                        print("Will update pad cell {0} {1} to state {2}".
+                              format(x, y, clip.state))
+                        res.append(self.generateNote(x, y, clip.state))
+                        self.state_matrix[x][y] = clip.state
+        return res
+
+    def processNote(self, song, notes):
+        for note in notes:
+            if len(note) == 3:
+                status, pitch, vel = struct.unpack('3B', note)
+                print("Note received {0} {1} {2}".
+                      format(status, pitch, vel))
+                try:
+                    x, y = self.getXY(pitch)
+
+                    if status >> 4 == self.NOTEOFF and x >= 0 and y >= 0:
+                        song.toogle(x, y)
+                except KeyError:
+                    pass
+
+    def getXY(self, note):
+        return self.pad_note_to_coord[note]
+
+    def generateNote(self, x, y, state):
+        print("Generate note for cell {0} {1} and state {2}".
+              format(x, y, state))
+        note = self.pad_coord_to_note[x][y]
+        velocity = self.pad_state_to_color[state]
+        return (self.NOTEON, note, velocity)
 
 
 

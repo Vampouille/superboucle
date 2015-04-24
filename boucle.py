@@ -6,18 +6,20 @@ import jack
 import transport
 import sys
 from clip import Clip, Song
-from gui import Gui
+from gui import Gui, PadUI
 from PyQt5.QtWidgets import QApplication
 
 song = Song(6, 6)
 
-client = jack.Client("MIDI-Monitor")
-port = client.midi_inports.register("input")
+client = jack.Client("Super Boucle")
+midi_in = client.midi_inports.register("input")
+midi_out = client.midi_outports.register("output")
 outL = client.outports.register("output_L")
 outR = client.outports.register("output_R")
 
 app = QApplication(sys.argv)
 gui = Gui(song)
+pad_ui = PadUI(song.width, song.height)
 
 # def bbt2ticks(bar, beat, tick):
 #    return (7680*(bar-1))+(1920*(beat-1))+tick
@@ -36,6 +38,14 @@ def my_callback(frames, userdata):
     outL_buffer[:] = 0
     outR_buffer[:] = 0
     tp = transport.Transport(state, position)
+
+    # check midi in
+    notes = []
+    for offset, indata in midi_in.incoming_midi_events():
+        notes.append(indata)
+    pad_ui.processNote(song, notes)
+    midi_out.clear_buffer()
+
     if(tp.state == 1):
         frame = tp.frame
         fps = tp.frame_rate
@@ -100,14 +110,24 @@ def my_callback(frames, userdata):
                 if clip.state == Clip.STARTING:
                     clip.state = Clip.START
                     song.updateUI()
+                    song.updatePadUI = True
                 if clip.state == Clip.STOPPING:
                     clip.state = Clip.STOP
                     clip.last_offset = 0
                     song.updateUI()
+                    song.updatePadUI = True
 
         # apply master volume
         outL_buffer[:] *= song.volume
         outR_buffer[:] *= song.volume
+
+        if song.updatePadUI:
+            notes = pad_ui.updatePad(song)
+            i = 1
+            for note in notes:
+                print(note)
+                midi_out.write_midi_event(i, note)
+                i += 1
 
     return jack.CALL_AGAIN
 

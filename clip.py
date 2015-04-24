@@ -73,6 +73,7 @@ class Song():
         self.height = height
         self.file_name = None
         self.c = Communicate()
+        self.updatePadUI = False
 
     def add_clip(self, clip, x, y):
         if self.clips_matrix[x][y]:
@@ -87,7 +88,8 @@ class Song():
         if clip:
             clip.state = Clip.TRANSITION[clip.state]
             self.c.updateUI.emit()
-    
+            self.updatePadUI = True
+
     def updateUI(self):
         self.c.updateUI.emit()
 
