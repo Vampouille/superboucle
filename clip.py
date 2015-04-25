@@ -3,6 +3,7 @@ import soundfile as sf
 from PyQt5 import QtCore
 import configparser
 
+
 class Communicate(QtCore.QObject):
 
     updateUI = QtCore.pyqtSignal()

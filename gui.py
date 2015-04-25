@@ -6,14 +6,11 @@ Gui
 """
 
 from PyQt5.QtWidgets import (QWidget,
-                             QPushButton,
                              QApplication,
-                             QSplitter,
                              QMainWindow,
-                             QFileDialog,
-                             QGridLayout,
-                             QFrame)
-from PyQt5.QtCore import Qt, QTimer, QRect
+                             QFileDialog)
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QPixmap
 import clip
 from ui import Ui_MainWindow
 from cell_ui import Ui_Cell
@@ -30,7 +27,7 @@ class Cell(QWidget, Ui_Cell):
         self.clip = clip
         self.blink, self.color = False, None
         self.setupUi(self)
-
+        self.setStyleSheet(Gui.DEFAULT)
         if clip:
             self.clip_name.setText(clip.name)
             self.start_stop.clicked.connect(parent.onStartStopClick)
@@ -44,11 +41,11 @@ class Cell(QWidget, Ui_Cell):
 
 class Gui(QMainWindow, Ui_MainWindow):
 
-    GREEN = "#frame { background-color: rgb(0,230,0);}"
-    BLUE = "#frame { background-color: rgb(0, 130, 240);}"
-    RED = "#frame { background-color: rgb(240, 0, 0);}"
-    PURPLE = "#frame { background-color: rgb(130, 0, 240);}"
-    WHITE = "#frame { background-color: rgb(255, 255, 255);}"
+    GREEN = "#cell_frame { border: 0px; border-radius: 10px; background-color: rgb(125,242,0);}"
+    BLUE = "#cell_frame { border: 0px; border-radius: 10px; background-color: rgb(0, 130, 240);}"
+    RED = "#cell_frame { border: 0px; border-radius: 10px; background-color: rgb(255, 21, 65);}"
+    PURPLE = "#cell_frame { border: 0px; border-radius: 10px; background-color: rgb(130, 0, 240);}"
+    DEFAULT = "#cell_frame { border: 0px; border-radius: 10px; background-color: rgb(217, 217, 217);}"
 
     STATE_COLORS = {clip.Clip.STOP: RED,
                     clip.Clip.STARTING: GREEN,
@@ -66,7 +63,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         super(Gui, self).__init__()
         self.setupUi(self)
         self.setWindowTitle('Super Boucle')
-        self.gridLayout.setContentsMargins(5, 5, 5, 5)
         self.show()
 
         self.actionOpen.triggered.connect(self.onActionOpen)
@@ -93,7 +89,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def initUI(self, song):
 
-        self.groupBox.setEnabled(False)
+        self.frame_clip.setEnabled(False)
 
         self.master_volume.setValue(song.volume*256)
 
@@ -124,8 +120,7 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onEdit(self):
         self.last_clip = self.sender().parent().parent().clip
         if self.last_clip:
-            self.groupBox.setEnabled(True)
-            self.groupBox.setTitle(self.last_clip.name)
+            self.frame_clip.setEnabled(True)
             self.clip_name.setText(self.last_clip.name)
             self.frame_offset.setValue(self.last_clip.frame_offset)
             self.beat_offset.setValue(self.last_clip.beat_offset)
@@ -159,7 +154,6 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onClipNameChange(self):
         self.last_clip.name = self.clip_name.text()
-        self.groupBox.setTitle(self.last_clip.name)
         tframe = self.btn_matrix[self.last_clip.x][self.last_clip.y]
         tframe.clip_name.setText(self.last_clip.name)
 
@@ -232,7 +226,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                     if self.blktimer.state:
                         btn.setStyleSheet(btn.color)
                     else:
-                        btn.setStyleSheet("")
+                        btn.setStyleSheet(self.DEFAULT)
 
         self.blktimer.state = not self.blktimer.state
 
