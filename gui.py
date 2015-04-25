@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (QWidget,
                              QMainWindow,
                              QFileDialog)
 from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QIcon
 import clip
 from ui import Ui_MainWindow
 from cell_ui import Ui_Cell
@@ -62,7 +62,7 @@ class Gui(QMainWindow, Ui_MainWindow):
     def __init__(self, song):
         super(Gui, self).__init__()
         self.setupUi(self)
-        self.setWindowTitle('Super Boucle')
+        self.clip_volume.knobRadius = 3
         self.show()
 
         self.actionOpen.triggered.connect(self.onActionOpen)

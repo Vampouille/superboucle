@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Super Boucle</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>icon.png</normaloff>icon.png</iconset>
   </property>
   <property name="styleSheet">
    <string notr="true">QMainWindow {background-color: black;}</string>
@@ -90,7 +94,7 @@ background-color: rgb(175, 178, 178);}</string>
        <property name="frameShadow">
         <enum>QFrame::Raised</enum>
        </property>
-       <widget class="QDial" name="master_volume">
+       <widget class="QSuperDial" name="master_volume">
         <property name="geometry">
          <rect>
           <x>44</x>
@@ -106,7 +110,8 @@ background-color: rgb(175, 178, 178);}</string>
          </size>
         </property>
         <property name="styleSheet">
-         <string notr="true">background-color: rgb(247, 255, 0);</string>
+         <string notr="true">background-color: rgb(239, 248, 0);
+color: black;</string>
         </property>
         <property name="maximum">
          <number>256</number>
@@ -212,20 +217,21 @@ border-radius: 2px;</string>
           <set>Qt::AlignCenter</set>
          </property>
         </widget>
-        <widget class="QDial" name="clip_volume">
+        <widget class="QSuperDial" name="clip_volume">
          <property name="enabled">
           <bool>true</bool>
          </property>
          <property name="geometry">
           <rect>
-           <x>41</x>
-           <y>80</y>
-           <width>51</width>
-           <height>52</height>
+           <x>45</x>
+           <y>91</y>
+           <width>41</width>
+           <height>41</height>
           </rect>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color: rgb(109, 215, 23);</string>
+          <string notr="true">background-color: rgb(109, 215, 23);
+color: black;</string>
          </property>
          <property name="maximum">
           <number>256</number>
@@ -501,6 +507,13 @@ border-radius: 2px;</string>
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QSuperDial</class>
+   <extends>QDial</extends>
+   <header>qsuperdial.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
