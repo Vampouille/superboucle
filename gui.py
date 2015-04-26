@@ -5,16 +5,106 @@
 Gui
 """
 
-from PyQt5.QtWidgets import (QWidget,
+from PyQt5.QtWidgets import (QDialog,
+                             QFrame,
+                             QWidget,
                              QApplication,
                              QMainWindow,
                              QFileDialog)
 from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QIcon
+from PyQt5 import QtCore
 import clip
 from ui import Ui_MainWindow
 from cell_ui import Ui_Cell
+from learn_cell import Ui_LearnCell
+import learn_ui
 import struct
+from queue import Queue, Empty
+
+
+class Communicate(QtCore.QObject):
+
+    updateUI = QtCore.pyqtSignal()
+
+
+class LearnCell(QWidget, Ui_LearnCell):
+
+    def __init__(self, parent):
+        super(LearnCell, self).__init__(parent)
+        self.setupUi(self)
+
+
+class LearnDialog(QDialog, learn_ui.Ui_Dialog):
+
+    NOTEON = 0x9
+    NOTEOFF = 0x8
+    NEW_CELL_STYLE = "border: 0px; border-radius: 10px; background-color: rgb(217, 217, 217);"
+
+    def __init__(self, parent):
+        super(LearnDialog, self).__init__(parent)
+        self.gui = parent
+        self.queue = Queue()
+        self.current_line = None
+        self.current_row = None
+        self.pitch_matrix = []
+        self.setupUi(self)
+        self.show()
+        self.accepted.connect(self.onSave)
+        self.firstLine.clicked.connect(self.onFirstLineClicked)
+
+    def onFirstLineClicked(self):
+
+        if self.current_line is None:
+            self.current_line = 0
+            self.firstLine.setText("Add Next line")
+        else:
+            self.pitch_matrix.append(self.current_line_pitch)
+            self.current_line += 1
+
+        print("Clicked")
+        self.firstLine.setEnabled(False)
+        self.current_row = 0
+        self.current_line_pitch = []
+        cell = LearnCell(self)
+        self.gridLayout.addWidget(cell,
+                                  self.current_line,
+                                  self.current_row)
+
+    def onNote(self, note):
+        self.queue.put(note)
+
+    def processNotes(self):
+        try:
+            while True:
+                data = self.queue.get(block=False)
+                if len(data) == 3:
+                    status, pitch, vel = struct.unpack('3B', data)
+                    self.processNote(status, pitch, vel)
+                    print(pitch)
+        except Empty:
+            pass
+
+    def processNote(self, status, pitch, velocity):
+        if self.current_line is not None and self.current_line is not None:
+            if status >> 4 == self.NOTEOFF:
+                print("New note : {0} at {1} x {2}".
+                      format(pitch, self.current_line, self.current_row))
+                self.current_line_pitch.append(pitch)
+                cell = LearnCell(self)
+                cell.setStyleSheet(self.NEW_CELL_STYLE)
+                self.gridLayout.addWidget(cell,
+                                          self.current_line,
+                                          self.current_row)
+                self.current_row += 1
+                self.firstLine.setEnabled(True)
+
+    def onSave(self):
+        self.pitch_matrix.append(self.current_line_pitch)
+        pass
+
+        print(self.pitch_matrix)
+        self.gui.is_add_device_mode = False
+
 
 
 class Cell(QWidget, Ui_Cell):
@@ -63,11 +153,13 @@ class Gui(QMainWindow, Ui_MainWindow):
         super(Gui, self).__init__()
         self.setupUi(self)
         self.clip_volume.knobRadius = 3
+        self.is_add_device_mode = False
         self.show()
 
         self.actionOpen.triggered.connect(self.onActionOpen)
         self.actionSave.triggered.connect(self.onActionSave)
         self.actionSave_As.triggered.connect(self.onActionSaveAs)
+        self.actionAdd_Device.triggered.connect(self.onAddDevice)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
@@ -86,6 +178,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         # Avoid missing song attribute on master volume changed
         self.song = song
         self.initUI(song)
+        self.c = Communicate()
 
     def initUI(self, song):
 
@@ -169,6 +262,17 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onBeatOffsetChange(self):
         self.last_clip.beat_offset = self.beat_offset.value()
 
+    def onActionOpen(self):
+        file_name, a = (
+            QFileDialog.getOpenFileName(self,
+                                        'Open file',
+                                        '/home/joe/git/superboucle/',
+                                        'Super Boucle Song (*.sbl)'))
+        if file_name:
+            self.setEnabled(False)
+            self.initUI(clip.load_song_from_file(file_name))
+            self.setEnabled(True)
+
     def onActionSave(self):
         if self.song.file_name:
             self.song.save()
@@ -186,16 +290,10 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.song.save()
             print("File saved to : {}".format(self.song.file_name))
 
-    def onActionOpen(self):
-        file_name, a = (
-            QFileDialog.getOpenFileName(self,
-                                        'Open file',
-                                        '/home/joe/git/superboucle/',
-                                        'Super Boucle Song (*.sbl)'))
-        if file_name:
-            self.setEnabled(False)
-            self.initUI(clip.load_song_from_file(file_name))
-            self.setEnabled(True)
+    def onAddDevice(self):
+        self.is_add_device_mode = True
+        self.add_device = LearnDialog(self)
+        self.c.updateUI.connect(self.add_device.processNotes)
 
     def update(self):
         for clp in self.song.clips:
@@ -236,6 +334,9 @@ class Gui(QMainWindow, Ui_MainWindow):
                 if btn.clip:
                     btn.clip_position.setValue((
                         (btn.clip.last_offset / btn.clip.length) * 100))
+
+    def updateAddDeviceUi(self):
+        self.c.updateUI.emit()
 
 
 class PadUI():
