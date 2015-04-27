@@ -6,8 +6,9 @@ import jack
 import transport
 import sys
 from clip import Clip, Song
-from gui import Gui, PadUI
+from gui import Gui
 from PyQt5.QtWidgets import QApplication
+from queue import Empty
 
 song = Song(6, 6)
 
@@ -19,7 +20,6 @@ outR = client.outports.register("output_R")
 
 app = QApplication(sys.argv)
 gui = Gui(song)
-pad_ui = PadUI(song.width, song.height)
 
 # def bbt2ticks(bar, beat, tick):
 #    return (7680*(bar-1))+(1920*(beat-1))+tick
@@ -40,15 +40,14 @@ def my_callback(frames, userdata):
     tp = transport.Transport(state, position)
 
     # check midi in
-    notes = []
     if gui.is_add_device_mode:
         for offset, indata in midi_in.incoming_midi_events():
             gui.add_device.queue.put(indata)
-        gui.updateAddDeviceUi()
+        gui.add_device.updateUi.emit()
     else:
         for offset, indata in midi_in.incoming_midi_events():
-            notes.append(indata)
-        pad_ui.processNote(song, notes)
+            gui.queue_in.put(indata)
+        gui.readQueueIn.emit()
     midi_out.clear_buffer()
 
     if(tp.state == 1):
@@ -114,34 +113,25 @@ def my_callback(frames, userdata):
             if clip_offset == 0 or next_clip_offset:
                 if clip.state == Clip.STARTING:
                     clip.state = Clip.START
-                    song.updateUI()
-                    song.updatePadUI = True
+                    gui.updateUi.emit()
                 if clip.state == Clip.STOPPING:
                     clip.state = Clip.STOP
                     clip.last_offset = 0
-                    song.updateUI()
-                    song.updatePadUI = True
+                    gui.updateUi.emit()
 
         # apply master volume
         outL_buffer[:] *= song.volume
         outR_buffer[:] *= song.volume
 
-        # try:
-        #     i = 1
-        #     while True:
-        #         note = gui.queue_out.get(block=False)
-        #         midi_out.write_midi_event(i, note)
-        #         i += 1
-        # except Empty:
-        #     pass
-
-        if song.updatePadUI:
-            notes = pad_ui.updatePad(song)
-            i = 1
-            for note in notes:
-                print(note)
-                midi_out.write_midi_event(i, note)
-                i += 1
+    try:
+        i = 1
+        while True:
+            note = gui.queue_out.get(block=False)
+            print("Send note {}".format(note))
+            midi_out.write_midi_event(i, note)
+            i += 1
+    except Empty:
+        pass
 
     return jack.CALL_AGAIN
 

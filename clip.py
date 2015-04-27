@@ -73,8 +73,6 @@ class Song():
         self.width = width
         self.height = height
         self.file_name = None
-        self.c = Communicate()
-        self.updatePadUI = False
 
     def add_clip(self, clip, x, y):
         if self.clips_matrix[x][y]:
@@ -88,14 +86,6 @@ class Song():
         clip = self.clips_matrix[x][y]
         if clip:
             clip.state = Clip.TRANSITION[clip.state]
-            self.c.updateUI.emit()
-            self.updatePadUI = True
-
-    def updateUI(self):
-        self.c.updateUI.emit()
-
-    def registerUI(self, gui_callback):
-        self.c.updateUI.connect(gui_callback)
 
     def save(self):
         if self.file_name:
