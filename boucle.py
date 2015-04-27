@@ -41,9 +41,14 @@ def my_callback(frames, userdata):
 
     # check midi in
     notes = []
-    for offset, indata in midi_in.incoming_midi_events():
-        notes.append(indata)
-    pad_ui.processNote(song, notes)
+    if gui.is_add_device_mode:
+        for offset, indata in midi_in.incoming_midi_events():
+            gui.add_device.queue.put(indata)
+        gui.updateAddDeviceUi()
+    else:
+        for offset, indata in midi_in.incoming_midi_events():
+            notes.append(indata)
+        pad_ui.processNote(song, notes)
     midi_out.clear_buffer()
 
     if(tp.state == 1):
