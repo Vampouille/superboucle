@@ -22,6 +22,24 @@ import struct
 from queue import Queue, Empty
 
 
+class PadMapping():
+
+    def __init__(self, pitch_matrix):
+        self.note_to_coord = {}
+        self.coord_to_note = []
+        self.coord_to_note = [[None for x in range(len(pitch_matrix[0]))]
+                              for x in range(len(pitch_matrix))]
+        for y in range(len(pitch_matrix)):
+            line = pitch_matrix[y]
+            for x in range(len(line)):
+                note = line[x]
+                self.note_to_coord[note] = (x, y)
+                self.coord_to_note[x][y] = note
+
+    def __str__(self):
+        return str(self.coord_to_note)
+
+
 class Communicate(QtCore.QObject):
 
     updateUI = QtCore.pyqtSignal()
@@ -104,7 +122,6 @@ class LearnDialog(QDialog, learn_ui.Ui_Dialog):
 
         print(self.pitch_matrix)
         self.gui.is_add_device_mode = False
-
 
 
 class Cell(QWidget, Ui_Cell):
