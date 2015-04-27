@@ -126,6 +126,15 @@ def my_callback(frames, userdata):
         outL_buffer[:] *= song.volume
         outR_buffer[:] *= song.volume
 
+        # try:
+        #     i = 1
+        #     while True:
+        #         note = gui.queue_out.get(block=False)
+        #         midi_out.write_midi_event(i, note)
+        #         i += 1
+        # except Empty:
+        #     pass
+
         if song.updatePadUI:
             notes = pad_ui.updatePad(song)
             i = 1
