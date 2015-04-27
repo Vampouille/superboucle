@@ -8,7 +8,7 @@ Gui
 from PyQt5.QtWidgets import QWidget, QMainWindow, QFileDialog
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings
 from clip import Clip, load_song_from_file
-from ui import Ui_MainWindow
+from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
 import struct
