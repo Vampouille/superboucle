@@ -5,9 +5,7 @@
 Gui
 """
 
-from PyQt5.QtWidgets import (QWidget,
-                             QMainWindow,
-                             QFileDialog)
+from PyQt5.QtWidgets import QWidget, QMainWindow, QFileDialog
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings
 from clip import Clip, load_song_from_file
 from ui import Ui_MainWindow
@@ -45,11 +43,14 @@ class Device():
 
     # TODO implements note, second note and channel
     def generateNote(self, x, y, state):
-        print("Generate note for cell {0} {1} and state {2}".
-              format(x, y, state))
-        note = self.mapping['start_stop'][x][y]
-        velocity = self.state_to_color[state]
-        return (self.NOTEON, note, velocity)
+        try:
+            print("Generate note for cell {0} {1} and state {2}".
+                  format(x, y, state))
+            note = self.mapping['start_stop'][x][y]
+            velocity = self.state_to_color[state]
+            return [(self.NOTEON, note, velocity)]
+        except IndexError:
+            return []
 
     def __str__(self):
         return str(self.mapping)
@@ -66,8 +67,6 @@ class Device():
     @property
     def name(self):
         return self.mapping['name']
-
-
 
 
 class Cell(QWidget, Ui_Cell):
@@ -96,11 +95,16 @@ class Gui(QMainWindow, Ui_MainWindow):
     NOTEON = 0x9
     NOTEOFF = 0x8
 
-    GREEN = "#cell_frame { border: 0px; border-radius: 10px; background-color: rgb(125,242,0);}"
-    BLUE = "#cell_frame { border: 0px; border-radius: 10px; background-color: rgb(0, 130, 240);}"
-    RED = "#cell_frame { border: 0px; border-radius: 10px; background-color: rgb(255, 21, 65);}"
-    PURPLE = "#cell_frame { border: 0px; border-radius: 10px; background-color: rgb(130, 0, 240);}"
-    DEFAULT = "#cell_frame { border: 0px; border-radius: 10px; background-color: rgb(217, 217, 217);}"
+    GREEN = ("#cell_frame { border: 0px; border-radius: 10px; "
+             "background-color: rgb(125,242,0);}")
+    BLUE = ("#cell_frame { border: 0px; border-radius: 10px; "
+            "background-color: rgb(0, 130, 240);}")
+    RED = ("#cell_frame { border: 0px; border-radius: 10px; "
+           "background-color: rgb(255, 21, 65);}")
+    PURPLE = ("#cell_frame { border: 0px; border-radius: 10px; "
+              "background-color: rgb(130, 0, 240);}")
+    DEFAULT = ("#cell_frame { border: 0px; border-radius: 10px; "
+               "background-color: rgb(217, 217, 217);}")
 
     STATE_COLORS = {Clip.STOP: RED,
                     Clip.STARTING: GREEN,
@@ -281,10 +285,17 @@ class Gui(QMainWindow, Ui_MainWindow):
                                   clp.y,
                                   self.STATE_COLORS[clp.state],
                                   self.STATE_BLINK[clp.state])
-                self.queue_out.put(self.device.generateNote(clp.x,
-                                                            clp.y,
-                                                            clp.state))
+                notes = self.device.generateNote(clp.x,
+                                                 clp.y,
+                                                 clp.state)
+                for note in notes:
+                    self.queue_out.put(note)
                 self.state_matrix[clp.x][clp.y] = clp.state
+
+    def redraw(self):
+        self.state_matrix = [[-1 for x in range(self.song.height)]
+                             for x in range(self.song.width)]
+        self.update()
 
     def readQueue(self):
         updateUi = False
@@ -340,3 +351,4 @@ class Gui(QMainWindow, Ui_MainWindow):
     def addDevice(self, mapping):
         self.device = Device(mapping)
         self.device.save()
+        self.redraw()
