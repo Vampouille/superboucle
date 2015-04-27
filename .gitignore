@@ -1,2 +1,5 @@
-/ui.py
+/gui_ui.py
+/learn_ui.py
+/cell_ui.py
+/learn_cell_ui.py
 /__pycache__/

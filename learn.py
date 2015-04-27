@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QDialog,
 from PyQt5.QtCore import pyqtSignal
 import struct
 from queue import Queue, Empty
-from learn_cell import Ui_LearnCell
+from learn_cell_ui import Ui_LearnCell
 from learn_ui import Ui_Dialog
 
 
