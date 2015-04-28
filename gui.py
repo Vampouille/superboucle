@@ -59,6 +59,22 @@ class Device():
     def name(self):
         return self.mapping['name']
 
+    @property
+    def ctrls(self):
+        if 'ctrls' in self.mapping:
+            return self.mapping['ctrls']
+        else:
+            return []
+
+    @property
+    def master_volume_ctrl(self):
+        if 'master_volume_ctrl' in self.mapping:
+            return self.mapping['master_volume_ctrl']
+        else:
+            return False
+
+
+
 
 class Cell(QWidget, Ui_Cell):
 
@@ -85,6 +101,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     NOTEON = 0x9
     NOTEOFF = 0x8
+    MIDICTRL = 11
 
     GREEN = ("#cell_frame { border: 0px; border-radius: 10px; "
              "background-color: rgb(125,242,0);}")
@@ -315,13 +332,24 @@ class Gui(QMainWindow, Ui_MainWindow):
 
                     channel = status & 0xF
                     msg_type = status >> 4
+                    chnote = (channel << 8) + pitch
                     print(("Note received status: %s type: %s "
                            "channel: %s pitch: %s "
-                           "velocity: %s") % (status,
-                                              msg_type,
-                                              channel,
-                                              pitch,
-                                              vel))
+                           "velocity: %s chnote: %s") % (status,
+                                                         msg_type,
+                                                         channel + 1,
+                                                         pitch,
+                                                         vel,
+                                                         chnote))
+                    # process ctrl
+                    if ((msg_type == self.MIDICTRL
+                         and len(self.device.ctrls)
+                         or self.device.master_volume_ctrl)):
+                        if chnote == self.device.master_volume_ctrl:
+                            self.song.master_volume = vel / 127
+                            (self.master_volume
+                             .setValue(self.song.master_volume * 256))
+
                     try:
                         x, y = self.device.getXY((channel << 8) + pitch)
                         if status >> 4 == self.NOTEOFF and x >= 0 and y >= 0:
