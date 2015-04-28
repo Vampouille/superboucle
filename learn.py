@@ -64,29 +64,14 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.stop2.clicked.connect(self.onStopClicked)
         self.stop3.clicked.connect(self.onStopClicked)
         self.learn_green.clicked.connect(self.onGreen)
+        print("learn_green connected")
         self.learn_blink_green.clicked.connect(self.onBlinkGreen)
         self.learn_red.clicked.connect(self.onRed)
         self.learn_blink_red.clicked.connect(self.onBlinkRed)
-        self.green_ch.valueChanged.connect(self.onGreen)
         self.green_vel.valueChanged.connect(self.onGreen)
-        self.green_has2.toggled.connect(self.onGreen2Toogle)
-        self.green_ch2.valueChanged.connect(self.onGreen)
-        self.green_vel2.valueChanged.connect(self.onGreen)
-        self.blink_green_ch.valueChanged.connect(self.onBlinkGreen)
         self.blink_green_vel.valueChanged.connect(self.onBlinkGreen)
-        self.blink_green_has2.toggled.connect(self.onBlinkGreen2Toogle)
-        self.blink_green_ch2.valueChanged.connect(self.onBlinkGreen)
-        self.blink_green_vel2.valueChanged.connect(self.onBlinkGreen)
-        self.red_ch.valueChanged.connect(self.onRed)
         self.red_vel.valueChanged.connect(self.onRed)
-        self.red_has2.toggled.connect(self.onRed2Toogle)
-        self.red_ch2.valueChanged.connect(self.onRed)
-        self.red_vel2.valueChanged.connect(self.onRed)
-        self.blink_red_ch.valueChanged.connect(self.onBlinkRed)
         self.blink_red_vel.valueChanged.connect(self.onBlinkRed)
-        self.blink_red_has2.toggled.connect(self.onBlinkRed2Toogle)
-        self.blink_red_ch2.valueChanged.connect(self.onBlinkRed)
-        self.blink_red_vel2.valueChanged.connect(self.onBlinkRed)
         self.show()
 
     def onFirstLineClicked(self):
@@ -96,13 +81,13 @@ class LearnDialog(QDialog, Ui_Dialog):
             self.current_line = 0
             self.firstLine.setText("Add Next line")
         else:
-            self.pitch_matrix.append(self.current_line_pitch)
             self.current_line += 1
 
+        self.current_line_pitch = []
+        self.pitch_matrix.append(self.current_line_pitch)
         print("Clicked")
         self.firstLine.setEnabled(False)
         self.current_row = 0
-        self.current_line_pitch = []
         cell = LearnCell(self)
         self.gridLayout.addWidget(cell,
                                   self.current_line,
@@ -133,76 +118,29 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.send_midi_to = None
 
     def onGreen(self):
-        self.gui.queue_out.put((144 + self.green_ch.value(),
-                                self.current_line_pitch[0],
-                                self.green_vel.value()))
-        if self.green_has2.isChecked():
-            self.gui.queue_out.put((144 + self.green_ch2.value(),
-                                    self.current_line_pitch[0],
-                                    self.green_vel2.value()))
+        print("On green call")
+        print(self.pitch_matrix)
+        self.lightAllCell(self.green_vel.value())
 
     def onBlinkGreen(self):
-        self.gui.queue_out.put((144 + self.blink_green_ch.value(),
-                                self.current_line_pitch[0],
-                                self.blink_green_vel.value()))
-        if self.blink_green_has2.isChecked():
-            self.gui.queue_out.put((144 + self.blink_green_ch2.value(),
-                                    self.current_line_pitch[0],
-                                    self.blink_green_vel2.value()))
+        self.lightAllCell(self.blink_green_vel.value())
 
     def onRed(self):
-        self.gui.queue_out.put((144 + self.red_ch.value(),
-                                self.current_line_pitch[0],
-                                self.red_vel.value()))
-        if self.red_has2.isChecked():
-            self.gui.queue_out.put((144 + self.red_ch2.value(),
-                                    self.current_line_pitch[0],
-                                    self.red_vel2.value()))
+        self.lightAllCell(self.red_vel.value())
 
     def onBlinkRed(self):
-        self.gui.queue_out.put((144 + self.blink_red_ch.value(),
-                                self.current_line_pitch[0],
-                                self.blink_red_vel.value()))
-        if self.blink_red_has2.isChecked():
-            self.gui.queue_out.put((144 + self.blink_red_ch2.value(),
-                                    self.current_line_pitch[0],
-                                    self.blink_red_vel2.value()))
+        self.lightAllCell(self.red_green_vel.value())
 
-    def onGreen2Toogle(self):
-        if self.green_has2.isChecked():
-            self.green_ch2.setEnabled(True)
-            self.green_vel2.setEnabled(True)
-        else:
-            self.green_ch2.setEnabled(False)
-            self.green_vel2.setEnabled(False)
-        self.onGreen()
-
-    def onBlinkGreen2Toogle(self):
-        if self.blink_green_has2.isChecked():
-            self.blink_green_ch2.setEnabled(True)
-            self.blink_green_vel2.setEnabled(True)
-        else:
-            self.blink_green_ch2.setEnabled(False)
-            self.blink_green_vel2.setEnabled(False)
-        self.onBlinkGreen()
-
-    def onRed2Toogle(self):
-        if self.red_has2.isChecked():
-            self.red_ch2.setEnabled(True)
-            self.red_vel2.setEnabled(True)
-        else:
-            self.red_ch2.setEnabled(False)
-            self.red_vel2.setEnabled(False)
-        self.onRed()
-
-    def onBlinkRed2Toogle(self):
-        if self.blink_red_has2.isChecked():
-            self.blink_red_ch2.setEnabled(True)
-            self.blink_red_vel2.setEnabled(True)
-        else:
-            self.blink_red_ch2.setEnabled(False)
-            self.blink_red_vel2.setEnabled(False)
-        self.onBlinkRed()
+    def lightAllCell(self, velocity):
+        print("lightAllCell call")
+        for line in self.pitch_matrix:
+            for chnote in line:
+                channel = chnote >> 8
+                note = chnote & 0x7F
+                print('Send %s %s' % (channel, note))
+                self.gui.queue_out.put((144 + channel,
+                                        note,
+                                        velocity))
 
     def update(self):
         try:
@@ -225,12 +163,15 @@ class LearnDialog(QDialog, Ui_Dialog):
         elif self.send_midi_to == self.CTRLS:
             self.addCtrl(status, pitch, velocity)
         elif status >> 4 == self.NOTEOFF:  # then process note off
+            channel = status - 128
+            print("status %s" % status)
             if self.send_midi_to == self.BLOCK_BUTTONS:
-                self.addBlockBtn(pitch)
+                # store pitch *and* channel
+                self.addBlockBtn((channel << 8) + pitch)
             elif self.send_midi_to == self.START_STOP:
-                print("New note : {0} at {1} x {2}".
-                      format(pitch, self.current_line, self.current_row))
-                self.current_line_pitch.append(pitch)
+                print("New note : %s %s at %s x %s"
+                      % (channel, pitch, self.current_line, self.current_row))
+                self.current_line_pitch.append((channel << 8) + pitch)
                 cell = LearnCell(self)
                 cell.setStyleSheet(self.NEW_CELL_STYLE)
                 self.gridLayout.addWidget(cell,
@@ -271,8 +212,10 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.pitch_matrix.append(self.current_line_pitch)
         self.mapping['start_stop'] = self.pitch_matrix
         self.mapping['name'] = str(self.name.text())
-        self.mapping['green_ch'] = int(self.green_ch.value())
-        # TODO save all colors params !
+        self.mapping['green_vel'] = int(self.green_vel.value())
+        self.mapping['blink_green_vel'] = int(self.blink_green_vel.value())
+        self.mapping['red_vel'] = int(self.red_vel.value())
+        self.mapping['blink_red_vel'] = int(self.blink_red_vel.value())
         print(self.mapping)
         self.gui.is_add_device_mode = False
         self.gui.addDevice(self.mapping)

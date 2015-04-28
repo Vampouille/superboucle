@@ -40,18 +40,18 @@ class Device():
                                Clip.STOPPING: 15}
 
     def getXY(self, note):
+        print("Searching for note %s in :\n%s" % (note, self.note_to_coord))
         return self.note_to_coord[note]
 
     # TODO implements note, second note and channel
     def generateNote(self, x, y, state):
-        try:
             print("Generate note for cell {0} {1} and state {2}".
                   format(x, y, state))
-            note = self.mapping['start_stop'][x][y]
+            chnote = self.mapping['start_stop'][x][y]
+            channel = chnote >> 8
+            note = chnote & 0x7F
             velocity = self.state_to_color[state]
-            return [(self.NOTEON, note, velocity)]
-        except IndexError:
-            return []
+            return (self.NOTEON + channel, note, velocity)
 
     def __str__(self):
         return str(self.mapping)
@@ -291,11 +291,12 @@ class Gui(QMainWindow, Ui_MainWindow):
                                   clp.y,
                                   self.STATE_COLORS[clp.state],
                                   self.STATE_BLINK[clp.state])
-                notes = self.device.generateNote(clp.x,
-                                                 clp.y,
-                                                 clp.state)
-                for note in notes:
-                    self.queue_out.put(note)
+                try:
+                    self.queue_out.put(self.device.generateNote(clp.x,
+                                                                clp.y,
+                                                                clp.state))
+                except IndexError:
+                    print("No cell associated to %s x %s" % (clp.x, clp.y))
                 self.state_matrix[clp.x][clp.y] = clp.state
 
     def redraw(self):
@@ -310,10 +311,18 @@ class Gui(QMainWindow, Ui_MainWindow):
                 note = self.queue_in.get(block=False)
                 if len(note) == 3:
                     status, pitch, vel = struct.unpack('3B', note)
-                    print("Note received {0} {1} {2}".
-                          format(status, pitch, vel))
+                    
+                    channel = status & 0xF
+                    msg_type = status >> 4
+                    print(("Note received status: %s type: %s "
+                           "channel: %s pitch: %s "
+                           "velocity: %s") % (status,
+                                              msg_type,
+                                              channel,
+                                              pitch,
+                                              vel))
                     try:
-                        x, y = self.device.getXY(pitch)
+                        x, y = self.device.getXY((channel << 8) + pitch)
                         if status >> 4 == self.NOTEOFF and x >= 0 and y >= 0:
                             self.song.toogle(x, y)
                             updateUi = True
