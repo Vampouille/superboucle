@@ -67,13 +67,18 @@ class Device():
             return []
 
     @property
+    def block_buttons(self):
+        if 'block_buttons' in self.mapping:
+            return self.mapping['block_buttons']
+        else:
+            return []
+
+    @property
     def master_volume_ctrl(self):
         if 'master_volume_ctrl' in self.mapping:
             return self.mapping['master_volume_ctrl']
         else:
             return False
-
-
 
 
 class Cell(QWidget, Ui_Cell):
@@ -138,6 +143,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.queue_out, self.queue_in = Queue(), Queue()
         self.updateUi.connect(self.update)
         self.readQueueIn.connect(self.readQueue)
+        self.current_vol_block = 0
 
         self.actionOpen.triggered.connect(self.onActionOpen)
         self.actionSave.triggered.connect(self.onActionSave)
@@ -165,10 +171,11 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.devices = []
         settings = QSettings('superboucle', 'devices')
         if settings.contains('devices'):
-            for raw_device in settings.value('devices'):
-                self.addDevice(json.loads(raw_device))
-        else:
-            self.addDevice({'name': 'No Device', 'start_stop': []})
+            if settings.value('devices'):
+                for raw_device in settings.value('devices'):
+                    self.addDevice(json.loads(raw_device))
+            else:
+                self.addDevice({'name': 'No Device', 'start_stop': []})
 
         self.initUI(song)
         self.show()
@@ -229,7 +236,6 @@ class Gui(QMainWindow, Ui_MainWindow):
             sender.clip = new_clip
             sender.clip_name.setText(new_clip.name)
             sender.start_stop.clicked.connect(self.onStartStopClick)
-            print(sender.edit.text())
             sender.edit.setText("Edit")
             sender.edit.clicked.disconnect(self.onAddClipClick)
             sender.edit.clicked.connect(self.onEdit)
@@ -299,7 +305,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         else:
             self.showFullScreen()
         self.show()
-        print("OK")
 
     def update(self):
         for clp in self.song.clips:
@@ -314,7 +319,8 @@ class Gui(QMainWindow, Ui_MainWindow):
                                                                 clp.y,
                                                                 clp.state))
                 except IndexError:
-                    print("No cell associated to %s x %s" % (clp.x, clp.y))
+                    # print("No cell associated to %s x %s" % (clp.x, clp.y))
+                    pass
                 self.state_matrix[clp.x][clp.y] = clp.state
 
     def redraw(self):
@@ -333,30 +339,47 @@ class Gui(QMainWindow, Ui_MainWindow):
                     channel = status & 0xF
                     msg_type = status >> 4
                     chnote = (channel << 8) + pitch
-                    print(("Note received status: %s type: %s "
-                           "channel: %s pitch: %s "
-                           "velocity: %s chnote: %s") % (status,
-                                                         msg_type,
-                                                         channel + 1,
-                                                         pitch,
-                                                         vel,
-                                                         chnote))
+                    # print(("Note received status: %s type: %s "
+                    #        "channel: %s pitch: %s "
+                    #        "velocity: %s chnote: %s")
+                    #       % (status, msg_type, channel + 1,
+                    #          pitch, vel, chnote))
                     # process ctrl
                     if ((msg_type == self.MIDICTRL
-                         and len(self.device.ctrls)
-                         or self.device.master_volume_ctrl)):
+                         and (len(self.device.ctrls)
+                              or self.device.master_volume_ctrl))):
                         if chnote == self.device.master_volume_ctrl:
                             self.song.master_volume = vel / 127
                             (self.master_volume
                              .setValue(self.song.master_volume * 256))
+                        elif chnote in self.device.ctrls:
+                            try:
+                                ctrl_index = self.device.ctrls.index(chnote)
+                                block_index = self.current_vol_block
+                                clip = (self.song.
+                                        clips_matrix[block_index][ctrl_index])
+                                if clip:
+                                    clip.volume = vel / 127
+                            except KeyError:
+                                pass
+                        else:
+                            print("Unknown ctrl")
 
-                    try:
-                        x, y = self.device.getXY((channel << 8) + pitch)
-                        if status >> 4 == self.NOTEOFF and x >= 0 and y >= 0:
-                            self.song.toogle(x, y)
-                            updateUi = True
-                    except KeyError:
-                        pass
+                    elif msg_type == self.NOTEOFF:
+                        if chnote in self.device.block_buttons:
+                            self.current_vol_block = (
+                                self.device.block_buttons.index(chnote))
+                        else:
+                            try:
+                                x, y = self.device.getXY(chnote)
+                                if ((status >> 4 == self.NOTEOFF
+                                     and x >= 0 and y >= 0)):
+                                    self.song.toogle(x, y)
+                                    self.update()
+                            except KeyError:
+                                pass
+                else:
+                    print("Invalid message length")
         except Empty:
             pass
         if updateUi:

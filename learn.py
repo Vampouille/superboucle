@@ -36,13 +36,9 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     # send_midi_to values :
     START_STOP = 0
-    MASTER_VOLUME = 1
-    CLIP_VOLUME = 2
-    BEAT_DIVISER = 3
-    BEAT_OFFSET = 4
-    MASTER_VOLUME_CTRL = 5
-    CTRLS = 6
-    BLOCK_BUTTONS = 7
+    MASTER_VOLUME_CTRL = 1
+    CTRLS = 2
+    BLOCK_BUTTONS = 3
 
     updateUi = pyqtSignal()
 
@@ -65,10 +61,6 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.setupUi(self)
         self.accepted.connect(self.onSave)
         self.firstLine.clicked.connect(self.onFirstLineClicked)
-        self.learn_master_volume.clicked.connect(self.onMasterVolumeClicked)
-        self.learn_clip_volume.clicked.connect(self.onClipVolumeClicked)
-        self.learn_beat_diviser.clicked.connect(self.onBeatDiviserClicked)
-        self.learn_beat_offset.clicked.connect(self.onBeatOffsetClicked)
         self.learn_master_volume_ctrl.clicked.connect(self.onMasterVolumeCtrl)
         self.learn_ctrls.clicked.connect(self.onCtrls)
         self.learn_block_bts.clicked.connect(self.onBlockBts)
@@ -76,7 +68,6 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.stop2.clicked.connect(self.onStopClicked)
         self.stop3.clicked.connect(self.onStopClicked)
         self.learn_green.clicked.connect(self.onGreen)
-        print("learn_green connected")
         self.learn_blink_green.clicked.connect(self.onBlinkGreen)
         self.learn_red.clicked.connect(self.onRed)
         self.learn_blink_red.clicked.connect(self.onBlinkRed)
@@ -97,25 +88,12 @@ class LearnDialog(QDialog, Ui_Dialog):
 
         self.current_line_pitch = []
         self.pitch_matrix.append(self.current_line_pitch)
-        print("Clicked")
         self.firstLine.setEnabled(False)
         self.current_row = 0
         cell = LearnCell(self)
         self.gridLayout.addWidget(cell,
                                   self.current_line,
                                   self.current_row)
-
-    def onMasterVolumeClicked(self):
-        self.send_midi_to = self.MASTER_VOLUME
-
-    def onClipVolumeClicked(self):
-        self.send_midi_to = self.CLIP_VOLUME
-
-    def onBeatDiviserClicked(self):
-        self.send_midi_to = self.BEAT_DIVISER
-
-    def onBeatOffsetClicked(self):
-        self.send_midi_to = self.BEAT_OFFSET
 
     def onMasterVolumeCtrl(self):
         self.send_midi_to = self.MASTER_VOLUME_CTRL
@@ -130,8 +108,6 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.send_midi_to = None
 
     def onGreen(self):
-        print("On green call")
-        print(self.pitch_matrix)
         self.lightAllCell(self.green_vel.value())
 
     def onBlinkGreen(self):
@@ -144,12 +120,10 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.lightAllCell(self.blink_red_vel.value())
 
     def lightAllCell(self, velocity):
-        print("lightAllCell call")
         for line in self.pitch_matrix:
             for chnote in line:
                 channel = chnote >> 8
                 note = chnote & 0x7F
-                print('Send %s %s' % (channel + 1, note))
                 self.gui.queue_out.put((144 + channel,
                                         note,
                                         velocity))
@@ -161,7 +135,6 @@ class LearnDialog(QDialog, Ui_Dialog):
                 if len(data) == 3:
                     status, pitch, vel = struct.unpack('3B', data)
                     self.processNote(status, pitch, vel)
-                    print(pitch)
         except Empty:
             pass
 
@@ -217,45 +190,15 @@ class LearnDialog(QDialog, Ui_Dialog):
                 self.current_row += 1
                 self.firstLine.setEnabled(True)
 
-            elif self.send_midi_to == self.MASTER_VOLUME:
-                self.mapping['master_volume'] = chnote
-                self.label_master_volume.setText("Channel %s Note %s"
-                                                 % (channel + 1,
-                                                    self.displayNote(pitch)))
-                self.send_midi_to = None
-
-            elif self.send_midi_to == self.CLIP_VOLUME:
-                self.mapping['clip_volume'] = chnote
-                self.label_clip_volume.setText("Channel %s Note %s"
-                                               % (channel + 1,
-                                                  self.displayNote(pitch)))
-                self.send_midi_to = None
-
-            elif self.send_midi_to == self.BEAT_DIVISER:
-                self.mapping['beat_diviser'] = chnote
-                self.label_beat_diviser.setText("Channel %s Note %s"
-                                                % (channel,
-                                                   self.displayNote(pitch)))
-                self.send_midi_to = None
-
-            elif self.send_midi_to == self.BEAT_OFFSET:
-                self.mapping['beat_offset'] = chnote
-                self.label_beat_offset.setText("Channel %s Note %s"
-                                               % (channel + 1,
-                                                  self.displayNote(pitch)))
-                self.send_midi_to = None
-
             self.knownBtn.add(chnote)
 
     def onSave(self):
-        self.pitch_matrix.append(self.current_line_pitch)
         self.mapping['start_stop'] = self.pitch_matrix
         self.mapping['name'] = str(self.name.text())
         self.mapping['green_vel'] = int(self.green_vel.value())
         self.mapping['blink_green_vel'] = int(self.blink_green_vel.value())
         self.mapping['red_vel'] = int(self.red_vel.value())
         self.mapping['blink_red_vel'] = int(self.blink_red_vel.value())
-        print(self.mapping)
         self.gui.is_add_device_mode = False
         self.gui.addDevice(self.mapping)
         self.gui.redraw()
