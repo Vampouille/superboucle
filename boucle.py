@@ -127,7 +127,6 @@ def my_callback(frames, userdata):
         i = 1
         while True:
             note = gui.queue_out.get(block=False)
-            print("Send note {}".format(note))
             midi_out.write_midi_event(i, note)
             i += 1
     except Empty:

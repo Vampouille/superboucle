@@ -1,6 +1,4 @@
-from PyQt5.QtWidgets import (QDialog,
-                             QDial,
-                             QWidget)
+from PyQt5.QtWidgets import QDialog, QWidget
 
 from PyQt5.QtCore import pyqtSignal
 import struct

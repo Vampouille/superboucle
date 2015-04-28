@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1111</width>
-    <height>929</height>
+    <height>926</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -539,7 +539,7 @@ color: rgb(223, 27, 130);</string>
      <string>Device</string>
     </property>
     <addaction name="actionAdd_Device"/>
-    <addaction name="separator"/>
+    <addaction name="actionManage_Devices"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -591,7 +591,7 @@ color: rgb(223, 27, 130);</string>
   </action>
   <action name="actionAdd_Device">
    <property name="text">
-    <string>Add Device ...</string>
+    <string>Add Device...</string>
    </property>
   </action>
   <action name="actionFullScreen">
@@ -603,6 +603,11 @@ color: rgb(223, 27, 130);</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionManage_Devices">
+   <property name="text">
+    <string>Manage Devices...</string>
    </property>
   </action>
  </widget>

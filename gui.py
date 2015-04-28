@@ -7,11 +7,11 @@ Gui
 
 from PyQt5.QtWidgets import QWidget, QMainWindow, QFileDialog
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings
-from PyQt5.QtGui import QWindow
 from clip import Clip, load_song_from_file
 from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
+from manage import ManageDialog
 import struct
 from queue import Queue, Empty
 import json
@@ -44,13 +44,13 @@ class Device():
 
     # TODO implements note, second note and channel
     def generateNote(self, x, y, state):
-            print("Generate note for cell {0} {1} and state {2}".
-                  format(x, y, state))
-            chnote = self.mapping['start_stop'][x][y]
-            channel = chnote >> 8
-            note = chnote & 0x7F
-            velocity = self.state_to_color[state]
-            return (self.NOTEON + channel, note, velocity)
+        # print("Generate note for cell {0} {1} and state {2}".
+        #      format(x, y, state))
+        chnote = self.mapping['start_stop'][x][y]
+        channel = chnote >> 8
+        note = chnote & 0x7F
+        velocity = self.state_to_color[state]
+        return (self.NOTEON + channel, note, velocity)
 
     def __str__(self):
         return str(self.mapping)
@@ -126,6 +126,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionSave.triggered.connect(self.onActionSave)
         self.actionSave_As.triggered.connect(self.onActionSaveAs)
         self.actionAdd_Device.triggered.connect(self.onAddDevice)
+        self.actionManage_Devices.triggered.connect(self.onManageDevice)
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
         self.devicesComboBox.currentIndexChanged.connect(self.onDeviceSelect)
@@ -146,13 +147,11 @@ class Gui(QMainWindow, Ui_MainWindow):
         # Devices
         self.devices = []
         settings = QSettings('superboucle', 'devices')
-        print(settings.value('devices'))
         if settings.contains('devices'):
             for raw_device in settings.value('devices'):
                 self.addDevice(json.loads(raw_device))
         else:
             self.addDevice({'name': 'No Device', 'start_stop': []})
-            print("setting default device")
 
         self.initUI(song)
         self.show()
@@ -247,7 +246,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             QFileDialog.getOpenFileName(self,
                                         'Open file',
                                         '/home/joe/git/superboucle/',
-                                        'Super Boucle Song (*.sbl)'))
+                                        'Super Boucle Song (*.sbs)'))
         if file_name:
             self.setEnabled(False)
             self.initUI(load_song_from_file(file_name))
@@ -265,7 +264,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             QFileDialog.getSaveFileName(self,
                                         'Save As',
                                         '/home/joe/git/superboucle/',
-                                        'Super Boucle Song (*.sbl)'))
+                                        'Super Boucle Song (*.sbs)'))
         if self.song.file_name:
             self.song.save()
             print("File saved to : {}".format(self.song.file_name))
@@ -273,6 +272,9 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onAddDevice(self):
         self.add_device = LearnDialog(self)
         self.is_add_device_mode = True
+
+    def onManageDevice(self):
+        ManageDialog(self)
 
     def onActionFullScreen(self):
         if self.isFullScreen():
@@ -370,5 +372,4 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onDeviceSelect(self):
         self.device = self.devicesComboBox.currentData()
-        print("Selected ! : %s" % self.device)
         
