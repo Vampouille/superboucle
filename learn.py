@@ -20,9 +20,21 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     NOTEON = 0x9
     NOTEOFF = 0x8
-    NEW_CELL_STYLE = ("border: 0px; "
-                      "border-radius: 10px; "
-                      "background-color: rgb(217, 217, 217);")
+    MIDICTRL = 11
+    NEW_CELL_STYLE = ("#cell_frame {border: 0px; "
+                      "border-radius: 5px; "
+                      "background-color: rgb(217, 217, 217);}")
+    NEW_CELL_STYLE_ROUND = ("#cell_frame {border: 0px; "
+                            "border-radius: 20px; "
+                            "background-color: rgb(217, 217, 217);}")
+
+    NOTE_NAME = ['C', 'C#',
+                 'D', 'D#',
+                 'E',
+                 'F', 'F#',
+                 'G', 'G#',
+                 'A', 'A#',
+                 'B']
 
     # send_midi_to values :
     START_STOP = 0
@@ -47,6 +59,8 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.current_line_pitch = []
         self.pitch_matrix = []
         self.ctrls_list = []
+        self.knownCtrl = set()
+        self.knownBtn = set()
         self.block_bts_list = []
         self.send_midi_to = None
         self.updateUi.connect(self.update)
@@ -129,7 +143,7 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.lightAllCell(self.red_vel.value())
 
     def onBlinkRed(self):
-        self.lightAllCell(self.red_green_vel.value())
+        self.lightAllCell(self.blink_red_vel.value())
 
     def lightAllCell(self, velocity):
         print("lightAllCell call")
@@ -137,7 +151,7 @@ class LearnDialog(QDialog, Ui_Dialog):
             for chnote in line:
                 channel = chnote >> 8
                 note = chnote & 0x7F
-                print('Send %s %s' % (channel, note))
+                print('Send %s %s' % (channel + 1, note))
                 self.gui.queue_out.put((144 + channel,
                                         note,
                                         velocity))
@@ -155,58 +169,85 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     def processNote(self, status, pitch, velocity):
         # process controller
+        channel = status & 0xF
+        msg_type = status >> 4
+        chnote = (channel << 8) + pitch
+
         if self.send_midi_to == self.MASTER_VOLUME_CTRL:
-            self.mapping['master_volume_ctrl'] = (status, pitch, velocity)
-            self.label_master_volume_ctrl.setText("Midi note On {}".
-                                                  format(pitch))
-            self.send_midi_to = None
+            if msg_type == self.MIDICTRL:
+                if chnote not in self.knownCtrl:
+                    self.mapping['master_volume_ctrl'] = chnote
+                    self.label_master_volume_ctrl.setText(("Channel %s "
+                                                           "Controller %s")
+                                                          % (channel + 1,
+                                                             pitch))
+                    self.knownCtrl.add(chnote)
+                    self.send_midi_to = None
+
         elif self.send_midi_to == self.CTRLS:
-            self.addCtrl(status, pitch, velocity)
-        elif status >> 4 == self.NOTEOFF:  # then process note off
-            channel = status - 128
-            print("status %s" % status)
+            if msg_type == self.MIDICTRL:
+                if chnote not in self.knownCtrl:
+                    cell = LearnCell(self)
+                    cell.label.setText("Ch %s\n%s"
+                                       % (channel + 1, pitch))
+                    cell.setStyleSheet(self.NEW_CELL_STYLE_ROUND)
+                    self.ctrlsHorizontalLayout.addWidget(cell)
+                    self.mapping['ctrls'].append(chnote)
+                    self.knownCtrl.add(chnote)
+
+        # then process note off
+        elif msg_type == self.NOTEOFF and chnote not in self.knownBtn:
             if self.send_midi_to == self.BLOCK_BUTTONS:
-                # store pitch *and* channel
-                self.addBlockBtn((channel << 8) + pitch)
-            elif self.send_midi_to == self.START_STOP:
-                print("New note : %s %s at %s x %s"
-                      % (channel, pitch, self.current_line, self.current_row))
-                self.current_line_pitch.append((channel << 8) + pitch)
                 cell = LearnCell(self)
+                cell.label.setText("Ch %s\n%s"
+                                   % (channel + 1,
+                                      self.displayNote(pitch)))
+                cell.setStyleSheet(self.NEW_CELL_STYLE)
+                self.btsHorizontalLayout.addWidget(cell)
+                self.mapping['block_buttons'].append(chnote)
+
+            elif self.send_midi_to == self.START_STOP:
+                self.current_line_pitch.append(chnote)
+                cell = LearnCell(self)
+                cell.label.setText("Ch %s\n%s"
+                                   % (channel + 1,
+                                      self.displayNote(pitch)))
                 cell.setStyleSheet(self.NEW_CELL_STYLE)
                 self.gridLayout.addWidget(cell,
                                           self.current_line,
                                           self.current_row)
                 self.current_row += 1
                 self.firstLine.setEnabled(True)
-            else:
-                if self.send_midi_to == self.MASTER_VOLUME:
-                    self.mapping['master_volume'] = pitch
-                    self.label_master_volume.setText("Midi note On {}".
-                                                     format(pitch))
-                elif self.send_midi_to == self.CLIP_VOLUME:
-                    self.mapping['clip_volume'] = pitch
-                    self.label_clip_volume.setText("Midi note On {}".
-                                                   format(pitch))
-                elif self.send_midi_to == self.BEAT_DIVISER:
-                    self.mapping['beat_diviser'] = pitch
-                    self.label_beat_diviser.setText("Midi note On {}".
-                                                    format(pitch))
-                elif self.send_midi_to == self.BEAT_OFFSET:
-                    self.mapping['beat_offset'] = pitch
-                    self.label_beat_offset.setText("Midi note On {}".
-                                                   format(pitch))
+
+            elif self.send_midi_to == self.MASTER_VOLUME:
+                self.mapping['master_volume'] = chnote
+                self.label_master_volume.setText("Channel %s Note %s"
+                                                 % (channel + 1,
+                                                    self.displayNote(pitch)))
                 self.send_midi_to = None
 
-    def addCtrl(self, status, note, velocity):
-        self.mapping['ctrls'].append((status, note, velocity))
-        self.ctrlsHorizontalLayout.addWidget(QDial())
+            elif self.send_midi_to == self.CLIP_VOLUME:
+                self.mapping['clip_volume'] = chnote
+                self.label_clip_volume.setText("Channel %s Note %s"
+                                               % (channel + 1,
+                                                  self.displayNote(pitch)))
+                self.send_midi_to = None
 
-    def addBlockBtn(self, note):
-        self.mapping['block_buttons'].append(note)
-        cell = LearnCell(self)
-        cell.setStyleSheet(self.NEW_CELL_STYLE)
-        self.btsHorizontalLayout.addWidget(cell)
+            elif self.send_midi_to == self.BEAT_DIVISER:
+                self.mapping['beat_diviser'] = chnote
+                self.label_beat_diviser.setText("Channel %s Note %s"
+                                                % (channel,
+                                                   self.displayNote(pitch)))
+                self.send_midi_to = None
+
+            elif self.send_midi_to == self.BEAT_OFFSET:
+                self.mapping['beat_offset'] = chnote
+                self.label_beat_offset.setText("Channel %s Note %s"
+                                               % (channel + 1,
+                                                  self.displayNote(pitch)))
+                self.send_midi_to = None
+
+            self.knownBtn.add(chnote)
 
     def onSave(self):
         self.pitch_matrix.append(self.current_line_pitch)
@@ -220,3 +261,9 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.gui.is_add_device_mode = False
         self.gui.addDevice(self.mapping)
         self.gui.redraw()
+
+    def displayNote(self, note_dec):
+        octave, note = divmod(note_dec, 12)
+        octave += 1
+        note_str = self.NOTE_NAME[note]
+        return note_str[:1] + str(octave) + note_str[1:]

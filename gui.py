@@ -40,7 +40,6 @@ class Device():
                                Clip.STOPPING: 15}
 
     def getXY(self, note):
-        print("Searching for note %s in :\n%s" % (note, self.note_to_coord))
         return self.note_to_coord[note]
 
     # TODO implements note, second note and channel
@@ -311,7 +310,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                 note = self.queue_in.get(block=False)
                 if len(note) == 3:
                     status, pitch, vel = struct.unpack('3B', note)
-                    
+
                     channel = status & 0xF
                     msg_type = status >> 4
                     print(("Note received status: %s type: %s "
@@ -370,7 +369,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.devicesComboBox.setCurrentIndex(self.devicesComboBox.count() - 1)
 
     def onDeviceSelect(self):
-        # self.menuDevice.
         self.device = self.devicesComboBox.currentData()
         print("Selected ! : %s" % self.device)
         
