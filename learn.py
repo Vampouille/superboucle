@@ -133,28 +133,76 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.send_midi_to = None
 
     def onGreen(self):
-        pass
+        self.gui.queue_out.put((144 + self.green_ch.value(),
+                                self.current_line_pitch[0],
+                                self.green_vel.value()))
+        if self.green_has2.isChecked():
+            self.gui.queue_out.put((144 + self.green_ch2.value(),
+                                    self.current_line_pitch[0],
+                                    self.green_vel2.value()))
 
     def onBlinkGreen(self):
-        pass
+        self.gui.queue_out.put((144 + self.blink_green_ch.value(),
+                                self.current_line_pitch[0],
+                                self.blink_green_vel.value()))
+        if self.blink_green_has2.isChecked():
+            self.gui.queue_out.put((144 + self.blink_green_ch2.value(),
+                                    self.current_line_pitch[0],
+                                    self.blink_green_vel2.value()))
 
     def onRed(self):
-        pass
+        self.gui.queue_out.put((144 + self.red_ch.value(),
+                                self.current_line_pitch[0],
+                                self.red_vel.value()))
+        if self.red_has2.isChecked():
+            self.gui.queue_out.put((144 + self.red_ch2.value(),
+                                    self.current_line_pitch[0],
+                                    self.red_vel2.value()))
 
     def onBlinkRed(self):
-        pass
+        self.gui.queue_out.put((144 + self.blink_red_ch.value(),
+                                self.current_line_pitch[0],
+                                self.blink_red_vel.value()))
+        if self.blink_red_has2.isChecked():
+            self.gui.queue_out.put((144 + self.blink_red_ch2.value(),
+                                    self.current_line_pitch[0],
+                                    self.blink_red_vel2.value()))
 
     def onGreen2Toogle(self):
-        pass
+        if self.green_has2.isChecked():
+            self.green_ch2.setEnabled(True)
+            self.green_vel2.setEnabled(True)
+        else:
+            self.green_ch2.setEnabled(False)
+            self.green_vel2.setEnabled(False)
+        self.onGreen()
 
     def onBlinkGreen2Toogle(self):
-        pass
+        if self.blink_green_has2.isChecked():
+            self.blink_green_ch2.setEnabled(True)
+            self.blink_green_vel2.setEnabled(True)
+        else:
+            self.blink_green_ch2.setEnabled(False)
+            self.blink_green_vel2.setEnabled(False)
+        self.onBlinkGreen()
 
     def onRed2Toogle(self):
-        pass
+        if self.red_has2.isChecked():
+            self.red_ch2.setEnabled(True)
+            self.red_vel2.setEnabled(True)
+        else:
+            self.red_ch2.setEnabled(False)
+            self.red_vel2.setEnabled(False)
+        self.onRed()
 
     def onBlinkRed2Toogle(self):
-        pass
+        if self.blink_red_has2.isChecked():
+            self.blink_red_ch2.setEnabled(True)
+            self.blink_red_vel2.setEnabled(True)
+        else:
+            self.blink_red_ch2.setEnabled(False)
+            self.blink_red_vel2.setEnabled(False)
+        self.onBlinkRed()
 
     def update(self):
         try:
@@ -223,6 +271,8 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.pitch_matrix.append(self.current_line_pitch)
         self.mapping['start_stop'] = self.pitch_matrix
         self.mapping['name'] = str(self.name.text())
+        self.mapping['green_ch'] = int(self.green_ch.value())
+        # TODO save all colors params !
         print(self.mapping)
         self.gui.is_add_device_mode = False
         self.gui.addDevice(self.mapping)
