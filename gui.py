@@ -7,6 +7,7 @@ Gui
 
 from PyQt5.QtWidgets import QWidget, QMainWindow, QFileDialog
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings
+from PyQt5.QtGui import QWindow
 from clip import Clip, load_song_from_file
 from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
@@ -54,15 +55,6 @@ class Device():
 
     def __str__(self):
         return str(self.mapping)
-
-    def save(self):
-        settings = QSettings('superboucle', 'superboucle')
-        if settings.contains('devices'):
-            devices = settings.value('devices')
-        else:
-            devices = []
-        devices.append(json.dumps(self.mapping))
-        settings.setValue('devices', devices)
 
     @property
     def name(self):
@@ -135,7 +127,9 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionSave.triggered.connect(self.onActionSave)
         self.actionSave_As.triggered.connect(self.onActionSaveAs)
         self.actionAdd_Device.triggered.connect(self.onAddDevice)
+        self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
+        self.devicesComboBox.currentIndexChanged.connect(self.onDeviceSelect)
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
@@ -150,18 +144,17 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.disptimer.start(self.PROGRESS_PERIOD)
         self.disptimer.timeout.connect(self.updateProgress)
 
-        settings = QSettings('superboucle', 'superboucle')
+        # Devices
+        self.devices = []
+        settings = QSettings('superboucle', 'devices')
+        print(settings.value('devices'))
         if settings.contains('devices'):
-            devices = settings.value('devices')
-            if len(devices):
-                self.device = Device(json.loads(devices[0]))
-                print("Setting first configured device %s" % self.device)
+            for raw_device in settings.value('devices'):
+                self.addDevice(json.loads(raw_device))
         else:
-            self.device = Device({'start_stop': Device.pad_coord_to_note})
+            self.addDevice({'name': 'No Device', 'start_stop': []})
             print("setting default device")
 
-        # Avoid missing song attribute on master volume changed
-        # self.song = song
         self.initUI(song)
         self.show()
 
@@ -187,6 +180,11 @@ class Gui(QMainWindow, Ui_MainWindow):
                 self.gridLayout.addWidget(cell, x, y)
 
         self.update()
+
+    def closeEvent(self, event):
+        settings = QSettings('superboucle', 'devices')
+        settings.setValue('devices',
+                          [json.dumps(x.mapping) for x in self.devices])
 
     def onStartStopClick(self):
         clip = self.sender().parent().parent().clip
@@ -277,6 +275,14 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.add_device = LearnDialog(self)
         self.is_add_device_mode = True
 
+    def onActionFullScreen(self):
+        if self.isFullScreen():
+            self.showNormal()
+        else:
+            self.showFullScreen()
+        self.show()
+        print("OK")
+
     def update(self):
         for clp in self.song.clips:
             # print("updating clip at {0} {1}".format(clp.x, clp.y))
@@ -350,5 +356,12 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def addDevice(self, mapping):
         self.device = Device(mapping)
-        self.device.save()
-        self.redraw()
+        self.devices.append(self.device)
+        self.devicesComboBox.addItem(self.device.name, self.device)
+        self.devicesComboBox.setCurrentIndex(self.devicesComboBox.count() - 1)
+
+    def onDeviceSelect(self):
+        # self.menuDevice.
+        self.device = self.devicesComboBox.currentData()
+        print("Selected ! : %s" % self.device)
+        

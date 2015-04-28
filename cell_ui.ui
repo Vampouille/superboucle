@@ -35,8 +35,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>120</width>
-     <height>120</height>
+     <width>110</width>
+     <height>110</height>
     </rect>
    </property>
    <property name="sizePolicy">
@@ -61,7 +61,7 @@ border-radius: 10px;}</string>
      <rect>
       <x>5</x>
       <y>6</y>
-      <width>111</width>
+      <width>102</width>
       <height>20</height>
      </rect>
     </property>
@@ -84,10 +84,10 @@ border-radius: 10px;}</string>
    <widget class="QProgressBar" name="clip_position">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>90</y>
-      <width>101</width>
-      <height>23</height>
+      <x>7</x>
+      <y>89</y>
+      <width>97</width>
+      <height>16</height>
      </rect>
     </property>
     <property name="value">
@@ -142,11 +142,6 @@ border-radius: 10px;}</string>
     </property>
    </widget>
   </widget>
-  <zorder>cell_frame</zorder>
-  <zorder>clip_position</zorder>
-  <zorder>edit</zorder>
-  <zorder>start_stop</zorder>
-  <zorder>clip_name</zorder>
  </widget>
  <resources/>
  <connections/>

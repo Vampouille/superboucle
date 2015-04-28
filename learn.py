@@ -226,3 +226,4 @@ class LearnDialog(QDialog, Ui_Dialog):
         print(self.mapping)
         self.gui.is_add_device_mode = False
         self.gui.addDevice(self.mapping)
+        self.gui.redraw()
