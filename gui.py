@@ -22,11 +22,6 @@ class Device():
     NOTEON = 0x90
     NOTEOFF = 0x80
 
-    pad_coord_to_note = [[36, 38, 40, 41],
-                         [48, 50, 52, 53],
-                         [60, 62, 64, 65],
-                         [72, 74, 76, 77]]
-
     def __init__(self, mapping):
         self.note_to_coord = {}
         self.mapping = mapping
@@ -34,26 +29,33 @@ class Device():
             line = mapping['start_stop'][x]
             for y in range(len(line)):
                 self.note_to_coord[line[y]] = (x, y)
-        self.state_to_color = {Clip.STOP: 12,
-                               Clip.STARTING: 13,
-                               Clip.START: 14,
-                               Clip.STOPPING: 15}
 
-    def getXY(self, note):
-        return self.note_to_coord[note]
-
-    # TODO implements note, second note and channel
     def generateNote(self, x, y, state):
         # print("Generate note for cell {0} {1} and state {2}".
         #      format(x, y, state))
         chnote = self.mapping['start_stop'][x][y]
         channel = chnote >> 8
         note = chnote & 0x7F
-        velocity = self.state_to_color[state]
+        velocity = self.get_color(state)
         return (self.NOTEON + channel, note, velocity)
 
     def __str__(self):
         return str(self.mapping)
+
+    def get_color(self, state):
+        if state == Clip.STOP:
+            return self.red_vel
+        elif state == Clip.STARTING:
+            return self.blink_green_vel
+        elif state == Clip.START:
+            return self.green_vel
+        elif state == Clip.STOPPING:
+            return self.red
+        else:
+            raise Exception("Invalid state")
+
+    def getXY(self, note):
+        return self.note_to_coord[note]
 
     @property
     def name(self):
@@ -79,6 +81,34 @@ class Device():
             return self.mapping['master_volume_ctrl']
         else:
             return False
+
+    @property
+    def green_vel(self):
+        if 'green_vel' in self.mapping:
+            return self.mapping['green_vel']
+        else:
+            return 0
+
+    @property
+    def blink_green_vel(self):
+        if 'blink_green_vel' in self.mapping:
+            return self.mapping['blink_green_vel']
+        else:
+            return 0
+
+    @property
+    def red_vel(self):
+        if 'red_vel' in self.mapping:
+            return self.mapping['red_vel']
+        else:
+            return 0
+
+    @property
+    def blink_red_vel(self):
+        if 'blink_red_vel' in self.mapping:
+            return self.mapping['blink_red_vel']
+        else:
+            return 0
 
 
 class Cell(QWidget, Ui_Cell):
@@ -369,6 +399,19 @@ class Gui(QMainWindow, Ui_MainWindow):
                         if chnote in self.device.block_buttons:
                             self.current_vol_block = (
                                 self.device.block_buttons.index(chnote))
+                            for i in range(len(self.device.block_buttons)):
+                                block_chnote = self.device.block_buttons[i]
+                                if i == self.current_vol_block:
+                                    note = ((self.NOTEON << 4) +
+                                            (block_chnote >> 8),
+                                            block_chnote & 0xFF,
+                                            self.device.mapping['red_vel'])
+                                else:
+                                    note = ((self.NOTEON << 4) +
+                                            (block_chnote >> 8),
+                                            block_chnote & 0xFF,
+                                            0)
+                                self.queue_out.put(note)
                         else:
                             try:
                                 x, y = self.device.getXY(chnote)
