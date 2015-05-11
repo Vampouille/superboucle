@@ -69,6 +69,13 @@ class Device():
             return []
 
     @property
+    def init_command(self):
+        if 'init_command' in self.mapping:
+            return self.mapping['init_command']
+        else:
+            return []
+
+    @property
     def block_buttons(self):
         if 'block_buttons' in self.mapping:
             return self.mapping['block_buttons']
@@ -230,6 +237,10 @@ class Gui(QMainWindow, Ui_MainWindow):
                 cell = Cell(self, clip, x, y)
                 self.btn_matrix[x][y] = cell
                 self.gridLayout.addWidget(cell, x, y)
+
+        # send init command
+        for init_cmd in self.device.init_command:
+            self.queue_out.put(init_cmd)
 
         self.update()
 
@@ -395,7 +406,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                         else:
                             print("Unknown ctrl")
 
-                    elif msg_type == self.NOTEOFF:
+                    elif msg_type == self.NOTEON and vel == 127:
                         if chnote in self.device.block_buttons:
                             self.current_vol_block = (
                                 self.device.block_buttons.index(chnote))
@@ -410,12 +421,12 @@ class Gui(QMainWindow, Ui_MainWindow):
                                     note = ((self.NOTEON << 4) +
                                             (block_chnote >> 8),
                                             block_chnote & 0xFF,
-                                            0)
+                                            4)
                                 self.queue_out.put(note)
                         else:
                             try:
                                 x, y = self.device.getXY(chnote)
-                                if ((status >> 4 == self.NOTEOFF
+                                if ((status >> 4 == self.NOTEON
                                      and x >= 0 and y >= 0)):
                                     self.song.toogle(x, y)
                                     self.update()

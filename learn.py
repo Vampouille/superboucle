@@ -5,6 +5,9 @@ import struct
 from queue import Queue, Empty
 from learn_cell_ui import Ui_LearnCell
 from learn_ui import Ui_Dialog
+import re
+
+_init_cmd_regexp = re.compile("^\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*$")
 
 
 class LearnCell(QWidget, Ui_LearnCell):
@@ -167,7 +170,7 @@ class LearnDialog(QDialog, Ui_Dialog):
                     self.knownCtrl.add(chnote)
 
         # then process note off
-        elif msg_type == self.NOTEOFF and chnote not in self.knownBtn:
+        elif msg_type == self.NOTEON and chnote not in self.knownBtn:
             if self.send_midi_to == self.BLOCK_BUTTONS:
                 cell = LearnCell(self)
                 cell.label.setText("Ch %s\n%s"
@@ -199,6 +202,8 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.mapping['blink_green_vel'] = int(self.blink_green_vel.value())
         self.mapping['red_vel'] = int(self.red_vel.value())
         self.mapping['blink_red_vel'] = int(self.blink_red_vel.value())
+        self.mapping['init_command'] = (
+            self.parseInitCommand(str(self.init_command.toPlainText())))
         self.gui.is_add_device_mode = False
         self.gui.addDevice(self.mapping)
         self.gui.redraw()
@@ -208,3 +213,22 @@ class LearnDialog(QDialog, Ui_Dialog):
         octave += 1
         note_str = self.NOTE_NAME[note]
         return note_str[:1] + str(octave) + note_str[1:]
+
+    def parseInitCommand(self, raw_str):
+        init_commands = []
+        for raw_line in raw_str.split("\n"):
+            matches = _init_cmd_regexp.match(raw_line)
+            if matches:
+                byte1 = int(matches.group(1))
+                byte2 = int(matches.group(2))
+                byte3 = int(matches.group(3))
+                if not 0 <= byte1 < 256:
+                    raise Exception("byte 1 Out of range")
+                if not 0 <= byte2 < 256:
+                    raise Exception("byte 2 Out of range")
+                if not 0 <= byte3 < 256:
+                    raise Exception("byte 3 Out of range")
+                init_commands.append((byte1, byte2, byte3))
+            else:
+                print("Not matching")
+        return init_commands

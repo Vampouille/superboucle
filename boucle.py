@@ -3,7 +3,6 @@
 """JACK client that prints all received MIDI events."""
 
 import jack
-import transport
 import sys
 from clip import Clip, Song
 from gui import Gui
@@ -21,9 +20,6 @@ outR = client.outports.register("output_R")
 app = QApplication(sys.argv)
 gui = Gui(song)
 
-# def bbt2ticks(bar, beat, tick):
-#    return (7680*(bar-1))+(1920*(beat-1))+tick
-
 
 def frame2bbt(frame, ticks_per_beat, beats_per_minute, frame_rate):
     ticks_per_second = (beats_per_minute * ticks_per_beat) / 60
@@ -37,7 +33,6 @@ def my_callback(frames, userdata):
     outR_buffer = outR.get_array()
     outL_buffer[:] = 0
     outR_buffer[:] = 0
-    tp = transport.Transport(state, position)
 
     # check midi in
     if gui.is_add_device_mode:
@@ -50,10 +45,10 @@ def my_callback(frames, userdata):
         gui.readQueueIn.emit()
     midi_out.clear_buffer()
 
-    if(tp.state == 1):
-        frame = tp.frame
-        fps = tp.frame_rate
-        bpm = tp.beats_per_minute
+    if(state == 1):
+        frame = position.frame
+        fps = position.frame_rate
+        bpm = position.beats_per_minute
         blocksize = client.blocksize
 
         for clip in song.clips:
@@ -62,13 +57,9 @@ def my_callback(frames, userdata):
             frame_beat, clip_offset = divmod((frame - clip.frame_offset -
                                               (clip.beat_offset *
                                                frame_per_beat)) * bpm,
-                                             60 * tp.frame_rate *
+                                             60 * position.frame_rate *
                                              clip.beat_diviser)
-            clip_offset = clip_offset / tp.beats_per_minute
-
-            # print("{0} {1} {2}|{3}|{4}".
-            #      format(tp.frame, frame_beat + 1,
-            #             tp.bar, tp.beat, tp.tick,  clip_offset))
+            clip_offset = clip_offset / position.beats_per_minute
 
             # next beat is in block ?
             if (clip_offset + blocksize) > clip_period:
