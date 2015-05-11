@@ -28,16 +28,15 @@ class Device():
         for x in range(len(mapping['start_stop'])):
             line = mapping['start_stop'][x]
             for y in range(len(line)):
-                self.note_to_coord[line[y]] = (x, y)
+                rec = line[y]
+                key = (rec[0], rec[1], rec[2], rec[3])
+                self.note_to_coord[key] = (x, y)
 
     def generateNote(self, x, y, state):
         # print("Generate note for cell {0} {1} and state {2}".
         #      format(x, y, state))
-        chnote = self.mapping['start_stop'][x][y]
-        channel = chnote >> 8
-        note = chnote & 0x7F
-        velocity = self.get_color(state)
-        return (self.NOTEON + channel, note, velocity)
+        (msg_type, channel, pitch, velocity) = self.mapping['start_stop'][x][y]
+        return (self.NOTEON + channel, pitch, self.get_color(state))
 
     def __str__(self):
         return str(self.mapping)
@@ -370,74 +369,58 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.update()
 
     def readQueue(self):
-        updateUi = False
         try:
             while True:
                 note = self.queue_in.get(block=False)
                 if len(note) == 3:
                     status, pitch, vel = struct.unpack('3B', note)
-
                     channel = status & 0xF
                     msg_type = status >> 4
-                    chnote = (channel << 8) + pitch
-                    # print(("Note received status: %s type: %s "
-                    #        "channel: %s pitch: %s "
-                    #        "velocity: %s chnote: %s")
-                    #       % (status, msg_type, channel + 1,
-                    #          pitch, vel, chnote))
-                    # process ctrl
-                    if ((msg_type == self.MIDICTRL
-                         and (len(self.device.ctrls)
-                              or self.device.master_volume_ctrl))):
-                        if chnote == self.device.master_volume_ctrl:
-                            self.song.master_volume = vel / 127
-                            (self.master_volume
-                             .setValue(self.song.master_volume * 256))
-                        elif chnote in self.device.ctrls:
-                            try:
-                                ctrl_index = self.device.ctrls.index(chnote)
-                                block_index = self.current_vol_block
-                                clip = (self.song.
-                                        clips_matrix[block_index][ctrl_index])
-                                if clip:
-                                    clip.volume = vel / 127
-                            except KeyError:
-                                pass
-                        else:
-                            print("Unknown ctrl")
-
-                    elif msg_type == self.NOTEON and vel == 127:
-                        if chnote in self.device.block_buttons:
-                            self.current_vol_block = (
-                                self.device.block_buttons.index(chnote))
-                            for i in range(len(self.device.block_buttons)):
-                                block_chnote = self.device.block_buttons[i]
-                                if i == self.current_vol_block:
-                                    note = ((self.NOTEON << 4) +
-                                            (block_chnote >> 8),
-                                            block_chnote & 0xFF,
-                                            self.device.mapping['red_vel'])
-                                else:
-                                    note = ((self.NOTEON << 4) +
-                                            (block_chnote >> 8),
-                                            block_chnote & 0xFF,
-                                            4)
-                                self.queue_out.put(note)
-                        else:
-                            try:
-                                x, y = self.device.getXY(chnote)
-                                if ((status >> 4 == self.NOTEON
-                                     and x >= 0 and y >= 0)):
-                                    self.song.toogle(x, y)
-                                    self.update()
-                            except KeyError:
-                                pass
+                    self.processNote(msg_type, channel, pitch, vel)
                 else:
                     print("Invalid message length")
         except Empty:
             pass
-        if updateUi:
-            self.update()
+
+    def processNote(self, msg_type, channel, pitch, vel):
+
+        btn_key = (msg_type, channel, pitch, vel)
+        ctrl_key = (msg_type, channel, pitch)
+
+        # master volume
+        if ctrl_key == self.device.master_volume_ctrl:
+            self.song.master_volume = vel / 127
+            (self.master_volume
+             .setValue(self.song.master_volume * 256))
+        elif ctrl_key in self.device.ctrls:
+            try:
+                ctrl_index = self.device.ctrls.index(ctrl_key)
+                clip = (self.song.clips_matrix
+                        [self.current_vol_block]
+                        [ctrl_index])
+                if clip:
+                    clip.volume = vel / 127
+            except KeyError:
+                pass
+        elif btn_key in self.device.block_buttons:
+            self.current_vol_block = self.device.block_buttons.index(btn_key)
+            for i in range(len(self.device.block_buttons)):
+                (a, b_channel, b_pitch, b) = self.device.block_buttons[i]
+                if i == self.current_vol_block:
+                    color = self.device.mapping['red_vel']
+                else:
+                    color = 4
+                self.queue_out.put(((self.NOTEON << 4) + b_channel,
+                                    b_pitch,
+                                    color))
+        else:
+            try:
+                x, y = self.device.getXY(btn_key)
+                if (x >= 0 and y >= 0):
+                    self.song.toogle(x, y)
+                    self.update()
+            except KeyError:
+                pass
 
     def setCellColor(self, x, y, color, blink=False):
         self.btn_matrix[x][y].setStyleSheet(color)

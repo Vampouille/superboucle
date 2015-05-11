@@ -122,14 +122,12 @@ class LearnDialog(QDialog, Ui_Dialog):
     def onBlinkRed(self):
         self.lightAllCell(self.blink_red_vel.value())
 
-    def lightAllCell(self, velocity):
+    def lightAllCell(self, color):
         for line in self.pitch_matrix:
-            for chnote in line:
-                channel = chnote >> 8
-                note = chnote & 0x7F
-                self.gui.queue_out.put((144 + channel,
-                                        note,
-                                        velocity))
+            for data in line:
+                (m, channel, pitch, v) = data
+                note = ((self.NOTEON << 4) + channel, pitch, color)
+                self.gui.queue_out.put(note)
 
     def update(self):
         try:
@@ -142,46 +140,48 @@ class LearnDialog(QDialog, Ui_Dialog):
             pass
 
     def processNote(self, status, pitch, velocity):
-        # process controller
+
         channel = status & 0xF
         msg_type = status >> 4
-        chnote = (channel << 8) + pitch
+        btn_key = (msg_type, channel, pitch, velocity)
+        ctrl_key = (msg_type, channel, pitch)
 
-        if self.send_midi_to == self.MASTER_VOLUME_CTRL:
-            if msg_type == self.MIDICTRL:
-                if chnote not in self.knownCtrl:
-                    self.mapping['master_volume_ctrl'] = chnote
+        if ctrl_key not in self.knownCtrl:
+            # process controller
+
+            if self.send_midi_to == self.MASTER_VOLUME_CTRL:
+                if msg_type == self.MIDICTRL:
+                    self.mapping['master_volume_ctrl'] = ctrl_key
                     self.label_master_volume_ctrl.setText(("Channel %s "
                                                            "Controller %s")
                                                           % (channel + 1,
                                                              pitch))
-                    self.knownCtrl.add(chnote)
+                    self.knownCtrl.add(ctrl_key)
                     self.send_midi_to = None
 
-        elif self.send_midi_to == self.CTRLS:
-            if msg_type == self.MIDICTRL:
-                if chnote not in self.knownCtrl:
+            elif self.send_midi_to == self.CTRLS:
+                if msg_type == self.MIDICTRL:
                     cell = LearnCell(self)
                     cell.label.setText("Ch %s\n%s"
                                        % (channel + 1, pitch))
                     cell.setStyleSheet(self.NEW_CELL_STYLE_ROUND)
                     self.ctrlsHorizontalLayout.addWidget(cell)
-                    self.mapping['ctrls'].append(chnote)
-                    self.knownCtrl.add(chnote)
+                    self.mapping['ctrls'].append(ctrl_key)
+                    self.knownCtrl.add(ctrl_key)
 
-        # then process note off
-        elif msg_type == self.NOTEON and chnote not in self.knownBtn:
-            if self.send_midi_to == self.BLOCK_BUTTONS:
+            # then process other
+            elif self.send_midi_to == self.BLOCK_BUTTONS:
                 cell = LearnCell(self)
                 cell.label.setText("Ch %s\n%s"
                                    % (channel + 1,
                                       self.displayNote(pitch)))
                 cell.setStyleSheet(self.NEW_CELL_STYLE)
                 self.btsHorizontalLayout.addWidget(cell)
-                self.mapping['block_buttons'].append(chnote)
+                self.mapping['block_buttons'].append(btn_key)
+                self.knownCtrl.add(ctrl_key)
 
             elif self.send_midi_to == self.START_STOP:
-                self.current_line_pitch.append(chnote)
+                self.current_line_pitch.append(btn_key)
                 cell = LearnCell(self)
                 cell.label.setText("Ch %s\n%s"
                                    % (channel + 1,
@@ -192,8 +192,7 @@ class LearnDialog(QDialog, Ui_Dialog):
                                           self.current_row)
                 self.current_row += 1
                 self.firstLine.setEnabled(True)
-
-            self.knownBtn.add(chnote)
+                self.knownCtrl.add(ctrl_key)
 
     def onSave(self):
         self.mapping['start_stop'] = self.pitch_matrix
