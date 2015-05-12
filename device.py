@@ -15,9 +15,12 @@ class Device():
         for x in range(len(self.start_stop)):
             line = self.start_stop[x]
             for y in range(len(line)):
-                rec = line[y]
-                key = (rec[0], rec[1], rec[2], rec[3])
-                self.note_to_coord[key] = (x, y)
+                line[y] = tuple(line[y])
+                self.note_to_coord[line[y]] = (x, y)
+        for x in range(len(self.block_buttons)):
+            self.block_buttons[x] = tuple(self.block_buttons[x])
+        for x in range(len(self.ctrls)):
+            self.ctrls[x] = tuple(self.ctrls[x])
 
     def generateNote(self, x, y, state):
         # print("Generate note for cell {0} {1} and state {2}".

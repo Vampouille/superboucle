@@ -218,7 +218,6 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onActionSave(self):
         if self.song.file_name:
             self.song.save()
-            print("File saved")
         else:
             self.onActionSaveAs()
 
@@ -307,7 +306,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             for i in range(len(self.device.block_buttons)):
                 (a, b_channel, b_pitch, b) = self.device.block_buttons[i]
                 if i == self.current_vol_block:
-                    color = self.device.mapping['red_vel']
+                    color = self.device.red_vel
                 else:
                     color = 4
                 self.queue_out.put(((self.NOTEON << 4) + b_channel,
@@ -319,6 +318,8 @@ class Gui(QMainWindow, Ui_MainWindow):
                 if (x >= 0 and y >= 0):
                     self.song.toogle(x, y)
                     self.update()
+            except IndexError:
+                pass
             except KeyError:
                 pass
 
