@@ -93,6 +93,13 @@ class Device():
         self.mapping['master_volume_ctrl'] = ctrl_key
 
     @property
+    def black_vel(self):
+        if 'black_vel' in self.mapping:
+            return self.mapping['black_vel']
+        else:
+            return 0
+
+    @property
     def green_vel(self):
         if 'green_vel' in self.mapping:
             return self.mapping['green_vel']
@@ -119,6 +126,10 @@ class Device():
             return self.mapping['blink_red_vel']
         else:
             return 0
+
+    @black_vel.setter
+    def black_vel(self, vel):
+        self.mapping['black_vel'] = vel
 
     @green_vel.setter
     def green_vel(self, vel):

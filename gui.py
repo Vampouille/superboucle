@@ -308,7 +308,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                 if i == self.current_vol_block:
                     color = self.device.red_vel
                 else:
-                    color = 4
+                    color = self.device.black_vel
                 self.queue_out.put(((self.NOTEON << 4) + b_channel,
                                     b_pitch,
                                     color))
@@ -362,5 +362,6 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onDeviceSelect(self):
         self.device = self.devicesComboBox.currentData()
-        for note in self.device.init_command:
-            self.queue_out.put(note)
+        if self.device.init_command:
+            for note in self.device.init_command:
+                self.queue_out.put(note)

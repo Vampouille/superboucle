@@ -65,28 +65,9 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.send_midi_to = None
         self.updateUi.connect(self.update)
 
-        # connect signals
-        self.accepted.connect(self.onSave)
-        self.firstLine.clicked.connect(self.onFirstLineClicked)
-        self.learn_master_volume_ctrl.clicked.connect(self.onMasterVolumeCtrl)
-        self.sendInitButton.clicked.connect(self.onSendInit)
-        self.learn_ctrls.clicked.connect(self.onCtrls)
-        self.learn_block_bts.clicked.connect(self.onBlockBts)
-        self.stop1.clicked.connect(self.onStopClicked)
-        self.stop2.clicked.connect(self.onStopClicked)
-        self.stop3.clicked.connect(self.onStopClicked)
-        self.learn_green.clicked.connect(self.onGreen)
-        self.learn_blink_green.clicked.connect(self.onBlinkGreen)
-        self.learn_red.clicked.connect(self.onRed)
-        self.learn_blink_red.clicked.connect(self.onBlinkRed)
-        self.green_vel.valueChanged.connect(self.onGreen)
-        self.blink_green_vel.valueChanged.connect(self.onBlinkGreen)
-        self.red_vel.valueChanged.connect(self.onRed)
-        self.blink_red_vel.valueChanged.connect(self.onBlinkRed)
-        self.show()
-
         # set current device values
         self.name.setText(self.device.name)
+        self.black_vel.setValue(self.device.black_vel)
         self.green_vel.setValue(self.device.green_vel)
         self.blink_green_vel.setValue(self.device.blink_green_vel)
         self.red_vel.setValue(self.device.red_vel)
@@ -133,6 +114,28 @@ class LearnDialog(QDialog, Ui_Dialog):
                                           self.current_row)
                 self.current_row += 1
 
+        # connect signals
+        self.accepted.connect(self.onSave)
+        self.firstLine.clicked.connect(self.onFirstLineClicked)
+        self.learn_master_volume_ctrl.clicked.connect(self.onMasterVolumeCtrl)
+        self.sendInitButton.clicked.connect(self.onSendInit)
+        self.learn_ctrls.clicked.connect(self.onCtrls)
+        self.learn_block_bts.clicked.connect(self.onBlockBts)
+        self.stop1.clicked.connect(self.onStopClicked)
+        self.stop2.clicked.connect(self.onStopClicked)
+        self.stop3.clicked.connect(self.onStopClicked)
+        self.learn_black.clicked.connect(self.onBlack)
+        self.learn_green.clicked.connect(self.onGreen)
+        self.learn_blink_green.clicked.connect(self.onBlinkGreen)
+        self.learn_red.clicked.connect(self.onRed)
+        self.learn_blink_red.clicked.connect(self.onBlinkRed)
+        self.black_vel.valueChanged.connect(self.onBlack)
+        self.green_vel.valueChanged.connect(self.onGreen)
+        self.blink_green_vel.valueChanged.connect(self.onBlinkGreen)
+        self.red_vel.valueChanged.connect(self.onRed)
+        self.blink_red_vel.valueChanged.connect(self.onBlinkRed)
+        self.show()
+
     def onFirstLineClicked(self):
         self.send_midi_to = self.START_STOP
 
@@ -171,6 +174,9 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     def onStopClicked(self):
         self.send_midi_to = None
+
+    def onBlack(self):
+        self.lightAllCell(self.black_vel.value())
 
     def onGreen(self):
         self.lightAllCell(self.green_vel.value())
@@ -272,6 +278,7 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     def onSave(self):
         self.device.name = str(self.name.text())
+        self.device.black_vel = int(self.black_vel.value())
         self.device.green_vel = int(self.green_vel.value())
         self.device.blink_green_vel = int(self.blink_green_vel.value())
         self.device.red_vel = int(self.red_vel.value())
