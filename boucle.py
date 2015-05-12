@@ -35,10 +35,10 @@ def my_callback(frames, userdata):
     outR_buffer[:] = 0
 
     # check midi in
-    if gui.is_add_device_mode:
+    if gui.is_learn_device_mode:
         for offset, indata in midi_in.incoming_midi_events():
-            gui.add_device.queue.put(indata)
-        gui.add_device.updateUi.emit()
+            gui.learn_device.queue.put(indata)
+        gui.learn_device.updateUi.emit()
     else:
         for offset, indata in midi_in.incoming_midi_events():
             gui.queue_in.put(indata)

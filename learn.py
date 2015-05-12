@@ -1,10 +1,10 @@
-from PyQt5.QtWidgets import QDialog, QWidget
-
+from PyQt5.QtWidgets import QDialog, QWidget, QMessageBox
 from PyQt5.QtCore import pyqtSignal
 import struct
 from queue import Queue, Empty
 from learn_cell_ui import Ui_LearnCell
 from learn_ui import Ui_Dialog
+from device import Device
 import re
 
 _init_cmd_regexp = re.compile("^\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*$")
@@ -45,26 +45,31 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     updateUi = pyqtSignal()
 
-    def __init__(self, parent):
+    def __init__(self, parent, callback, device=None):
         super(LearnDialog, self).__init__(parent)
         self.gui = parent
+        self.setupUi(self)
+        self.callback = callback
         self.queue = Queue()
-        self.mapping = {'block_buttons': [],
-                        'ctrls': []}
+        if device is None:
+            self.device = Device()
+        else:
+            self.device = device
+            self.setWindowTitle("Edit %s" % device.name)
         self.current_line = None
         self.current_row = None
         self.current_line_pitch = []
-        self.pitch_matrix = []
-        self.ctrls_list = []
         self.knownCtrl = set()
         self.knownBtn = set()
         self.block_bts_list = []
         self.send_midi_to = None
         self.updateUi.connect(self.update)
-        self.setupUi(self)
+
+        # connect signals
         self.accepted.connect(self.onSave)
         self.firstLine.clicked.connect(self.onFirstLineClicked)
         self.learn_master_volume_ctrl.clicked.connect(self.onMasterVolumeCtrl)
+        self.sendInitButton.clicked.connect(self.onSendInit)
         self.learn_ctrls.clicked.connect(self.onCtrls)
         self.learn_block_bts.clicked.connect(self.onBlockBts)
         self.stop1.clicked.connect(self.onStopClicked)
@@ -80,6 +85,54 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.blink_red_vel.valueChanged.connect(self.onBlinkRed)
         self.show()
 
+        # set current device values
+        self.name.setText(self.device.name)
+        self.green_vel.setValue(self.device.green_vel)
+        self.blink_green_vel.setValue(self.device.blink_green_vel)
+        self.red_vel.setValue(self.device.red_vel)
+        self.blink_red_vel.setValue(self.device.blink_red_vel)
+        if self.device.master_volume_ctrl:
+            (self.label_master_volume_ctrl.setText(
+                self.displayCtrl(self.device.master_volume_ctrl)))
+        (self.init_command
+         .setText("\n".join([", ".join([str(num)
+                                        for num in init_cmd])
+                             for init_cmd in self.device.init_command])))
+        for vol_btn in self.device.block_buttons:
+            (msg_type, channel, pitch, velocity) = vol_btn
+            cell = LearnCell(self)
+            cell.label.setText("Ch %s\n%s"
+                               % (channel + 1,
+                                  self.displayNote(pitch)))
+            cell.setStyleSheet(self.NEW_CELL_STYLE)
+            self.btsHorizontalLayout.addWidget(cell)
+        for vol_ctrl in self.device.ctrls:
+            (msg_type, channel, pitch) = vol_ctrl
+            cell = LearnCell(self)
+            cell.label.setText("Ch %s\n%s"
+                               % (channel + 1, pitch))
+            cell.setStyleSheet(self.NEW_CELL_STYLE_ROUND)
+            self.ctrlsHorizontalLayout.addWidget(cell)
+        for line in self.device.start_stop:
+            if self.current_line is None:
+                self.current_line = 0
+                self.firstLine.setText("Add Next line")
+            else:
+                self.current_line += 1
+            self.current_row = 0
+
+            for btn_key in line:
+                (msg_type, channel, pitch, velocity) = btn_key
+                cell = LearnCell(self)
+                cell.label.setText("Ch %s\n%s"
+                                   % (channel + 1,
+                                      self.displayNote(pitch)))
+                cell.setStyleSheet(self.NEW_CELL_STYLE)
+                self.gridLayout.addWidget(cell,
+                                          self.current_line,
+                                          self.current_row)
+                self.current_row += 1
+
     def onFirstLineClicked(self):
         self.send_midi_to = self.START_STOP
 
@@ -90,7 +143,7 @@ class LearnDialog(QDialog, Ui_Dialog):
             self.current_line += 1
 
         self.current_line_pitch = []
-        self.pitch_matrix.append(self.current_line_pitch)
+        self.device.start_stop.append(self.current_line_pitch)
         self.firstLine.setEnabled(False)
         self.current_row = 0
         cell = LearnCell(self)
@@ -100,6 +153,15 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     def onMasterVolumeCtrl(self):
         self.send_midi_to = self.MASTER_VOLUME_CTRL
+
+    def onSendInit(self):
+        try:
+            for note in self.parseInitCommand():
+                self.gui.queue_out.put(note)
+        except Exception as ex:
+            QMessageBox.critical(self,
+                                 "Invalid init commands",
+                                 str(ex))
 
     def onCtrls(self):
         self.send_midi_to = self.CTRLS
@@ -123,11 +185,15 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.lightAllCell(self.blink_red_vel.value())
 
     def lightAllCell(self, color):
-        for line in self.pitch_matrix:
+        for line in self.device.start_stop:
             for data in line:
                 (m, channel, pitch, v) = data
                 note = ((self.NOTEON << 4) + channel, pitch, color)
                 self.gui.queue_out.put(note)
+        for btn_key in self.device.block_buttons:
+            (msg_type, channel, pitch, velocity) = btn_key
+            note = ((self.NOTEON << 4) + channel, pitch, color)
+            self.gui.queue_out.put(note)
 
     def update(self):
         try:
@@ -143,19 +209,17 @@ class LearnDialog(QDialog, Ui_Dialog):
 
         channel = status & 0xF
         msg_type = status >> 4
-        btn_key = (msg_type, channel, pitch, velocity)
+        btn_id = (msg_type, channel, pitch, velocity)
+        btn_key = (msg_type >> 1, channel, pitch)
         ctrl_key = (msg_type, channel, pitch)
 
         if ctrl_key not in self.knownCtrl:
             # process controller
-
             if self.send_midi_to == self.MASTER_VOLUME_CTRL:
                 if msg_type == self.MIDICTRL:
-                    self.mapping['master_volume_ctrl'] = ctrl_key
-                    self.label_master_volume_ctrl.setText(("Channel %s "
-                                                           "Controller %s")
-                                                          % (channel + 1,
-                                                             pitch))
+                    self.device.master_volume_ctrl = ctrl_key
+                    (self.label_master_volume_ctrl
+                     .setText(self.displayCtrl(ctrl_key)))
                     self.knownCtrl.add(ctrl_key)
                     self.send_midi_to = None
 
@@ -166,45 +230,55 @@ class LearnDialog(QDialog, Ui_Dialog):
                                        % (channel + 1, pitch))
                     cell.setStyleSheet(self.NEW_CELL_STYLE_ROUND)
                     self.ctrlsHorizontalLayout.addWidget(cell)
-                    self.mapping['ctrls'].append(ctrl_key)
+                    self.device.ctrls.append(ctrl_key)
                     self.knownCtrl.add(ctrl_key)
 
             # then process other
-            elif self.send_midi_to == self.BLOCK_BUTTONS:
-                cell = LearnCell(self)
-                cell.label.setText("Ch %s\n%s"
-                                   % (channel + 1,
-                                      self.displayNote(pitch)))
-                cell.setStyleSheet(self.NEW_CELL_STYLE)
-                self.btsHorizontalLayout.addWidget(cell)
-                self.mapping['block_buttons'].append(btn_key)
-                self.knownCtrl.add(ctrl_key)
+            elif btn_key not in self.knownBtn:
+                if self.send_midi_to == self.BLOCK_BUTTONS:
+                    cell = LearnCell(self)
+                    cell.label.setText("Ch %s\n%s"
+                                       % (channel + 1,
+                                          self.displayNote(pitch)))
+                    cell.setStyleSheet(self.NEW_CELL_STYLE)
+                    self.btsHorizontalLayout.addWidget(cell)
+                    self.device.block_buttons.append(btn_id)
+                    self.knownCtrl.add(ctrl_key)
+                    self.knownBtn.add(btn_key)
 
-            elif self.send_midi_to == self.START_STOP:
-                self.current_line_pitch.append(btn_key)
-                cell = LearnCell(self)
-                cell.label.setText("Ch %s\n%s"
-                                   % (channel + 1,
-                                      self.displayNote(pitch)))
-                cell.setStyleSheet(self.NEW_CELL_STYLE)
-                self.gridLayout.addWidget(cell,
-                                          self.current_line,
-                                          self.current_row)
-                self.current_row += 1
-                self.firstLine.setEnabled(True)
-                self.knownCtrl.add(ctrl_key)
+                elif self.send_midi_to == self.START_STOP:
+                    self.current_line_pitch.append(btn_id)
+                    cell = LearnCell(self)
+                    cell.label.setText("Ch %s\n%s"
+                                       % (channel + 1,
+                                          self.displayNote(pitch)))
+                    cell.setStyleSheet(self.NEW_CELL_STYLE)
+                    self.gridLayout.addWidget(cell,
+                                              self.current_line,
+                                              self.current_row)
+                    self.current_row += 1
+                    self.firstLine.setEnabled(True)
+                    self.knownCtrl.add(ctrl_key)
+                    self.knownBtn.add(btn_key)
+
+    def accept(self):
+        try:
+            self.parseInitCommand()
+            super(LearnDialog, self).accept()
+        except Exception as ex:
+            QMessageBox.critical(self,
+                                 "Invalid init commands",
+                                 str(ex))
 
     def onSave(self):
-        self.mapping['start_stop'] = self.pitch_matrix
-        self.mapping['name'] = str(self.name.text())
-        self.mapping['green_vel'] = int(self.green_vel.value())
-        self.mapping['blink_green_vel'] = int(self.blink_green_vel.value())
-        self.mapping['red_vel'] = int(self.red_vel.value())
-        self.mapping['blink_red_vel'] = int(self.blink_red_vel.value())
-        self.mapping['init_command'] = (
-            self.parseInitCommand(str(self.init_command.toPlainText())))
+        self.device.name = str(self.name.text())
+        self.device.green_vel = int(self.green_vel.value())
+        self.device.blink_green_vel = int(self.blink_green_vel.value())
+        self.device.red_vel = int(self.red_vel.value())
+        self.device.blink_red_vel = int(self.blink_red_vel.value())
+        self.device.mapping['init_command'] = self.parseInitCommand()
         self.gui.is_add_device_mode = False
-        self.gui.addDevice(self.mapping)
+        self.callback(self.device)
         self.gui.redraw()
 
     def displayNote(self, note_dec):
@@ -213,8 +287,27 @@ class LearnDialog(QDialog, Ui_Dialog):
         note_str = self.NOTE_NAME[note]
         return note_str[:1] + str(octave) + note_str[1:]
 
-    def parseInitCommand(self, raw_str):
+    def displayCtrl(self, ctrl_key):
+        (msg_type, channel, pitch) = ctrl_key
+        if msg_type == self.NOTEON:
+            type = "Note On"
+            note = self.displayNote(pitch)
+        elif msg_type == self.NOTEOFF:
+            type = "Note Off"
+            note = self.displayNote(pitch)
+        elif msg_type == self.MIDICTRL:
+            type = "Controller"
+            note = str(pitch)
+        else:
+            type = "Type=%s" % msg_type
+        return "Channel %s %s %s" % (channel + 1,
+                                     type,
+                                     note)
+
+    def parseInitCommand(self):
+        raw_str = str(self.init_command.toPlainText())
         init_commands = []
+        line = 1
         for raw_line in raw_str.split("\n"):
             matches = _init_cmd_regexp.match(raw_line)
             if matches:
@@ -228,6 +321,8 @@ class LearnDialog(QDialog, Ui_Dialog):
                 if not 0 <= byte3 < 256:
                     raise Exception("byte 3 Out of range")
                 init_commands.append((byte1, byte2, byte3))
-            else:
-                print("Not matching")
+            elif len(raw_line):
+                raise Exception("Invalid format for Line %s :\n%s"
+                                % (line, raw_line))
+            line = line + 1
         return init_commands

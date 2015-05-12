@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QFileDialog
 from manage_ui import Ui_Dialog
+from learn import LearnDialog
 import json
 
 
@@ -11,10 +12,20 @@ class ManageDialog(QDialog, Ui_Dialog):
         self.setupUi(self)
         for device in self.gui.devices[1:]:
             self.list.addItem(device.name)
+        self.editButton.clicked.connect(self.onEdit)
         self.deleteButton.clicked.connect(self.onDelete)
         self.importButton.clicked.connect(self.onImport)
         self.exportButton.clicked.connect(self.onExport)
+        self.finished.connect(self.onFinished)
         self.show()
+
+    def onEdit(self):
+        if self.list.currentRow() != -1:
+            device = self.gui.devices[self.list.currentRow() + 1]
+            self.gui.learn_device = LearnDialog(self.gui,
+                                                self.updateDevice,
+                                                device)
+            self.gui.is_learn_device_mode = True
 
     def onDelete(self):
         if self.list.currentRow() != -1:
@@ -45,3 +56,14 @@ class ManageDialog(QDialog, Ui_Dialog):
 
         with open(file_name, 'w') as f:
             f.write(json.dumps(device.mapping))
+
+    def onFinished(self):
+        self.gui.devicesComboBox.clear()
+        for device in self.gui.devices:
+            self.gui.devicesComboBox.addItem(device.name, device)
+
+    def updateDevice(self, device):
+        self.list.clear()
+        for device in self.gui.devices[1:]:
+            self.list.addItem(device.name)
+        self.gui.is_learn_device_mode = False

@@ -12,109 +12,10 @@ from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
 from manage import ManageDialog
+from device import Device
 import struct
 from queue import Queue, Empty
 import json
-
-
-class Device():
-
-    NOTEON = 0x90
-    NOTEOFF = 0x80
-
-    def __init__(self, mapping):
-        self.note_to_coord = {}
-        self.mapping = mapping
-        for x in range(len(mapping['start_stop'])):
-            line = mapping['start_stop'][x]
-            for y in range(len(line)):
-                rec = line[y]
-                key = (rec[0], rec[1], rec[2], rec[3])
-                self.note_to_coord[key] = (x, y)
-
-    def generateNote(self, x, y, state):
-        # print("Generate note for cell {0} {1} and state {2}".
-        #      format(x, y, state))
-        (msg_type, channel, pitch, velocity) = self.mapping['start_stop'][x][y]
-        return (self.NOTEON + channel, pitch, self.get_color(state))
-
-    def __str__(self):
-        return str(self.mapping)
-
-    def get_color(self, state):
-        if state == Clip.STOP:
-            return self.red_vel
-        elif state == Clip.STARTING:
-            return self.blink_green_vel
-        elif state == Clip.START:
-            return self.green_vel
-        elif state == Clip.STOPPING:
-            return self.blink_red_vel
-        else:
-            raise Exception("Invalid state")
-
-    def getXY(self, note):
-        return self.note_to_coord[note]
-
-    @property
-    def name(self):
-        return self.mapping['name']
-
-    @property
-    def ctrls(self):
-        if 'ctrls' in self.mapping:
-            return self.mapping['ctrls']
-        else:
-            return []
-
-    @property
-    def init_command(self):
-        if 'init_command' in self.mapping:
-            return self.mapping['init_command']
-        else:
-            return []
-
-    @property
-    def block_buttons(self):
-        if 'block_buttons' in self.mapping:
-            return self.mapping['block_buttons']
-        else:
-            return []
-
-    @property
-    def master_volume_ctrl(self):
-        if 'master_volume_ctrl' in self.mapping:
-            return self.mapping['master_volume_ctrl']
-        else:
-            return False
-
-    @property
-    def green_vel(self):
-        if 'green_vel' in self.mapping:
-            return self.mapping['green_vel']
-        else:
-            return 0
-
-    @property
-    def blink_green_vel(self):
-        if 'blink_green_vel' in self.mapping:
-            return self.mapping['blink_green_vel']
-        else:
-            return 0
-
-    @property
-    def red_vel(self):
-        if 'red_vel' in self.mapping:
-            return self.mapping['red_vel']
-        else:
-            return 0
-
-    @property
-    def blink_red_vel(self):
-        if 'blink_red_vel' in self.mapping:
-            return self.mapping['blink_red_vel']
-        else:
-            return 0
 
 
 class Cell(QWidget, Ui_Cell):
@@ -206,12 +107,11 @@ class Gui(QMainWindow, Ui_MainWindow):
         # Devices
         self.devices = []
         settings = QSettings('superboucle', 'devices')
-        if settings.contains('devices'):
-            if settings.value('devices'):
-                for raw_device in settings.value('devices'):
-                    self.addDevice(json.loads(raw_device))
-            else:
-                self.addDevice({'name': 'No Device', 'start_stop': []})
+        if settings.contains('devices') and settings.value('devices'):
+            for raw_device in settings.value('devices'):
+                self.addDevice(Device(json.loads(raw_device)))
+        else:
+            self.addDevice(Device({'name': 'No Device', 'start_stop': []}))
 
         self.initUI(song)
         self.show()
@@ -333,8 +233,8 @@ class Gui(QMainWindow, Ui_MainWindow):
             print("File saved to : {}".format(self.song.file_name))
 
     def onAddDevice(self):
-        self.add_device = LearnDialog(self)
-        self.is_add_device_mode = True
+        self.learn_device = LearnDialog(self, self.addDevice)
+        self.is_learn_device_mode = True
 
     def onManageDevice(self):
         ManageDialog(self)
@@ -452,12 +352,14 @@ class Gui(QMainWindow, Ui_MainWindow):
                     btn.clip_position.setValue((
                         (btn.clip.last_offset / btn.clip.length) * 100))
 
-    def addDevice(self, mapping):
-        self.device = Device(mapping)
+    def addDevice(self, device):
+        self.device = device
         self.devices.append(self.device)
         self.devicesComboBox.addItem(self.device.name, self.device)
         self.devicesComboBox.setCurrentIndex(self.devicesComboBox.count() - 1)
+        self.is_learn_device_mode = False
 
     def onDeviceSelect(self):
         self.device = self.devicesComboBox.currentData()
-        
+        for note in self.device.init_command:
+            self.queue_out.put(note)
