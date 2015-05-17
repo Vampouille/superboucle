@@ -191,6 +191,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.song = song
         self.frame_clip.setEnabled(False)
         self.master_volume.setValue(song.volume*256)
+        self.bpm.setValue(song.bpm)
+        self.beat_per_bar.setValue(song.beat_per_bar)
         for x in range(song.width):
             for y in range(song.height):
                 clip = song.clips_matrix[x][y]
@@ -434,11 +436,22 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.blktimer.state = not self.blktimer.state
 
     def updateProgress(self):
+        state, pos = self._jack_client.transport_query()
+        if pos.valid & 0x10:
+            bbt = "%d|%d|%03d" % (pos.bar, pos.beat, pos.tick)
+        else:
+            bbt = "-|-|-"
+        seconds = int(pos.frame / pos.frame_rate)
+        (minutes, second) = divmod(seconds, 60)
+        (hour, minute) = divmod(minutes, 60)
+        time = "%d:%02d:%02d" % (hour, minute, second)
+        self.bbtLabel.setText("%s\n%s" % (bbt, time))
         for line in self.btn_matrix:
             for btn in line:
                 if btn.clip:
-                    btn.clip_position.setValue((
-                        (btn.clip.last_offset / btn.clip.length) * 100))
+                    value = ((btn.clip.last_offset / btn.clip.length) * 97)
+                    btn.clip_position.setValue(value)
+                    btn.clip_position.repaint()
 
     def addDevice(self, device):
         self.device = device
@@ -456,12 +469,9 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.redraw()
 
     def timebase_callback(self, state, nframes, pos, new_pos, userdata):
-        print("Timebase ... %s %s %s %s" % (state, nframes, pos, new_pos))
-        print(pos2str(pos))
-
         pos.valid = 0x10
         pos.bar_start_tick = BAR_START_TICK
-        pos.beats_per_bar = BEATS_PER_BAR
+        pos.beats_per_bar = self.beat_per_bar.value()
         pos.beat_type = BEAT_TYPE
         pos.ticks_per_beat = TICKS_PER_BEAT
         pos.beats_per_minute = self.bpm.value()
@@ -473,7 +483,4 @@ class Gui(QMainWindow, Ui_MainWindow):
                                    int(round(pos.ticks_per_beat, 0)))
         (bar, beat) = divmod(beats, int(round(pos.beats_per_bar, 0)))
         (pos.bar, pos.beat) = (bar + 1, beat + 1)
-        print("Ticks : %s" % ticks)
-        print(pos2str(pos))
-
         return None

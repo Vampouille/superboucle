@@ -90,6 +90,9 @@ border-radius: 10px;}</string>
       <height>16</height>
      </rect>
     </property>
+    <property name="maximum">
+     <number>97</number>
+    </property>
     <property name="value">
      <number>0</number>
     </property>

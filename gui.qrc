@@ -13,6 +13,10 @@
     <file>icons/logo.png</file>
   </qresource>
   <qresource prefix="icons_24">
+    <file>icons/white_goto_24.png</file>
+    <file>icons/white_pause_24.png</file>
+    <file>icons/white_play_24.png</file>
+    <file>icons/white_rewind_24.png</file>
     <file>icons/rewind_24.png</file>
     <file>icons/goto_24.png</file>
     <file>icons/pause_24.png</file>

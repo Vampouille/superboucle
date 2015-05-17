@@ -70,6 +70,8 @@ class Song():
                              for x in range(width)]
         self.clips = []
         self.volume = 1.0
+        self.bpm = 120
+        self.beat_per_bar = 4
         self.width = width
         self.height = height
         self.file_name = None
@@ -94,6 +96,8 @@ class Song():
     def saveTo(self, file):
         song_file = configparser.ConfigParser()
         song_file['DEFAULT'] = {'volume': self.volume,
+                                'bpm': self.bpm,
+                                'beat_per_bar': self.beat_per_bar,
                                 'width': self.width,
                                 'height': self.height}
         for clip in self.clips:
@@ -116,6 +120,8 @@ def load_song_from_file(file):
                song_file['DEFAULT'].getint('height'))
     res.file_name = file
     res.volume = song_file['DEFAULT'].getfloat('volume')
+    res.bpm = song_file['DEFAULT'].getfloat('bpm')
+    res.beat_per_bar = song_file['DEFAULT'].getint('beat_per_bar')
     for section in song_file:
         if section == 'DEFAULT':
             continue
@@ -129,7 +135,4 @@ def load_song_from_file(file):
                      song_file[section].getint('x'),
                      song_file[section].getint('y'))
     return res
-
-
-
 
