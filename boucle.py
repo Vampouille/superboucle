@@ -9,7 +9,7 @@ from gui import Gui
 from PyQt5.QtWidgets import QApplication
 from queue import Empty
 
-song = Song(6, 6)
+song = Song(8, 8)
 
 client = jack.Client("Super Boucle")
 midi_in = client.midi_inports.register("input")
@@ -18,7 +18,7 @@ outL = client.outports.register("output_L")
 outR = client.outports.register("output_R")
 
 app = QApplication(sys.argv)
-gui = Gui(song)
+gui = Gui(song, client)
 
 
 def frame2bbt(frame, ticks_per_beat, beats_per_minute, frame_rate):

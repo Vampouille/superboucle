@@ -71,9 +71,10 @@ class Gui(QMainWindow, Ui_MainWindow):
     updateUi = pyqtSignal()
     readQueueIn = pyqtSignal()
 
-    def __init__(self, song):
+    def __init__(self, song, jack_client):
         QObject.__init__(self)
         super(Gui, self).__init__()
+        self._jack_client = jack_client
         self.setupUi(self)
         self.clip_volume.knobRadius = 3
         self.is_add_device_mode = False
@@ -164,7 +165,18 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.beat_offset.setValue(self.last_clip.beat_offset)
             self.beat_diviser.setValue(self.last_clip.beat_diviser)
             self.clip_volume.setValue(self.last_clip.volume*256)
-            self.clip_description.setText("Good clip !")
+            state, position = self._jack_client.transport_query()
+            fps = position.frame_rate
+            bpm = position.beats_per_minute
+            if bpm and fps:
+                size_in_beat = ((bpm/60)/fps)*self.last_clip.length
+            else:
+                size_in_beat = "No BPM"
+            clip_description = ("Size in sample :\n%s\nSize in beat :\n%s"
+                                % (self.last_clip.length,
+                                   round(size_in_beat, 1)))
+
+            self.clip_description.setText(clip_description)
 
     def onAddClipClick(self):
         sender = self.sender().parent().parent()
