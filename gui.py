@@ -82,6 +82,18 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.readQueueIn.connect(self.readQueue)
         self.current_vol_block = 0
 
+        # Load devices
+        self.devices = []
+        settings = QSettings('superboucle', 'devices')
+        if settings.contains('devices') and settings.value('devices'):
+            for raw_device in settings.value('devices'):
+                self.addDevice(Device(json.loads(raw_device)))
+        else:
+            self.addDevice(Device({'name': 'No Device', 'start_stop': []}))
+
+        # Load song
+        self.initUI(song)
+
         self.actionOpen.triggered.connect(self.onActionOpen)
         self.actionSave.triggered.connect(self.onActionSave)
         self.actionSave_As.triggered.connect(self.onActionSaveAs)
@@ -104,16 +116,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.disptimer.start(self.PROGRESS_PERIOD)
         self.disptimer.timeout.connect(self.updateProgress)
 
-        # Devices
-        self.devices = []
-        settings = QSettings('superboucle', 'devices')
-        if settings.contains('devices') and settings.value('devices'):
-            for raw_device in settings.value('devices'):
-                self.addDevice(Device(json.loads(raw_device)))
-        else:
-            self.addDevice(Device({'name': 'No Device', 'start_stop': []}))
-
-        self.initUI(song)
         self.show()
 
     def initUI(self, song):
@@ -362,6 +364,8 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onDeviceSelect(self):
         self.device = self.devicesComboBox.currentData()
-        if self.device and self.device.init_command:
-            for note in self.device.init_command:
-                self.queue_out.put(note)
+        if self.device:
+            if self.device.init_command:
+                for note in self.device.init_command:
+                    self.queue_out.put(note)
+            self.redraw()
