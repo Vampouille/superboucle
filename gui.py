@@ -17,6 +17,58 @@ import struct
 from queue import Queue, Empty
 import json
 
+BAR_START_TICK = 0.0
+BEATS_PER_BAR = 4.0
+BEAT_TYPE = 4.0
+TICKS_PER_BEAT = 960.0
+
+
+def frame2bbt(frame, ticks_per_beat, beats_per_minute, frame_rate):
+    ticks_per_second = (beats_per_minute * ticks_per_beat) / 60
+    return (ticks_per_second * frame) / frame_rate
+
+
+def pos2str(pos):
+    return """Position :
+        Unique 1 : %s
+        Usecs : %s
+        frame rate : %s
+        frame : %s
+        valid : %s
+        bar : %s
+        beat : %s
+        tick : %s
+        bar_start_tick : %s
+        beats_per_bar : %s
+        beat_type : %s
+        ticks_per_beat : %s
+        beats_per_minute : %s
+        frame_time : %s
+        next_time : %s
+        bbt_offset : %s
+        audio_frames_per_video_frame : %s
+        video_offset : %s
+        unique_2 : %s
+    """ % (pos.unique_1,
+           pos.usecs,
+           pos.frame_rate,
+           pos.frame,
+           pos.valid,
+           pos.bar,
+           pos.beat,
+           pos.tick,
+           pos.bar_start_tick,
+           pos.beats_per_bar,
+           pos.beat_type,
+           pos.ticks_per_beat,
+           pos.beats_per_minute,
+           pos.frame_time,
+           pos.next_time,
+           pos.bbt_offset,
+           pos.audio_frames_per_video_frame,
+           pos.video_offset,
+           pos.unique_2)
+
 
 class Cell(QWidget, Ui_Cell):
 
@@ -102,6 +154,10 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionManage_Devices.triggered.connect(self.onManageDevice)
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
+        self.rewindButton.clicked.connect(self.onRewindClicked)
+        self.startButton.clicked.connect(self._jack_client.transport_start)
+        self.pauseButton.clicked.connect(self._jack_client.transport_stop)
+        self.gotoButton.clicked.connect(self.onGotoClicked)
         self.devicesComboBox.currentIndexChanged.connect(self.onDeviceSelect)
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
@@ -116,6 +172,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.disptimer = QTimer()
         self.disptimer.start(self.PROGRESS_PERIOD)
         self.disptimer.timeout.connect(self.updateProgress)
+
+        self._jack_client.set_timebase_callback(False, self.timebase_callback)
 
         self.show()
 
@@ -200,6 +258,21 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onMasterVolumeChange(self):
         self.song.volume = (self.master_volume.value() / 256)
+
+    def onStartClicked(self):
+        pass
+        self._jack_client.transport_start
+
+    def onGotoClicked(self):
+        state, position = self._jack_client.transport_query()
+        new_position = (position.beats_per_bar
+                        * (self.gotoTarget.value() - 1)
+                        * position.frame_rate
+                        * (60 / position.beats_per_minute))
+        self._jack_client.transport_locate(int(round(new_position, 0)))
+
+    def onRewindClicked(self):
+        self._jack_client.transport_locate(0)
 
     def onClipNameChange(self):
         self.last_clip.name = self.clip_name.text()
@@ -381,3 +454,26 @@ class Gui(QMainWindow, Ui_MainWindow):
                 for note in self.device.init_command:
                     self.queue_out.put(note)
             self.redraw()
+
+    def timebase_callback(self, state, nframes, pos, new_pos, userdata):
+        print("Timebase ... %s %s %s %s" % (state, nframes, pos, new_pos))
+        print(pos2str(pos))
+
+        pos.valid = 0x10
+        pos.bar_start_tick = BAR_START_TICK
+        pos.beats_per_bar = BEATS_PER_BAR
+        pos.beat_type = BEAT_TYPE
+        pos.ticks_per_beat = TICKS_PER_BEAT
+        pos.beats_per_minute = self.bpm.value()
+        ticks = frame2bbt(pos.frame,
+                          pos.ticks_per_beat,
+                          pos.beats_per_minute,
+                          pos.frame_rate)
+        (beats, pos.tick) = divmod(int(round(ticks, 0)),
+                                   int(round(pos.ticks_per_beat, 0)))
+        (bar, beat) = divmod(beats, int(round(pos.beats_per_bar, 0)))
+        (pos.bar, pos.beat) = (bar + 1, beat + 1)
+        print("Ticks : %s" % ticks)
+        print(pos2str(pos))
+
+        return None

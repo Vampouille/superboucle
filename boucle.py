@@ -21,11 +21,6 @@ app = QApplication(sys.argv)
 gui = Gui(song, client)
 
 
-def frame2bbt(frame, ticks_per_beat, beats_per_minute, frame_rate):
-    ticks_per_second = (beats_per_minute * ticks_per_beat) / 60
-    return (ticks_per_second * frame) / frame_rate
-
-
 def my_callback(frames, userdata):
     song = gui.song
     state, position = client.transport_query()
