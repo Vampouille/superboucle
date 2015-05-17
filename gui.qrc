@@ -1,0 +1,24 @@
+<RCC>
+  <qresource prefix="icons_48">
+    <file>icons/goto.png</file>
+    <file>icons/pause.png</file>
+    <file>icons/play.png</file>
+    <file>icons/record.png</file>
+    <file>icons/repeat.png</file>
+    <file>icons/rewind.png</file>
+    <file>icons/stop.png</file>
+  </qresource>
+  <qresource prefix="icons">
+    <file>icons/icon.png</file>
+    <file>icons/logo.png</file>
+  </qresource>
+  <qresource prefix="icons_24">
+    <file>icons/rewind_24.png</file>
+    <file>icons/goto_24.png</file>
+    <file>icons/pause_24.png</file>
+    <file>icons/play_24.png</file>
+    <file>icons/record_24.png</file>
+    <file>icons/repeat_24.png</file>
+    <file>icons/stop_24.png</file>
+  </qresource>
+</RCC>
