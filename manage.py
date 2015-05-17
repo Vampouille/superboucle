@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QDialog, QFileDialog
 from manage_ui import Ui_Dialog
 from learn import LearnDialog
+from device import Device
 import json
 
 
@@ -44,7 +45,7 @@ class ManageDialog(QDialog, Ui_Dialog):
             read_data = f.read()
         mapping = json.loads(read_data)
         self.list.addItem(mapping['name'])
-        self.gui.addDevice(mapping)
+        self.gui.addDevice(Device(mapping))
 
     def onExport(self):
         device = self.gui.devices[self.list.currentRow() + 1]

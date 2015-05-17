@@ -1,6 +1,13 @@
 # SuperBoucle
 
-Jack loop application synced with jack transport.
+SuperBoucle is midi controllable live sampler synced with jack transport.
+
+SuperBoucle is composed of a matrix of sample controllable with external midi
+device like pad. SuperBoucle will send back information to the pad (light up
+pad button). Sample will always start and stop on a beat. You can adjust length
+of sample in beat and offset in beat. But you can also adjust sample offset in
+raw frame count negative or positive. Which mean sample can start before next
+beat (useful for reversed sample).
 
 ## Requirements
 

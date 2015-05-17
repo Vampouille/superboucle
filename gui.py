@@ -362,6 +362,6 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onDeviceSelect(self):
         self.device = self.devicesComboBox.currentData()
-        if self.device.init_command:
+        if self.device and self.device.init_command:
             for note in self.device.init_command:
                 self.queue_out.put(note)
