@@ -16,7 +16,7 @@ from manage import ManageDialog
 from device import Device
 import struct
 from queue import Queue, Empty
-import json
+import pickle
 
 BAR_START_TICK = 0.0
 BEATS_PER_BAR = 4.0
@@ -142,7 +142,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         settings = QSettings('superboucle', 'devices')
         if settings.contains('devices') and settings.value('devices'):
             for raw_device in settings.value('devices'):
-                self.devices.append(Device(json.loads(raw_device)))
+                self.devices.append(Device(pickle.loads(raw_device)))
         else:
             self.devices.append(Device({'name': 'No Device', }))
         self.updateDevices()
@@ -212,7 +212,7 @@ class Gui(QMainWindow, Ui_MainWindow):
     def closeEvent(self, event):
         settings = QSettings('superboucle', 'devices')
         settings.setValue('devices',
-                          [json.dumps(x.mapping) for x in self.devices])
+                          [pickle.dumps(x.mapping) for x in self.devices])
 
     def onStartStopClick(self):
         clip = self.sender().parent().parent().clip

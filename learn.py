@@ -283,7 +283,6 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     def reject(self):
         self.gui.is_learn_device_mode = False
-        print("OK")
         super(LearnDialog, self).reject()
 
     def onSave(self):
