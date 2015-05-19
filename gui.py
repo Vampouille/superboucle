@@ -338,21 +338,27 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.show()
 
     def update(self):
-        for clp in self.song.clips:
-            # print("updating clip at {0} {1}".format(clp.x, clp.y))
-            if clp.state != self.state_matrix[clp.x][clp.y]:
-                self.setCellColor(clp.x,
-                                  clp.y,
-                                  self.STATE_COLORS[clp.state],
-                                  self.STATE_BLINK[clp.state])
+        for x in range(len(self.song.clips_matrix)):
+            line = self.song.clips_matrix[x]
+            for y in range(len(line)):
+                clp = line[y]
+                if clp is None:
+                    state = None
+                else:
+                    state = clp.state
+                if clp and clp.state != self.state_matrix[x][y]:
+                    self.setCellColor(x,
+                                      y,
+                                      self.STATE_COLORS[state],
+                                      self.STATE_BLINK[state])
                 try:
-                    self.queue_out.put(self.device.generateNote(clp.x,
-                                                                clp.y,
-                                                                clp.state))
+                    self.queue_out.put(self.device.generateNote(x,
+                                                                y,
+                                                                state))
                 except IndexError:
                     # print("No cell associated to %s x %s" % (clp.x, clp.y))
                     pass
-                self.state_matrix[clp.x][clp.y] = clp.state
+                self.state_matrix[x][y] = state
 
     def redraw(self):
         self.state_matrix = [[-1 for x in range(self.song.height)]

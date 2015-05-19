@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QDialog, QWidget, QMessageBox
 from PyQt5.QtCore import pyqtSignal
 import struct
+from copy import deepcopy
 from queue import Queue, Empty
 from learn_cell_ui import Ui_LearnCell
 from learn_ui import Ui_Dialog
@@ -52,10 +53,14 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.callback = callback
         self.queue = Queue()
         if device is None:
-            self.device = Device()
+            self.original_device = Device()
         else:
-            self.device = device
+            self.original_device = device
             self.setWindowTitle("Edit %s" % device.name)
+
+        # perform deep copy in order to keep original values if cancel is
+        # clicked
+        self.device = Device(deepcopy(self.original_device.mapping))
         self.current_line = None
         self.current_row = None
         self.current_line_pitch = []
@@ -276,6 +281,11 @@ class LearnDialog(QDialog, Ui_Dialog):
                                  "Invalid init commands",
                                  str(ex))
 
+    def reject(self):
+        self.gui.is_learn_device_mode = False
+        print("OK")
+        super(LearnDialog, self).reject()
+
     def onSave(self):
         self.device.name = str(self.name.text())
         self.device.black_vel = int(self.black_vel.value())
@@ -284,8 +294,9 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.device.red_vel = int(self.red_vel.value())
         self.device.blink_red_vel = int(self.blink_red_vel.value())
         self.device.mapping['init_command'] = self.parseInitCommand()
-        self.gui.is_add_device_mode = False
-        self.callback(self.device)
+        self.original_device.updateMapping(self.device.mapping)
+        self.gui.is_learn_device_mode = False
+        self.callback(self.original_device)
         self.gui.redraw()
 
     def displayNote(self, note_dec):
@@ -322,11 +333,14 @@ class LearnDialog(QDialog, Ui_Dialog):
                 byte2 = int(matches.group(2))
                 byte3 = int(matches.group(3))
                 if not 0 <= byte1 < 256:
-                    raise Exception("byte 1 Out of range")
+                    raise Exception("First number out of range on line %s"
+                                    % line)
                 if not 0 <= byte2 < 256:
-                    raise Exception("byte 2 Out of range")
+                    raise Exception("Second number out of range on line %s"
+                                    % line)
                 if not 0 <= byte3 < 256:
-                    raise Exception("byte 3 Out of range")
+                    raise Exception("Third number out of range on line %s"
+                                    % line)
                 init_commands.append((byte1, byte2, byte3))
             elif len(raw_line):
                 raise Exception("Invalid format for Line %s :\n%s"

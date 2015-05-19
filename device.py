@@ -7,11 +7,14 @@ class Device():
     NOTEOFF = 0x80
 
     def __init__(self, mapping=None):
-        self.note_to_coord = {}
         if mapping is None:
-            self.mapping = {}
+            self.updateMapping({})
         else:
-            self.mapping = mapping
+            self.updateMapping(mapping)
+
+    def updateMapping(self, new_mapping):
+        self.note_to_coord = {}
+        self.mapping = new_mapping
         for x in range(len(self.start_stop)):
             line = self.start_stop[x]
             for y in range(len(line)):
@@ -34,7 +37,9 @@ class Device():
 #        return str(self.mapping)
 
     def get_color(self, state):
-        if state == Clip.STOP:
+        if state is None:
+            return self.black_vel
+        elif state == Clip.STOP:
             return self.red_vel
         elif state == Clip.STARTING:
             return self.blink_green_vel
