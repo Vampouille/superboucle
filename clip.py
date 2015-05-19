@@ -66,7 +66,7 @@ class Clip():
 class Song():
 
     def __init__(self, width, height):
-        self.clips_matrix = [[None for x in range(height)]
+        self.clips_matrix = [[None for y in range(height)]
                              for x in range(width)]
         self.clips = []
         self.volume = 1.0

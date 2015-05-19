@@ -6,13 +6,14 @@ Gui
 """
 
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog,
-                             QAction, QActionGroup)
+                             QAction, QActionGroup, QMessageBox)
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings
 from clip import Clip, load_song_from_file
 from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
 from manage import ManageDialog
+from new_song import NewSongDialog
 from device import Device
 import struct
 from queue import Queue, Empty
@@ -151,6 +152,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         # Load song
         self.initUI(song)
 
+        self.actionNew.triggered.connect(self.onActionNew)
         self.actionOpen.triggered.connect(self.onActionOpen)
         self.actionSave.triggered.connect(self.onActionSave)
         self.actionSave_As.triggered.connect(self.onActionSaveAs)
@@ -183,9 +185,9 @@ class Gui(QMainWindow, Ui_MainWindow):
     def initUI(self, song):
 
         # remove old buttons
-        self.btn_matrix = [[None for x in range(song.height)]
+        self.btn_matrix = [[None for y in range(song.height)]
                            for x in range(song.width)]
-        self.state_matrix = [[-1 for x in range(song.height)]
+        self.state_matrix = [[-1 for y in range(song.height)]
                              for x in range(song.width)]
         for i in reversed(range(self.gridLayout.count())):
             self.gridLayout.itemAt(i).widget().close()
@@ -201,7 +203,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                 clip = song.clips_matrix[x][y]
                 cell = Cell(self, clip, x, y)
                 self.btn_matrix[x][y] = cell
-                self.gridLayout.addWidget(cell, x, y)
+                self.gridLayout.addWidget(cell, y, x)
 
         # send init command
         for init_cmd in self.device.init_command:
@@ -296,6 +298,9 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onBeatOffsetChange(self):
         self.last_clip.beat_offset = self.beat_offset.value()
 
+    def onActionNew(self):
+        NewSongDialog(self)
+
     def onActionOpen(self):
         file_name, a = (
             QFileDialog.getOpenFileName(self,
@@ -304,7 +309,12 @@ class Gui(QMainWindow, Ui_MainWindow):
                                         'Super Boucle Song (*.sbs)'))
         if file_name:
             self.setEnabled(False)
+            message = QMessageBox(self)
+            message.setWindowTitle("Loading ....")
+            message.setText("Reading Files, please wait ...")
+            message.show()
             self.initUI(load_song_from_file(file_name))
+            message.close()
             self.setEnabled(True)
 
     def onActionSave(self):

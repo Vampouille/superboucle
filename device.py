@@ -15,15 +15,15 @@ class Device():
     def updateMapping(self, new_mapping):
         self.note_to_coord = {}
         self.mapping = new_mapping
-        for x in range(len(self.start_stop)):
-            line = self.start_stop[x]
-            for y in range(len(line)):
-                self.note_to_coord[line[y]] = (x, y)
+        for y in range(len(self.start_stop)):
+            line = self.start_stop[y]
+            for x in range(len(line)):
+                self.note_to_coord[line[x]] = (x, y)
 
     def generateNote(self, x, y, state):
         # print("Generate note for cell {0} {1} and state {2}".
         #      format(x, y, state))
-        (msg_type, channel, pitch, velocity) = self.start_stop[x][y]
+        (msg_type, channel, pitch, velocity) = self.start_stop[y][x]
         return (self.NOTEON + channel, pitch, self.get_color(state))
 
 #    def __str__(self):

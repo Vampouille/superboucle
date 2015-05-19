@@ -730,7 +730,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionNew">
    <property name="text">
-    <string>New</string>
+    <string>New...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
