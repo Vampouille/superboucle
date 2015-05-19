@@ -346,18 +346,20 @@ class Gui(QMainWindow, Ui_MainWindow):
                     state = None
                 else:
                     state = clp.state
-                if clp and clp.state != self.state_matrix[x][y]:
-                    self.setCellColor(x,
-                                      y,
-                                      self.STATE_COLORS[state],
-                                      self.STATE_BLINK[state])
-                try:
-                    self.queue_out.put(self.device.generateNote(x,
-                                                                y,
-                                                                state))
-                except IndexError:
-                    # print("No cell associated to %s x %s" % (clp.x, clp.y))
-                    pass
+                if state != self.state_matrix[x][y]:
+                    if clp:
+                        self.setCellColor(x,
+                                          y,
+                                          self.STATE_COLORS[state],
+                                          self.STATE_BLINK[state])
+                    try:
+                        self.queue_out.put(self.device.generateNote(x,
+                                                                    y,
+                                                                    state))
+                    except IndexError:
+                        # print("No cell associated to %s x %s"
+                        # % (clp.x, clp.y))
+                        pass
                 self.state_matrix[x][y] = state
 
     def redraw(self):
