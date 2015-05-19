@@ -5,7 +5,8 @@
 Gui
 """
 
-from PyQt5.QtWidgets import QWidget, QMainWindow, QFileDialog
+from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog,
+                             QAction, QActionGroup)
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings
 from clip import Clip, load_song_from_file
 from gui_ui import Ui_MainWindow
@@ -129,20 +130,23 @@ class Gui(QMainWindow, Ui_MainWindow):
         self._jack_client = jack_client
         self.setupUi(self)
         self.clip_volume.knobRadius = 3
-        self.is_add_device_mode = False
+        self.is_learn_device_mode = False
         self.queue_out, self.queue_in = Queue(), Queue()
         self.updateUi.connect(self.update)
         self.readQueueIn.connect(self.readQueue)
         self.current_vol_block = 0
 
         # Load devices
+        self.deviceGroup = QActionGroup(self.menuDevice)
         self.devices = []
         settings = QSettings('superboucle', 'devices')
         if settings.contains('devices') and settings.value('devices'):
             for raw_device in settings.value('devices'):
-                self.addDevice(Device(json.loads(raw_device)))
+                self.devices.append(Device(json.loads(raw_device)))
         else:
-            self.addDevice(Device({'name': 'No Device', 'start_stop': []}))
+            self.devices.append(Device({'name': 'No Device', }))
+        self.updateDevices()
+        self.deviceGroup.triggered.connect(self.onDeviceSelect)
 
         # Load song
         self.initUI(song)
@@ -158,7 +162,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.startButton.clicked.connect(self._jack_client.transport_start)
         self.pauseButton.clicked.connect(self._jack_client.transport_stop)
         self.gotoButton.clicked.connect(self.onGotoClicked)
-        self.devicesComboBox.currentIndexChanged.connect(self.onDeviceSelect)
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
@@ -227,7 +230,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.clip_volume.setValue(self.last_clip.volume*256)
             state, position = self._jack_client.transport_query()
             fps = position.frame_rate
-            bpm = position.beats_per_minute
+            bpm = self.bpm.value()
             if bpm and fps:
                 size_in_beat = ((bpm/60)/fps)*self.last_clip.length
             else:
@@ -453,15 +456,26 @@ class Gui(QMainWindow, Ui_MainWindow):
                     btn.clip_position.setValue(value)
                     btn.clip_position.repaint()
 
-    def addDevice(self, device):
+    def updateDevices(self):
+        for action in self.deviceGroup.actions():
+            self.deviceGroup.removeAction(action)
+            self.menuDevice.removeAction(action)
+        for device in self.devices:
+            action = QAction(device.name, self.menuDevice)
+            action.setCheckable(True)
+            action.setData(device)
+            self.menuDevice.addAction(action)
+            self.deviceGroup.addAction(action)
+        action.setChecked(True)
         self.device = device
-        self.devices.append(self.device)
-        self.devicesComboBox.addItem(self.device.name, self.device)
-        self.devicesComboBox.setCurrentIndex(self.devicesComboBox.count() - 1)
+
+    def addDevice(self, device):
+        self.devices.append(device)
+        self.updateDevices()
         self.is_learn_device_mode = False
 
     def onDeviceSelect(self):
-        self.device = self.devicesComboBox.currentData()
+        self.device = self.deviceGroup.checkedAction().data()
         if self.device:
             if self.device.init_command:
                 for note in self.device.init_command:

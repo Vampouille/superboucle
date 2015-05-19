@@ -103,7 +103,7 @@ background-color: rgb(175, 178, 178);}</string>
          <widget class="QSuperDial" name="master_volume">
           <property name="geometry">
            <rect>
-            <x>130</x>
+            <x>110</x>
             <y>20</y>
             <width>60</width>
             <height>60</height>
@@ -126,7 +126,7 @@ color: black;</string>
          <widget class="QLabel" name="label_6">
           <property name="geometry">
            <rect>
-            <x>20</x>
+            <x>30</x>
             <y>35</y>
             <width>91</width>
             <height>30</height>
@@ -196,7 +196,7 @@ color: black;</string>
           <widget class="QLabel" name="label_5">
            <property name="geometry">
             <rect>
-             <x>30</x>
+             <x>40</x>
              <y>55</y>
              <width>52</width>
              <height>19</height>
@@ -223,7 +223,7 @@ color: black;</string>
            </property>
            <property name="geometry">
             <rect>
-             <x>120</x>
+             <x>100</x>
              <y>40</y>
              <width>51</width>
              <height>51</height>
@@ -530,44 +530,6 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
            <number>999999999</number>
           </property>
          </widget>
-         <widget class="QComboBox" name="devicesComboBox">
-          <property name="geometry">
-           <rect>
-            <x>100</x>
-            <y>340</y>
-            <width>121</width>
-            <height>23</height>
-           </rect>
-          </property>
-         </widget>
-         <widget class="QLabel" name="label_8">
-          <property name="geometry">
-           <rect>
-            <x>10</x>
-            <y>340</y>
-            <width>80</width>
-            <height>19</height>
-           </rect>
-          </property>
-          <property name="font">
-           <font>
-            <family>Lato</family>
-            <pointsize>11</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
-            <kerning>true</kerning>
-           </font>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">color: rgb(160, 6, 89);</string>
-          </property>
-          <property name="text">
-           <string>Midi Device</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
          <widget class="QLabel" name="label_9">
           <property name="geometry">
            <rect>
@@ -753,6 +715,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
     </property>
     <addaction name="actionAdd_Device"/>
     <addaction name="actionManage_Devices"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">

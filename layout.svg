@@ -3641,11 +3641,11 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="6.6292347"
-     inkscape:cx="306.04398"
-     inkscape:cy="659.10419"
+     inkscape:zoom="4.6875768"
+     inkscape:cx="324.96975"
+     inkscape:cy="646.15731"
      inkscape:document-units="px"
-     inkscape:current-layer="layer3"
+     inkscape:current-layer="layer4"
      showgrid="false"
      inkscape:window-width="1280"
      inkscape:window-height="947"
@@ -3943,7 +3943,7 @@
        sodipodi:rx="0.17913078"
        sodipodi:ry="0.17913078"
        d="m 290.13531,370.88269 a 0.17913078,0.17913078 0 1 1 -0.35826,0 0.17913078,0.17913078 0 1 1 0.35826,0 z"
-       transform="matrix(2.3397813,0,0,2.3397813,-352.17347,-489.8662)" />
+       transform="matrix(2.6375105,0,0,2.6375105,-438.44855,-600.27268)" />
     <g
        style="display:inline"
        id="g4758"
@@ -4175,31 +4175,26 @@
          d="m 321.693,436.98295 1.9327,-0.0377 -0.98008,1.57465 z"
          style="fill:#000000;fill-opacity:1;stroke:none;display:inline" />
     </g>
-    <g
-       style="display:inline"
-       id="g3711"
-       transform="matrix(0.84174848,0,0,0.84174848,56.342616,116.29895)">
-      <path
-         transform="matrix(0.87209303,0,0,0.87209303,41.14435,47.556952)"
-         d="m 308.33121,364.95251 c 0,3.58236 -2.90407,6.48642 -6.48642,6.48642 -3.58235,0 -6.48642,-2.90406 -6.48642,-6.48642 0,-3.58235 2.90407,-6.48642 6.48642,-6.48642 3.58235,0 6.48642,2.90407 6.48642,6.48642 z"
-         sodipodi:ry="6.4864202"
-         sodipodi:rx="6.4864202"
-         sodipodi:cy="364.95251"
-         sodipodi:cx="301.84479"
-         id="path19858"
-         style="fill:#f1f800;fill-opacity:1;stroke:#000000;stroke-width:0.11466667;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-         sodipodi:type="arc" />
-      <path
-         transform="matrix(1.5892557,0,0,1.5892557,-173.87371,-213.21563)"
-         d="m 299.46177,364.32013 c 0,0.35346 -0.28654,0.63999 -0.63999,0.63999 -0.35346,0 -0.63999,-0.28653 -0.63999,-0.63999 0,-0.35346 0.28653,-0.63999 0.63999,-0.63999 0.35345,0 0.63999,0.28653 0.63999,0.63999 z"
-         sodipodi:ry="0.6399895"
-         sodipodi:rx="0.6399895"
-         sodipodi:cy="364.32013"
-         sodipodi:cx="298.82178"
-         id="path19856"
-         style="fill:#000000;fill-opacity:1;stroke:none"
-         sodipodi:type="arc" />
-    </g>
+    <path
+       sodipodi:type="arc"
+       style="fill:#f1f800;fill-opacity:1;stroke:#000000;stroke-width:0.11466667;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path19858"
+       sodipodi:cx="301.84479"
+       sodipodi:cy="364.95251"
+       sodipodi:rx="6.4864202"
+       sodipodi:ry="6.4864202"
+       d="m 308.33121,364.95251 a 6.4864202,6.4864202 0 1 1 -12.97284,0 6.4864202,6.4864202 0 1 1 12.97284,0 z"
+       transform="matrix(0.73408298,0,0,0.73408298,90.97581,156.32994)" />
+    <path
+       sodipodi:type="arc"
+       style="fill:#000000;fill-opacity:1;stroke:none"
+       id="path19856"
+       sodipodi:cx="298.82178"
+       sodipodi:cy="364.32013"
+       sodipodi:rx="0.6399895"
+       sodipodi:ry="0.6399895"
+       d="m 299.46177,364.32013 a 0.6399895,0.6399895 0 1 1 -1.27998,0 0.6399895,0.6399895 0 1 1 1.27998,0 z"
+       transform="matrix(1.3377536,0,0,1.3377536,-90.015315,-63.174982)" />
     <g
        style="display:inline"
        id="g4758-0-7"
@@ -4283,7 +4278,7 @@
          y="401.75797">Volume</tspan></text>
     <g
        id="g4616-4"
-       transform="translate(11.243277,-65.912591)"
+       transform="translate(47.220281,-52.411787)"
        inkscape:export-filename="/home/joe/git/superboucle/icons/white_rewind_24.png"
        inkscape:export-xdpi="432"
        inkscape:export-ydpi="432">
@@ -4317,7 +4312,7 @@
        height="5"
        x="300.77283"
        y="291.6105"
-       inkscape:export-filename="/home/joe/git/superboucle/icons/white_rewind_24.png"
+       inkscape:export-filename="/home/joe/git/superboucle/icons/white_goto_24.png"
        inkscape:export-xdpi="432"
        inkscape:export-ydpi="432" />
     <g
@@ -4338,6 +4333,43 @@
          width="2.1283147"
          id="rect5601"
          style="fill:#ffffff;fill-opacity:1;stroke:none" />
+    </g>
+    <g
+       id="g5654"
+       transform="translate(-54.536199,-17.743879)"
+       inkscape:export-filename="/home/joe/git/superboucle/icons/white_goto_24.png"
+       inkscape:export-xdpi="432"
+       inkscape:export-ydpi="432">
+      <path
+         transform="matrix(2.6375105,0,0,2.6375105,-405.11113,-666.35261)"
+         d="m 290.13531,370.88269 c 0,0.0989 -0.0802,0.17913 -0.17913,0.17913 -0.0989,0 -0.17913,-0.0802 -0.17913,-0.17913 0,-0.0989 0.0802,-0.17913 0.17913,-0.17913 0.0989,0 0.17913,0.0802 0.17913,0.17913 z"
+         sodipodi:ry="0.17913078"
+         sodipodi:rx="0.17913078"
+         sodipodi:cy="370.88269"
+         sodipodi:cx="289.95618"
+         id="path4662-7"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;display:inline"
+         sodipodi:type="arc" />
+      <g
+         transform="translate(33.497406,-66.079927)"
+         id="g5603-2"
+         style="display:inline">
+        <path
+           style="fill:#ffffff;fill-opacity:1;stroke:none;display:inline"
+           d="m 323.90509,379.12485 -0.0191,-2.38108 1.38357,1.19891 z"
+           id="path3721-8-8"
+           inkscape:connector-curvature="0"
+           inkscape:transform-center-x="-7.7589223"
+           inkscape:transform-center-y="-4.2067628"
+           sodipodi:nodetypes="cccc" />
+        <rect
+           style="fill:#ffffff;fill-opacity:1;stroke:none"
+           id="rect5601-6"
+           width="2.1283147"
+           height="0.84951389"
+           x="321.99686"
+           y="377.47775" />
+      </g>
     </g>
   </g>
   <g

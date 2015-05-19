@@ -32,7 +32,6 @@ class ManageDialog(QDialog, Ui_Dialog):
         if self.list.currentRow() != -1:
             device = self.gui.devices[self.list.currentRow() + 1]
             self.gui.devices.remove(device)
-            self.gui.devicesComboBox.removeItem(self.list.currentRow() + 1)
             self.list.takeItem(self.list.currentRow())
 
     def onImport(self):
@@ -45,7 +44,7 @@ class ManageDialog(QDialog, Ui_Dialog):
             read_data = f.read()
         mapping = json.loads(read_data)
         self.list.addItem(mapping['name'])
-        self.gui.addDevice(Device(mapping))
+        self.gui.devices.append(Device(mapping))
 
     def onExport(self):
         device = self.gui.devices[self.list.currentRow() + 1]
@@ -59,9 +58,7 @@ class ManageDialog(QDialog, Ui_Dialog):
             f.write(json.dumps(device.mapping))
 
     def onFinished(self):
-        self.gui.devicesComboBox.clear()
-        for device in self.gui.devices:
-            self.gui.devicesComboBox.addItem(device.name, device)
+        self.gui.updateDevices()
 
     def updateDevice(self, device):
         self.list.clear()
