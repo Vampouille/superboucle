@@ -43,6 +43,10 @@ class LearnDialog(QDialog, Ui_Dialog):
     MASTER_VOLUME_CTRL = 1
     CTRLS = 2
     BLOCK_BUTTONS = 3
+    PLAY_BTN = 4
+    PAUSE_BTN = 5
+    REWIND_BTN = 6
+    GOTO_BTN = 7
 
     updateUi = pyqtSignal()
 
@@ -80,6 +84,14 @@ class LearnDialog(QDialog, Ui_Dialog):
         if self.device.master_volume_ctrl:
             (self.label_master_volume_ctrl.setText(
                 self.displayCtrl(self.device.master_volume_ctrl)))
+        if self.device.play_btn:
+            self.playLabel.setText(self.displayBtn(self.device.play_btn))
+        if self.device.pause_btn:
+            self.pauseLabel.setText(self.displayBtn(self.device.pause_btn))
+        if self.device.rewind_btn:
+            self.rewindLabel.setText(self.displayBtn(self.device.rewind_btn))
+        if self.device.goto_btn:
+            self.gotoLabel.setText(self.displayBtn(self.device.goto_btn))
         (self.init_command
          .setText("\n".join([", ".join([str(num)
                                         for num in init_cmd])
@@ -123,6 +135,10 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.accepted.connect(self.onSave)
         self.firstLine.clicked.connect(self.onFirstLineClicked)
         self.learn_master_volume_ctrl.clicked.connect(self.onMasterVolumeCtrl)
+        self.playButton.clicked.connect(self.onPlayButton)
+        self.pauseButton.clicked.connect(self.onPauseButton)
+        self.rewindButton.clicked.connect(self.onRewindButton)
+        self.gotoButton.clicked.connect(self.onGotoButton)
         self.sendInitButton.clicked.connect(self.onSendInit)
         self.learn_ctrls.clicked.connect(self.onCtrls)
         self.learn_block_bts.clicked.connect(self.onBlockBts)
@@ -161,6 +177,18 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     def onMasterVolumeCtrl(self):
         self.send_midi_to = self.MASTER_VOLUME_CTRL
+
+    def onPlayButton(self):
+        self.send_midi_to = self.PLAY_BTN
+
+    def onPauseButton(self):
+        self.send_midi_to = self.PAUSE_BTN
+
+    def onRewindButton(self):
+        self.send_midi_to = self.REWIND_BTN
+
+    def onGotoButton(self):
+        self.send_midi_to = self.GOTO_BTN
 
     def onSendInit(self):
         try:
@@ -234,6 +262,31 @@ class LearnDialog(QDialog, Ui_Dialog):
                     self.knownCtrl.add(ctrl_key)
                     self.send_midi_to = None
 
+            elif self.send_midi_to == self.PLAY_BTN:
+                self.send_midi_to = None
+                self.knownCtrl.add(ctrl_key)
+                self.knownBtn.add(btn_key)
+                self.device.play_btn = btn_id
+                self.playLabel.setText(self.displayCtrl(ctrl_key))
+            elif self.send_midi_to == self.PAUSE_BTN:
+                self.send_midi_to = None
+                self.knownCtrl.add(ctrl_key)
+                self.knownBtn.add(btn_key)
+                self.device.pause_btn = btn_id
+                self.pauseLabel.setText(self.displayCtrl(ctrl_key))
+            elif self.send_midi_to == self.REWIND_BTN:
+                self.send_midi_to = None
+                self.knownCtrl.add(ctrl_key)
+                self.knownBtn.add(btn_key)
+                self.device.rewind_btn = btn_id
+                self.rewindLabel.setText(self.displayCtrl(ctrl_key))
+            elif self.send_midi_to == self.GOTO_BTN:
+                self.send_midi_to = None
+                self.knownCtrl.add(ctrl_key)
+                self.knownBtn.add(btn_key)
+                self.device.goto_btn = btn_id
+                self.gotoLabel.setText(self.displayCtrl(ctrl_key))
+
             elif self.send_midi_to == self.CTRLS:
                 if msg_type == self.MIDICTRL:
                     cell = LearnCell(self)
@@ -283,6 +336,7 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     def reject(self):
         self.gui.is_learn_device_mode = False
+        self.gui.redraw()
         super(LearnDialog, self).reject()
 
     def onSave(self):
@@ -320,6 +374,11 @@ class LearnDialog(QDialog, Ui_Dialog):
         return "Channel %s %s %s" % (channel + 1,
                                      type,
                                      note)
+
+    def displayBtn(self, btn_id):
+        (msg_type, channel, pitch, velocity) = btn_id
+        ctrl_key = (msg_type, channel, pitch)
+        return self.displayCtrl(ctrl_key)
 
     def parseInitCommand(self):
         raw_str = str(self.init_command.toPlainText())

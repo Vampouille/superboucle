@@ -93,6 +93,54 @@ class Device():
         self.mapping['master_volume_ctrl'] = ctrl_key
 
     @property
+    def play_btn(self):
+        if 'play_btn' in self.mapping:
+            return self.mapping['play_btn']
+        else:
+            return False
+
+    @play_btn.setter
+    def play_btn(self, btn):
+        self.mapping['play_btn'] = btn
+
+    @property
+    def pause_btn(self):
+        if 'pause_btn' in self.mapping:
+            return self.mapping['pause_btn']
+        else:
+            return False
+
+    @pause_btn.setter
+    def pause_btn(self, btn):
+        self.mapping['pause_btn'] = btn
+
+    @property
+    def rewind_btn(self):
+        if 'rewind_btn' in self.mapping:
+            return self.mapping['rewind_btn']
+        else:
+            return False
+
+    @rewind_btn.setter
+    def rewind_btn(self, btn):
+        self.mapping['rewind_btn'] = btn
+
+    @property
+    def goto_btn(self):
+        if 'goto_btn' in self.mapping:
+            return self.mapping['goto_btn']
+        else:
+            return False
+
+    @goto_btn.setter
+    def goto_btn(self, btn):
+        self.mapping['goto_btn'] = btn
+
+    @master_volume_ctrl.setter
+    def master_volume_ctrl(self, ctrl_key):
+        self.mapping['master_volume_ctrl'] = ctrl_key
+
+    @property
     def black_vel(self):
         if 'black_vel' in self.mapping:
             return self.mapping['black_vel']

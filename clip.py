@@ -76,13 +76,17 @@ class Song():
         self.height = height
         self.file_name = None
 
-    def add_clip(self, clip, x, y):
+    def addClip(self, clip, x, y):
         if self.clips_matrix[x][y]:
             self.clips.remove(self.clips_matrix[x][y])
         self.clips_matrix[x][y] = clip
         self.clips.append(clip)
         clip.x = x
         clip.y = y
+
+    def removeClip(self, clip):
+        self.clips_matrix[clip.x][clip.y] = None
+        self.clips.remove(clip)
 
     def toogle(self, x, y):
         clip = self.clips_matrix[x][y]
@@ -131,8 +135,8 @@ def load_song_from_file(file):
                     song_file[section].getint('frame_offset', 0),
                     song_file[section].getfloat('beat_offset', 0.0),
                     song_file[section].getint('beat_diviser'))
-        res.add_clip(clip,
-                     song_file[section].getint('x'),
-                     song_file[section].getint('y'))
+        res.addClip(clip,
+                    song_file[section].getint('x'),
+                    song_file[section].getint('y'))
     return res
 

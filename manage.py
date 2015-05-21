@@ -65,3 +65,4 @@ class ManageDialog(QDialog, Ui_Dialog):
         for device in self.gui.devices[1:]:
             self.list.addItem(device.name)
         self.gui.is_learn_device_mode = False
+        self.gui.redraw()

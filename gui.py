@@ -84,13 +84,13 @@ class Cell(QWidget, Ui_Cell):
         self.setStyleSheet(Gui.DEFAULT)
         if clip:
             self.clip_name.setText(clip.name)
-            self.start_stop.clicked.connect(parent.onStartStopClick)
+            self.start_stop.clicked.connect(parent.onStartStopClicked)
             self.edit.clicked.connect(parent.onEdit)
         else:
             self.start_stop.setEnabled(False)
             self.clip_position.setEnabled(False)
             self.edit.setText("Add Clip...")
-            self.edit.clicked.connect(parent.onAddClipClick)
+            self.edit.clicked.connect(parent.onAddClipClicked)
 
 
 class Gui(QMainWindow, Ui_MainWindow):
@@ -161,7 +161,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
         self.rewindButton.clicked.connect(self.onRewindClicked)
-        self.startButton.clicked.connect(self._jack_client.transport_start)
+        self.playButton.clicked.connect(self._jack_client.transport_start)
         self.pauseButton.clicked.connect(self._jack_client.transport_stop)
         self.gotoButton.clicked.connect(self.onGotoClicked)
         self.clip_name.textChanged.connect(self.onClipNameChange)
@@ -169,6 +169,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
+        self.deleteButton.clicked.connect(self.onDeleteClipClicked)
 
         self.blktimer = QTimer()
         self.blktimer.state = False
@@ -216,7 +217,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         settings.setValue('devices',
                           [pickle.dumps(x.mapping) for x in self.devices])
 
-    def onStartStopClick(self):
+    def onStartStopClicked(self):
         clip = self.sender().parent().parent().clip
         self.song.toogle(clip.x, clip.y)
         self.update()
@@ -236,14 +237,14 @@ class Gui(QMainWindow, Ui_MainWindow):
             if bpm and fps:
                 size_in_beat = ((bpm/60)/fps)*self.last_clip.length
             else:
-                size_in_beat = "No BPM"
-            clip_description = ("Size in sample :\n%s\nSize in beat :\n%s"
+                size_in_beat = "No BPM info"
+            clip_description = ("Size in sample : %s\nSize in beat : %s"
                                 % (self.last_clip.length,
                                    round(size_in_beat, 1)))
 
             self.clip_description.setText(clip_description)
 
-    def onAddClipClick(self):
+    def onAddClipClicked(self):
         sender = self.sender().parent().parent()
         audio_file, a = QFileDialog.getOpenFileName(self,
                                                     'Open Clip file',
@@ -254,14 +255,25 @@ class Gui(QMainWindow, Ui_MainWindow):
             new_clip = Clip(audio_file)
             sender.clip = new_clip
             sender.clip_name.setText(new_clip.name)
-            sender.start_stop.clicked.connect(self.onStartStopClick)
+            sender.start_stop.clicked.connect(self.onStartStopClicked)
             sender.edit.setText("Edit")
-            sender.edit.clicked.disconnect(self.onAddClipClick)
+            sender.edit.clicked.disconnect(self.onAddClipClicked)
             sender.edit.clicked.connect(self.onEdit)
             sender.start_stop.setEnabled(True)
             sender.clip_position.setEnabled(True)
-            self.song.add_clip(new_clip, sender.pos_x, sender.pos_y)
+            self.song.addClip(new_clip, sender.pos_x, sender.pos_y)
             self.update()
+
+    def onDeleteClipClicked(self):
+        if self.last_clip:
+            response = QMessageBox.question(self,
+                                            "Delete Clip ?",
+                                            ("Are you sure "
+                                             "to delete the clip ?"))
+            if response == QMessageBox.Yes:
+                self.frame_clip.setEnabled(False)
+                self.song.removeClip(self.last_clip)
+                self.initUI(self.song)
 
     def onMasterVolumeChange(self):
         self.song.volume = (self.master_volume.value() / 256)
@@ -401,6 +413,14 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.song.master_volume = vel / 127
             (self.master_volume
              .setValue(self.song.master_volume * 256))
+        elif btn_key == self.device.play_btn:
+            self._jack_client.transport_start()
+        elif btn_key == self.device.pause_btn:
+            self._jack_client.transport_stop()
+        elif btn_key == self.device.rewind_btn:
+            self.onRewindClicked()
+        elif btn_key == self.device.goto_btn:
+            self.onGotoClicked()
         elif ctrl_key in self.device.ctrls:
             try:
                 ctrl_index = self.device.ctrls.index(ctrl_key)

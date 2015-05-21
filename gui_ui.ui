@@ -155,9 +155,9 @@ color: black;</string>
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>380</y>
+            <y>350</y>
             <width>216</width>
-            <height>371</height>
+            <height>401</height>
            </rect>
           </property>
           <property name="styleSheet">
@@ -384,8 +384,21 @@ border-radius: 2px;</string>
             </item>
            </layout>
           </widget>
+          <widget class="QPushButton" name="deleteButton">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>370</y>
+             <width>80</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Delete Clip</string>
+           </property>
+          </widget>
          </widget>
-         <widget class="QPushButton" name="startButton">
+         <widget class="QPushButton" name="playButton">
           <property name="geometry">
            <rect>
             <x>50</x>
@@ -394,6 +407,9 @@ border-radius: 2px;</string>
             <height>30</height>
            </rect>
           </property>
+          <property name="toolTip">
+           <string>Play</string>
+          </property>
           <property name="styleSheet">
            <string notr="true">QPushButton {background-color: rgb(0, 0, 0);}
 QPushButton:pressed {background-color: rgb(98, 98, 98);}
@@ -401,7 +417,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
           </property>
           <property name="icon">
            <iconset resource="gui.qrc">
-            <normaloff>:/icons_24/icons/white_play_24.png</normaloff>:/icons_24/icons/white_play_24.png</iconset>
+            <normaloff>:/icons/icons/white_play_24.png</normaloff>:/icons/icons/white_play_24.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -419,6 +435,9 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
             <height>30</height>
            </rect>
           </property>
+          <property name="toolTip">
+           <string>Pause</string>
+          </property>
           <property name="styleSheet">
            <string notr="true">QPushButton {background-color: rgb(0, 0, 0);}
 QPushButton:pressed {background-color: rgb(98, 98, 98);}
@@ -426,7 +445,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
           </property>
           <property name="icon">
            <iconset resource="gui.qrc">
-            <normaloff>:/icons_24/icons/white_pause_24.png</normaloff>:/icons_24/icons/white_pause_24.png</iconset>
+            <normaloff>:/icons/icons/white_pause_24.png</normaloff>:/icons/icons/white_pause_24.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -444,6 +463,9 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
             <height>30</height>
            </rect>
           </property>
+          <property name="toolTip">
+           <string>Rewind</string>
+          </property>
           <property name="styleSheet">
            <string notr="true">QPushButton {background-color: rgb(0, 0, 0);}
 QPushButton:pressed {background-color: rgb(98, 98, 98);}
@@ -451,7 +473,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
           </property>
           <property name="icon">
            <iconset resource="gui.qrc">
-            <normaloff>:/icons_24/icons/white_rewind_24.png</normaloff>:/icons_24/icons/white_rewind_24.png</iconset>
+            <normaloff>:/icons/icons/white_rewind_24.png</normaloff>:/icons/icons/white_rewind_24.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -498,6 +520,9 @@ color: rgb(0, 255, 0);</string>
             <height>30</height>
            </rect>
           </property>
+          <property name="toolTip">
+           <string>Go to</string>
+          </property>
           <property name="styleSheet">
            <string notr="true">QPushButton {background-color: rgb(0, 0, 0);}
 QPushButton:pressed {background-color: rgb(98, 98, 98);}
@@ -505,7 +530,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
           </property>
           <property name="icon">
            <iconset resource="gui.qrc">
-            <normaloff>:/icons_24/icons/white_goto_24.png</normaloff>:/icons_24/icons/white_goto_24.png</iconset>
+            <normaloff>:/icons/icons/white_goto_24.png</normaloff>:/icons/icons/white_goto_24.png</iconset>
           </property>
           <property name="iconSize">
            <size>
