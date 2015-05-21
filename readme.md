@@ -11,6 +11,8 @@ beat (useful for reversed sample).
 
 ## Requirements
 
+### Linux
+
 * Python 3
 * Pip
  
@@ -33,22 +35,37 @@ beat (useful for reversed sample).
 * package libjack-jackd2-dev, libsndfile1-dev
  
  		 sudo aptitude install libjack-jackd2-dev libsndfile1-dev
-* Running jack server with transport information : BPM (Qtractor, Hydrogen, Ardour, ...)
+* Running jack server
+
+### Windows
+
+* Jack Audio Kit (see http://jackaudio.org/downloads/)
 
 ## Installation
 
-### Requirements
+Download SuperBoucle from SourceForge Files : https://sourceforge.net/projects/superboucle/files/
+
+### Linux
 
 This should work on Ubuntu and derived (Tested on mint 17 and ubuntu trusty) :
 
 	sudo aptitude remove python3-cffi python3-numpy
 	sudo aptitude install python3-pip libffi-dev build-essential libpython3.4-dev libjack-jackd2-dev libsndfile1-dev python3-pyqt5
 
-## Running
+### Windows
+Run Jack Audio Kit setup first and then run SuperBoucle windows Setup
 
-Run boucle.py script :
+## Running 
+
+### Linux
+
+Start Jack audio server and then run SuperBoucle.sh script :
 	 
-	./boucle.py
+	./SuperBoucle.sh
+
+### Windows
+
+Start "Jack PortAudio" from start menu and then start SuperBoucle with desktop icon
 
 ## Midi devices
 
@@ -63,6 +80,8 @@ Run boucle.py script :
 ### What can be controlled by external midi device ?
 
 * You can start or stop clip/sample.
+* You can start, pause transport
+* You can jump to beggining of song or at specified position
 * You can adjust master volume
 * You can adjust volume of each clip/sample
 
@@ -92,9 +111,15 @@ user velocity.
 ### Master volume configuration
 
 If you have knobs or sliders on your midi device, you can associated one of
-them to master volume. In 'Master volume part', click on 'Master volume
+them to master volume. In 'Master volume' part, click on 'Master volume
 controller' and move controller on midi device. You should see a
 description of the new controller (channel and controller id).
+
+### Transport configuration
+
+If you have available buttons, you can associated them to transport actions. In
+'Transport' part, click one transport button and press desired button on midi
+device. You should see a description of the new button.
 
 ### Clip/sample volume configuration
 
