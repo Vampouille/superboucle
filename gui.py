@@ -18,6 +18,7 @@ from device import Device
 import struct
 from queue import Queue, Empty
 import pickle
+from os.path import expanduser
 
 BAR_START_TICK = 0.0
 BEATS_PER_BAR = 4.0
@@ -248,8 +249,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         sender = self.sender().parent().parent()
         audio_file, a = QFileDialog.getOpenFileName(self,
                                                     'Open Clip file',
-                                                    ('/home/joe/git'
-                                                     '/superboucle/'),
+                                                    expanduser("~"),
                                                     'All files (*.*)')
         if audio_file:
             new_clip = Clip(audio_file)
@@ -317,7 +317,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         file_name, a = (
             QFileDialog.getOpenFileName(self,
                                         'Open file',
-                                        '/home/joe/git/superboucle/',
+                                        expanduser('~'),
                                         'Super Boucle Song (*.sbs)'))
         if file_name:
             self.setEnabled(False)
@@ -339,7 +339,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.song.file_name, a = (
             QFileDialog.getSaveFileName(self,
                                         'Save As',
-                                        '/home/joe/git/superboucle/',
+                                        expanduser('~'),
                                         'Super Boucle Song (*.sbs)'))
         if self.song.file_name:
             self.song.save()

@@ -3,6 +3,7 @@ from manage_ui import Ui_Dialog
 from learn import LearnDialog
 from device import Device
 import json
+from os.path import expanduser
 
 
 class ManageDialog(QDialog, Ui_Dialog):
@@ -38,7 +39,7 @@ class ManageDialog(QDialog, Ui_Dialog):
         file_name, a = (
             QFileDialog.getOpenFileName(self,
                                         'Open file',
-                                        '/home/joe/git/superboucle/',
+                                        expanduser('~'),
                                         'Super Boucle Mapping (*.sbm)'))
         with open(file_name, 'r') as f:
             read_data = f.read()
@@ -51,7 +52,7 @@ class ManageDialog(QDialog, Ui_Dialog):
         file_name, a = (
             QFileDialog.getSaveFileName(self,
                                         'Save As',
-                                        '/home/joe/git/superboucle/',
+                                        expanduser('~'),
                                         'Super Boucle Mapping (*.sbm)'))
 
         with open(file_name, 'w') as f:
