@@ -121,7 +121,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                    Clip.STOPPING: True}
 
     BLINK_DURATION = 200
-    PROGRESS_PERIOD = 100
+    PROGRESS_PERIOD = 300
 
     updateUi = pyqtSignal()
     readQueueIn = pyqtSignal()
@@ -425,8 +425,8 @@ class Gui(QMainWindow, Ui_MainWindow):
             try:
                 ctrl_index = self.device.ctrls.index(ctrl_key)
                 clip = (self.song.clips_matrix
-                        [self.current_vol_block]
-                        [ctrl_index])
+                        [ctrl_index]
+                        [self.current_vol_block])
                 if clip:
                     clip.volume = vel / 127
             except KeyError:
