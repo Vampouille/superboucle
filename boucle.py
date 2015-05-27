@@ -21,7 +21,7 @@ app = QApplication(sys.argv)
 gui = Gui(song, client)
 
 
-def my_callback(frames, userdata):
+def my_callback(frames):
     song = gui.song
     state, position = client.transport_query()
     outL_buffer = outL.get_array()
@@ -41,9 +41,9 @@ def my_callback(frames, userdata):
     midi_out.clear_buffer()
 
     if(state == 1):
-        frame = position.frame
-        fps = position.frame_rate
-        bpm = position.beats_per_minute
+        frame = position['frame']
+        fps = position['frame_rate']
+        bpm = position['beats_per_minute']
         blocksize = client.blocksize
 
         for clip in song.clips:
@@ -52,9 +52,9 @@ def my_callback(frames, userdata):
             frame_beat, clip_offset = divmod((frame - clip.frame_offset -
                                               (clip.beat_offset *
                                                frame_per_beat)) * bpm,
-                                             60 * position.frame_rate *
+                                             60 * fps *
                                              clip.beat_diviser)
-            clip_offset = clip_offset / position.beats_per_minute
+            clip_offset = clip_offset / bpm
 
             # next beat is in block ?
             if (clip_offset + blocksize) > clip_period:

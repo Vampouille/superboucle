@@ -180,7 +180,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.disptimer.start(self.PROGRESS_PERIOD)
         self.disptimer.timeout.connect(self.updateProgress)
 
-        self._jack_client.set_timebase_callback(False, self.timebase_callback)
+        self._jack_client.set_timebase_callback(self.timebase_callback)
 
         self.show()
 
@@ -478,11 +478,11 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def updateProgress(self):
         state, pos = self._jack_client.transport_query()
-        if pos.valid & 0x10:
-            bbt = "%d|%d|%03d" % (pos.bar, pos.beat, pos.tick)
+        if 'bar' in pos:
+            bbt = "%d|%d|%03d" % (pos['bar'], pos['beat'], pos['tick'])
         else:
             bbt = "-|-|-"
-        seconds = int(pos.frame / pos.frame_rate)
+        seconds = int(pos['frame'] / pos['frame_rate'])
         (minutes, second) = divmod(seconds, 60)
         (hour, minute) = divmod(minutes, 60)
         time = "%d:%02d:%02d" % (hour, minute, second)
@@ -520,7 +520,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                     self.queue_out.put(note)
             self.redraw()
 
-    def timebase_callback(self, state, nframes, pos, new_pos, userdata):
+    def timebase_callback(self, state, nframes, pos, new_pos):
         pos.valid = 0x10
         pos.bar_start_tick = BAR_START_TICK
         pos.beats_per_bar = self.beat_per_bar.value()
