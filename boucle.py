@@ -70,12 +70,15 @@ def my_callback(frames):
                 next_clip_offset = round(next_clip_offset)
 
             if clip.state == Clip.START or clip.state == Clip.STOPPING:
-                if clip_offset < clip.length:  # is there enough audio data ?
-                    length = min(clip.length - clip_offset, frames)
-                    outL_buffer[:length] += clip.get_data(0,
+                # is there enough audio data ?
+                if clip_offset < song.length(clip):
+                    length = min(song.length(clip) - clip_offset, frames)
+                    outL_buffer[:length] += song.get_data(clip,
+                                                          0,
                                                           clip_offset,
                                                           length)
-                    outR_buffer[:length] += clip.get_data(1,
+                    outR_buffer[:length] += song.get_data(clip,
+                                                          1,
                                                           clip_offset,
                                                           length)
                     clip.last_offset = clip_offset
@@ -84,11 +87,13 @@ def my_callback(frames):
 
             if next_clip_offset and (clip.state == Clip.START
                                      or clip.state == Clip.STARTING):
-                length = min(clip.length, blocksize - next_clip_offset)
-                outL_buffer[next_clip_offset:] += clip.get_data(0,
+                length = min(song.length(clip), blocksize - next_clip_offset)
+                outL_buffer[next_clip_offset:] += song.get_data(clip,
+                                                                0,
                                                                 0,
                                                                 length)
-                outR_buffer[next_clip_offset:] += clip.get_data(1,
+                outR_buffer[next_clip_offset:] += song.get_data(clip,
+                                                                1,
                                                                 0,
                                                                 length)
                 clip.last_offset = next_clip_offset

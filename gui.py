@@ -8,7 +8,7 @@ Gui
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog,
                              QAction, QActionGroup, QMessageBox)
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings
-from clip import Clip, load_song_from_file
+from clip import Clip, load_song_from_file, basename
 from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
@@ -19,6 +19,8 @@ import struct
 from queue import Queue, Empty
 import pickle
 from os.path import expanduser
+import numpy as np
+import soundfile as sf
 
 BAR_START_TICK = 0.0
 BEATS_PER_BAR = 4.0
@@ -233,14 +235,14 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.beat_diviser.setValue(self.last_clip.beat_diviser)
             self.clip_volume.setValue(self.last_clip.volume*256)
             state, position = self._jack_client.transport_query()
-            fps = position.frame_rate
-            bpm = self.bpm.value()
-            if bpm and fps:
-                size_in_beat = ((bpm/60)/fps)*self.last_clip.length
+            fps = position['frame_rate']
+            bps = self.bpm.value() / 60
+            if self.bpm.value() and fps:
+                size_in_beat = (bps/fps)*self.song.length(self.last_clip)
             else:
                 size_in_beat = "No BPM info"
             clip_description = ("Size in sample : %s\nSize in beat : %s"
-                                % (self.last_clip.length,
+                                % (self.song.length(self.last_clip),
                                    round(size_in_beat, 1)))
 
             self.clip_description.setText(clip_description)
@@ -252,7 +254,18 @@ class Gui(QMainWindow, Ui_MainWindow):
                                                     expanduser("~"),
                                                     'All files (*.*)')
         if audio_file:
-            new_clip = Clip(audio_file)
+            wav_id = basename(audio_file)
+            if wav_id in self.song.data:
+                i = 0
+                while "%s-%02d" % (wav_id, i) in self.song.data:
+                    i += 1
+                wav_id = "%s-%02d" % (wav_id, i)
+
+            data, samplerate = sf.read(audio_file, dtype=np.float32)
+            self.song.data[wav_id] = data
+            self.song.samplerate[wav_id] = samplerate
+
+            new_clip = Clip(basename(wav_id))
             sender.clip = new_clip
             sender.clip_name.setText(new_clip.name)
             sender.start_stop.clicked.connect(self.onStartStopClicked)
@@ -284,10 +297,10 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onGotoClicked(self):
         state, position = self._jack_client.transport_query()
-        new_position = (position.beats_per_bar
+        new_position = (position['beats_per_bar']
                         * (self.gotoTarget.value() - 1)
-                        * position.frame_rate
-                        * (60 / position.beats_per_minute))
+                        * position['frame_rate']
+                        * (60 / position['beats_per_minute']))
         self._jack_client.transport_locate(int(round(new_position, 0)))
 
     def onRewindClicked(self):
@@ -490,7 +503,9 @@ class Gui(QMainWindow, Ui_MainWindow):
         for line in self.btn_matrix:
             for btn in line:
                 if btn.clip:
-                    value = ((btn.clip.last_offset / btn.clip.length) * 97)
+                    value = ((btn.clip.last_offset
+                              / self.song.length(btn.clip))
+                             * 97)
                     btn.clip_position.setValue(value)
                     btn.clip_position.repaint()
 
