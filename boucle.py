@@ -88,14 +88,15 @@ def my_callback(frames):
             if next_clip_offset and (clip.state == Clip.START
                                      or clip.state == Clip.STARTING):
                 length = min(song.length(clip), blocksize - next_clip_offset)
-                outL_buffer[next_clip_offset:] += song.get_data(clip,
-                                                                0,
-                                                                0,
-                                                                length)
-                outR_buffer[next_clip_offset:] += song.get_data(clip,
-                                                                1,
-                                                                0,
-                                                                length)
+                if length:
+                    outL_buffer[next_clip_offset:] += song.get_data(clip,
+                                                                    0,
+                                                                    0,
+                                                                    length)
+                    outR_buffer[next_clip_offset:] += song.get_data(clip,
+                                                                    1,
+                                                                    0,
+                                                                    length)
                 clip.last_offset = next_clip_offset
                 # print("buffer[{0}:] = sample[:{1}]".
                 #      format(next_clip_offset, length))

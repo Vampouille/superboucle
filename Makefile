@@ -1,5 +1,5 @@
 
-UI = gui_ui.py cell_ui.py learn_ui.py learn_cell_ui.py manage_ui.py new_song_ui.py
+UI = gui_ui.py cell_ui.py learn_ui.py learn_cell_ui.py manage_ui.py new_song_ui.py add_clip_ui.py
 
 
 run : $(UI) gui_rc.py

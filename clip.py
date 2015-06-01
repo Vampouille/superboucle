@@ -13,8 +13,11 @@ def strip_accents(s):
 
 
 def basename(s):
-    str = strip_accents(s)
-    return str.split('/')[-1]
+    if s is None:
+        return None
+    else:
+        str = strip_accents(s)
+        return str.split('/')[-1]
 
 
 class Communicate(QtCore.QObject):
@@ -38,10 +41,10 @@ class Clip():
                          2: "START",
                          3: "STOPPING"}
 
-    def __init__(self, audio_file, name=None,
+    def __init__(self, audio_file=None, name='',
                  volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1):
 
-        if name is None:
+        if name is '' and audio_file:
             self.name = audio_file
         else:
             self.name = name
@@ -86,12 +89,21 @@ class Song():
             clip.state = Clip.TRANSITION[clip.state]
 
     def channels(self, clip):
-        return self.data[clip.audio_file].shape[1]
+        if clip.audio_file is None:
+            return 0
+        else:
+            return self.data[clip.audio_file].shape[1]
 
     def length(self, clip):
-        return self.data[clip.audio_file].shape[0]
+        if clip.audio_file is None:
+            return 0
+        else:
+            return self.data[clip.audio_file].shape[0]
 
     def get_data(self, clip, channel, offset, length):
+        if clip.audio_file is None:
+            return []
+
         channel %= self.channels(clip)
         if offset > (self.length(clip) - 1) or offset < 0 or length < 0:
             raise Exception("Invalid length or offset: {0} {1} {2}".
@@ -118,14 +130,15 @@ class Song():
                                     'width': self.width,
                                     'height': self.height}
             for clip in self.clips:
-                print(" clip at %s %s" % (clip.x, clip.y))
                 clip_file = {'name': clip.name,
-                             'volume': clip.volume,
-                             'frame_offset': clip.frame_offset,
-                             'beat_offset': clip.beat_offset,
-                             'beat_diviser': clip.beat_diviser,
+                             'volume': str(clip.volume),
+                             'frame_offset': str(clip.frame_offset),
+                             'beat_offset': str(clip.beat_offset),
+                             'beat_diviser': str(clip.beat_diviser),
                              'audio_file': basename(
                                  clip.audio_file)}
+                if clip_file['audio_file'] is None:
+                    clip_file['audio_file'] = 'no-sound'
                 song_file["%s/%s" % (clip.x, clip.y)] = clip_file
 
             buffer = StringIO()
@@ -174,7 +187,11 @@ def load_song_from_file(file):
                     continue
                 x, y = section.split('/')
                 x, y = int(x), int(y)
-                clip = Clip(parser[section]['audio_file'],
+                if parser[section]['audio_file'] == 'no-sound':
+                    audio_file = None
+                else:
+                    audio_file = parser[section]['audio_file']
+                clip = Clip(audio_file,
                             parser[section]['name'],
                             parser[section].getfloat('volume', 1.0),
                             parser[section].getint('frame_offset', 0),

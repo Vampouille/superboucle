@@ -8,19 +8,18 @@ Gui
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog,
                              QAction, QActionGroup, QMessageBox)
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings
-from clip import Clip, load_song_from_file, basename
+from clip import Clip, load_song_from_file
 from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
 from manage import ManageDialog
 from new_song import NewSongDialog
+from add_clip import AddClipDialog
 from device import Device
 import struct
 from queue import Queue, Empty
 import pickle
 from os.path import expanduser
-import numpy as np
-import soundfile as sf
 
 BAR_START_TICK = 0.0
 BEATS_PER_BAR = 4.0
@@ -248,34 +247,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.clip_description.setText(clip_description)
 
     def onAddClipClicked(self):
-        sender = self.sender().parent().parent()
-        audio_file, a = QFileDialog.getOpenFileName(self,
-                                                    'Open Clip file',
-                                                    expanduser("~"),
-                                                    'All files (*.*)')
-        if audio_file:
-            wav_id = basename(audio_file)
-            if wav_id in self.song.data:
-                i = 0
-                while "%s-%02d" % (wav_id, i) in self.song.data:
-                    i += 1
-                wav_id = "%s-%02d" % (wav_id, i)
-
-            data, samplerate = sf.read(audio_file, dtype=np.float32)
-            self.song.data[wav_id] = data
-            self.song.samplerate[wav_id] = samplerate
-
-            new_clip = Clip(basename(wav_id))
-            sender.clip = new_clip
-            sender.clip_name.setText(new_clip.name)
-            sender.start_stop.clicked.connect(self.onStartStopClicked)
-            sender.edit.setText("Edit")
-            sender.edit.clicked.disconnect(self.onAddClipClicked)
-            sender.edit.clicked.connect(self.onEdit)
-            sender.start_stop.setEnabled(True)
-            sender.clip_position.setEnabled(True)
-            self.song.addClip(new_clip, sender.pos_x, sender.pos_y)
-            self.update()
+        AddClipDialog(self, self.sender().parent().parent())
 
     def onDeleteClipClicked(self):
         if self.last_clip:
@@ -502,7 +474,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.bbtLabel.setText("%s\n%s" % (bbt, time))
         for line in self.btn_matrix:
             for btn in line:
-                if btn.clip:
+                if btn.clip and btn.clip.audio_file:
                     value = ((btn.clip.last_offset
                               / self.song.length(btn.clip))
                              * 97)
