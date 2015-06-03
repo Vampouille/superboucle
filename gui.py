@@ -8,7 +8,7 @@ Gui
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog,
                              QAction, QActionGroup, QMessageBox)
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings
-from clip import Clip, load_song_from_file
+from clip import Clip, load_song_from_file, verify_ext
 from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
@@ -20,6 +20,8 @@ import struct
 from queue import Queue, Empty
 import pickle
 from os.path import expanduser
+import numpy as np
+import soundfile as sf
 
 BAR_START_TICK = 0.0
 BEATS_PER_BAR = 4.0
@@ -180,18 +182,20 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.playButton.clicked.connect(self._jack_client.transport_start)
         self.pauseButton.clicked.connect(self._jack_client.transport_stop)
         self.gotoButton.clicked.connect(self.onGotoClicked)
+        self.recordButton.clicked.connect(self.onRecord)
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
+        self.revertButton.clicked.connect(self.onRevertClip)
+        self.normalizeButton.clicked.connect(self.onNormalizeClip)
+        self.exportButton.clicked.connect(self.onExportClip)
         self.deleteButton.clicked.connect(self.onDeleteClipClicked)
-        self.recordButton.clicked.connect(self.onRecord)
 
         self.blktimer = QTimer()
         self.blktimer.state = False
         self.blktimer.timeout.connect(self.toogleBlinkButton)
-        self.blktimer.state = False
         self.blktimer.start(self.BLINK_DURATION)
 
         self.disptimer = QTimer()
@@ -286,6 +290,35 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onAddClipClicked(self):
         AddClipDialog(self, self.sender().parent().parent())
 
+    def onRevertClip(self):
+        if self.last_clip and self.last_clip.audio_file:
+            audio_file = self.last_clip.audio_file
+            self.song.data[audio_file] = self.song.data[audio_file][::-1]
+
+    def onNormalizeClip(self):
+        if self.last_clip and self.last_clip.audio_file:
+            audio_file = self.last_clip.audio_file
+            absolute_val = np.absolute(self.song.data[audio_file])
+            current_level = np.ndarray.max(absolute_val)
+            self.song.data[audio_file][:] *= (1 / current_level)
+
+    def onExportClip(self):
+        if self.last_clip and self.last_clip.audio_file:
+            audio_file = self.last_clip.audio_file
+            file_name, a = (
+                QFileDialog.getSaveFileName(self,
+                                            'Export Clip : %s'
+                                            % self.last_clip.name,
+                                            expanduser('~'),
+                                            'WAVE (*.wav)'))
+
+            if file_name:
+                file_name = verify_ext(file_name, 'wav')
+                sf.write(self.song.data[audio_file], file_name,
+                         self.song.samplerate[audio_file],
+                         subtype=sf.default_subtype('WAV'),
+                         format='WAV')
+
     def onDeleteClipClicked(self):
         if self.last_clip:
             response = QMessageBox.question(self,
@@ -373,12 +406,15 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.onActionSaveAs()
 
     def onActionSaveAs(self):
-        self.song.file_name, a = (
+        file_name, a = (
             QFileDialog.getSaveFileName(self,
                                         'Save As',
                                         expanduser('~'),
                                         'Super Boucle Song (*.sbs)'))
-        if self.song.file_name:
+
+        if file_name:
+            file_name = verify_ext(file_name, 'sbs')
+            self.song.file_name = file_name
             self.song.save()
             print("File saved to : {}".format(self.song.file_name))
 

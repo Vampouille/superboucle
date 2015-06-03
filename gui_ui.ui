@@ -387,14 +387,53 @@ border-radius: 2px;</string>
           <widget class="QPushButton" name="deleteButton">
            <property name="geometry">
             <rect>
-             <x>10</x>
-             <y>370</y>
+             <x>110</x>
+             <y>400</y>
              <width>80</width>
              <height>23</height>
             </rect>
            </property>
            <property name="text">
             <string>Delete Clip</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="exportButton">
+           <property name="geometry">
+            <rect>
+             <x>100</x>
+             <y>370</y>
+             <width>96</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Export Sample</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="normalizeButton">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>400</y>
+             <width>80</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Normalize</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="revertButton">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>370</y>
+             <width>81</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Revert</string>
            </property>
           </widget>
          </widget>

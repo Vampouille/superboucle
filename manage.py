@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QDialog, QFileDialog
 from manage_ui import Ui_Dialog
 from learn import LearnDialog
 from device import Device
+from clip import verify_ext
 import json
 from os.path import expanduser
 
@@ -55,8 +56,10 @@ class ManageDialog(QDialog, Ui_Dialog):
                                         expanduser('~'),
                                         'Super Boucle Mapping (*.sbm)'))
 
-        with open(file_name, 'w') as f:
-            f.write(json.dumps(device.mapping))
+        if file_name:
+            file_name = verify_ext(file_name, 'sbm')
+            with open(file_name, 'w') as f:
+                f.write(json.dumps(device.mapping))
 
     def onFinished(self):
         self.gui.updateDevices()

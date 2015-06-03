@@ -20,6 +20,13 @@ def basename(s):
         return str.split('/')[-1]
 
 
+def verify_ext(file, ext):
+    if file[-4:] == (".%s" % ext):
+        return file
+    else:
+        return "%s.%s" % (file, ext)
+
+
 class Communicate(QtCore.QObject):
 
     updateUI = QtCore.pyqtSignal()
@@ -93,6 +100,12 @@ class Song():
         clip.y = y
 
     def removeClip(self, clip):
+        if clip.audio_file is not None:
+            current_audio_file = clip.audio_file
+            clip.audio_file = None
+            if current_audio_file not in [c.audio_file for c in self.clips]:
+                del self.data[current_audio_file]
+
         self.clips_matrix[clip.x][clip.y] = None
         self.clips.remove(clip)
 
