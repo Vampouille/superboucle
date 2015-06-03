@@ -21,8 +21,6 @@ class Device():
                 self.note_to_coord[line[x]] = (x, y)
 
     def generateNote(self, x, y, state):
-        # print("Generate note for cell {0} {1} and state {2}".
-        #      format(x, y, state))
         (msg_type, channel, pitch, velocity) = self.start_stop[y][x]
         return (self.NOTEON + channel, pitch, self.get_color(state))
 
@@ -41,9 +39,9 @@ class Device():
         elif state == Clip.STOPPING:
             return self.blink_red_vel
         elif state == Clip.PREPARE_RECORD:
-            return self.blink_red_vel
+            return self.blink_amber_vel
         elif state == Clip.RECORDING:
-            return self.red_vel
+            return self.amber_vel
         else:
             raise Exception("Invalid state")
 
@@ -140,6 +138,17 @@ class Device():
     def goto_btn(self, btn):
         self.mapping['goto_btn'] = btn
 
+    @property
+    def record_btn(self):
+        if 'record_btn' in self.mapping:
+            return self.mapping['record_btn']
+        else:
+            return False
+
+    @record_btn.setter
+    def record_btn(self, btn):
+        self.mapping['record_btn'] = btn
+
     @master_volume_ctrl.setter
     def master_volume_ctrl(self, ctrl_key):
         self.mapping['master_volume_ctrl'] = ctrl_key
@@ -179,6 +188,20 @@ class Device():
         else:
             return 0
 
+    @property
+    def amber_vel(self):
+        if 'amber_vel' in self.mapping:
+            return self.mapping['amber_vel']
+        else:
+            return 0
+
+    @property
+    def blink_amber_vel(self):
+        if 'blink_amber_vel' in self.mapping:
+            return self.mapping['blink_amber_vel']
+        else:
+            return 0
+
     @black_vel.setter
     def black_vel(self, vel):
         self.mapping['black_vel'] = vel
@@ -198,3 +221,11 @@ class Device():
     @blink_red_vel.setter
     def blink_red_vel(self, vel):
         self.mapping['blink_red_vel'] = vel
+
+    @amber_vel.setter
+    def amber_vel(self, vel):
+        self.mapping['amber_vel'] = vel
+
+    @blink_amber_vel.setter
+    def blink_amber_vel(self, vel):
+        self.mapping['blink_amber_vel'] = vel

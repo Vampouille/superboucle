@@ -238,8 +238,15 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onStartStopClicked(self):
         clip = self.sender().parent().parent().clip
+        self.startStop(clip.x, clip.y)
+
+    def startStop(self, x, y):
+        clip = self.btn_matrix[x][y].clip
+        if clip is None:
+            return
         if self.song.is_record:
             self.song.is_record = False
+            self.updateRecordBtn()
             # calculate buffer size
             state, position = self._jack_client.transport_query()
             bps = position['beats_per_minute'] / 60
@@ -290,11 +297,6 @@ class Gui(QMainWindow, Ui_MainWindow):
                 self.song.removeClip(self.last_clip)
                 self.initUI(self.song)
 
-    def onRecord(self):
-        self.song.is_record = not self.song.is_record
-        if not self.song.is_record:
-            self.recordButton.setStyleSheet(self.RECORD_DEFAULT)
-
     def onMasterVolumeChange(self):
         self.song.volume = (self.master_volume.value() / 256)
 
@@ -309,6 +311,21 @@ class Gui(QMainWindow, Ui_MainWindow):
                         * position['frame_rate']
                         * (60 / position['beats_per_minute']))
         self._jack_client.transport_locate(int(round(new_position, 0)))
+
+    def onRecord(self):
+        self.song.is_record = not self.song.is_record
+        self.updateRecordBtn()
+
+    def updateRecordBtn(self):
+        if not self.song.is_record:
+            self.recordButton.setStyleSheet(self.RECORD_DEFAULT)
+        if self.device.record_btn:
+            (msg_type, channel, pitch, velocity) = self.device.record_btn
+            if self.song.is_record:
+                color = self.device.blink_amber_vel
+            else:
+                color = self.device.black_vel
+            self.queue_out.put(((msg_type << 4) + channel, pitch, color))
 
     def onRewindClicked(self):
         self._jack_client.transport_locate(0)
@@ -441,6 +458,8 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.onRewindClicked()
         elif btn_key == self.device.goto_btn:
             self.onGotoClicked()
+        elif btn_key == self.device.record_btn:
+            self.onRecord()
         elif ctrl_key in self.device.ctrls:
             try:
                 ctrl_index = self.device.ctrls.index(ctrl_key)
@@ -466,8 +485,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             try:
                 x, y = self.device.getXY(btn_key)
                 if (x >= 0 and y >= 0):
-                    self.song.toogle(x, y)
-                    self.update()
+                    self.startStop(x, y)
             except IndexError:
                 pass
             except KeyError:

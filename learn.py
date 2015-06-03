@@ -47,6 +47,7 @@ class LearnDialog(QDialog, Ui_Dialog):
     PAUSE_BTN = 5
     REWIND_BTN = 6
     GOTO_BTN = 7
+    RECORD_BTN = 8
 
     updateUi = pyqtSignal()
 
@@ -81,6 +82,8 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.blink_green_vel.setValue(self.device.blink_green_vel)
         self.red_vel.setValue(self.device.red_vel)
         self.blink_red_vel.setValue(self.device.blink_red_vel)
+        self.amber_vel.setValue(self.device.amber_vel)
+        self.blink_amber_vel.setValue(self.device.blink_amber_vel)
         if self.device.master_volume_ctrl:
             (self.label_master_volume_ctrl.setText(
                 self.displayCtrl(self.device.master_volume_ctrl)))
@@ -92,6 +95,8 @@ class LearnDialog(QDialog, Ui_Dialog):
             self.rewindLabel.setText(self.displayBtn(self.device.rewind_btn))
         if self.device.goto_btn:
             self.gotoLabel.setText(self.displayBtn(self.device.goto_btn))
+        if self.device.record_btn:
+            self.recordLabel.setText(self.displayBtn(self.device.record_btn))
         (self.init_command
          .setText("\n".join([", ".join([str(num)
                                         for num in init_cmd])
@@ -139,6 +144,7 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.pauseButton.clicked.connect(self.onPauseButton)
         self.rewindButton.clicked.connect(self.onRewindButton)
         self.gotoButton.clicked.connect(self.onGotoButton)
+        self.recordButton.clicked.connect(self.onRecordButton)
         self.sendInitButton.clicked.connect(self.onSendInit)
         self.learn_ctrls.clicked.connect(self.onCtrls)
         self.learn_block_bts.clicked.connect(self.onBlockBts)
@@ -150,11 +156,15 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.learn_blink_green.clicked.connect(self.onBlinkGreen)
         self.learn_red.clicked.connect(self.onRed)
         self.learn_blink_red.clicked.connect(self.onBlinkRed)
+        self.learn_amber.clicked.connect(self.onAmber)
+        self.learn_blink_amber.clicked.connect(self.onBlinkAmber)
         self.black_vel.valueChanged.connect(self.onBlack)
         self.green_vel.valueChanged.connect(self.onGreen)
         self.blink_green_vel.valueChanged.connect(self.onBlinkGreen)
         self.red_vel.valueChanged.connect(self.onRed)
         self.blink_red_vel.valueChanged.connect(self.onBlinkRed)
+        self.amber_vel.valueChanged.connect(self.onAmber)
+        self.blink_amber_vel.valueChanged.connect(self.onBlinkAmber)
         self.show()
 
     def onFirstLineClicked(self):
@@ -190,6 +200,9 @@ class LearnDialog(QDialog, Ui_Dialog):
     def onGotoButton(self):
         self.send_midi_to = self.GOTO_BTN
 
+    def onRecordButton(self):
+        self.send_midi_to = self.RECORD_BTN
+
     def onSendInit(self):
         try:
             for note in self.parseInitCommand():
@@ -222,6 +235,12 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     def onBlinkRed(self):
         self.lightAllCell(self.blink_red_vel.value())
+
+    def onAmber(self):
+        self.lightAllCell(self.amber_vel.value())
+
+    def onBlinkAmber(self):
+        self.lightAllCell(self.blink_amber_vel.value())
 
     def lightAllCell(self, color):
         for line in self.device.start_stop:
@@ -286,6 +305,12 @@ class LearnDialog(QDialog, Ui_Dialog):
                 self.knownBtn.add(btn_key)
                 self.device.goto_btn = btn_id
                 self.gotoLabel.setText(self.displayCtrl(ctrl_key))
+            elif self.send_midi_to == self.RECORD_BTN:
+                self.send_midi_to = None
+                self.knownCtrl.add(ctrl_key)
+                self.knownBtn.add(btn_key)
+                self.device.record_btn = btn_id
+                self.recordLabel.setText(self.displayCtrl(ctrl_key))
 
             elif self.send_midi_to == self.CTRLS:
                 if msg_type == self.MIDICTRL:
@@ -346,6 +371,8 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.device.blink_green_vel = int(self.blink_green_vel.value())
         self.device.red_vel = int(self.red_vel.value())
         self.device.blink_red_vel = int(self.blink_red_vel.value())
+        self.device.amber_vel = int(self.amber_vel.value())
+        self.device.blink_amber_vel = int(self.blink_amber_vel.value())
         self.device.mapping['init_command'] = self.parseInitCommand()
         self.original_device.updateMapping(self.device.mapping)
         self.gui.is_learn_device_mode = False

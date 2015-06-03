@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1001</width>
-    <height>533</height>
+    <width>1215</width>
+    <height>561</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -116,7 +116,7 @@
      <widget class="QDialogButtonBox" name="buttonBox">
       <property name="geometry">
        <rect>
-        <x>850</x>
+        <x>1060</x>
         <y>10</y>
         <width>121</width>
         <height>61</height>
@@ -156,7 +156,7 @@
        <rect>
         <x>380</x>
         <y>10</y>
-        <width>451</width>
+        <width>671</width>
         <height>111</height>
        </rect>
       </property>
@@ -304,6 +304,42 @@
         <rect>
          <x>270</x>
          <y>70</y>
+         <width>171</width>
+         <height>30</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="recordButton">
+       <property name="geometry">
+        <rect>
+         <x>450</x>
+         <y>30</y>
+         <width>36</width>
+         <height>30</height>
+        </rect>
+       </property>
+       <property name="toolTip">
+        <string>Pause</string>
+       </property>
+       <property name="icon">
+        <iconset resource="gui.qrc">
+         <normaloff>:/icons/icons/record_24.png</normaloff>:/icons/icons/record_24.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+      </widget>
+      <widget class="QLabel" name="recordLabel">
+       <property name="geometry">
+        <rect>
+         <x>490</x>
+         <y>30</y>
          <width>171</width>
          <height>30</height>
         </rect>
@@ -560,7 +596,7 @@
      <widget class="QGroupBox" name="groupBox_3">
       <property name="geometry">
        <rect>
-        <x>190</x>
+        <x>180</x>
         <y>240</y>
         <width>161</width>
         <height>71</height>
@@ -604,7 +640,7 @@
      <widget class="QGroupBox" name="groupBox_4">
       <property name="geometry">
        <rect>
-        <x>370</x>
+        <x>350</x>
         <y>240</y>
         <width>161</width>
         <height>71</height>
@@ -648,7 +684,7 @@
      <widget class="QGroupBox" name="groupBox_5">
       <property name="geometry">
        <rect>
-        <x>550</x>
+        <x>520</x>
         <y>240</y>
         <width>161</width>
         <height>71</height>
@@ -692,7 +728,7 @@
      <widget class="QGroupBox" name="groupBox_6">
       <property name="geometry">
        <rect>
-        <x>730</x>
+        <x>690</x>
         <y>240</y>
         <width>161</width>
         <height>71</height>
@@ -832,6 +868,94 @@ example:
         </item>
         <item row="0" column="1">
          <widget class="QPushButton" name="learn_black">
+          <property name="text">
+           <string>Test</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+     <widget class="QGroupBox" name="groupBox_10">
+      <property name="geometry">
+       <rect>
+        <x>860</x>
+        <y>240</y>
+        <width>161</width>
+        <height>71</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>11</pointsize>
+       </font>
+      </property>
+      <property name="title">
+       <string>Amber Color</string>
+      </property>
+      <widget class="QWidget" name="gridLayoutWidget_10">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>30</y>
+         <width>141</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_11">
+        <item row="0" column="0">
+         <widget class="QSpinBox" name="amber_vel">
+          <property name="maximum">
+           <number>127</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="learn_amber">
+          <property name="text">
+           <string>Test</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+     <widget class="QGroupBox" name="groupBox_11">
+      <property name="geometry">
+       <rect>
+        <x>1030</x>
+        <y>240</y>
+        <width>161</width>
+        <height>71</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>11</pointsize>
+       </font>
+      </property>
+      <property name="title">
+       <string>Blink Amber Color</string>
+      </property>
+      <widget class="QWidget" name="gridLayoutWidget_11">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>30</y>
+         <width>141</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_12">
+        <item row="0" column="0">
+         <widget class="QSpinBox" name="blink_amber_vel">
+          <property name="maximum">
+           <number>127</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="learn_blink_amber">
           <property name="text">
            <string>Test</string>
           </property>

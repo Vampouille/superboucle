@@ -147,12 +147,22 @@ class Song():
 
     def init_record_buffer(self, clip, channel, size, samplerate):
         i = 0
-        while 'audio-%02d' % i in self.data:
+        audio_file_base = basename(clip.name) or 'audio'
+
+        # remove old audio if not used
+        if clip.audio_file is not None:
+            current_audio_file = clip.audio_file
+            clip.audio_file = None
+            if current_audio_file not in [c.audio_file for c in self.clips]:
+                del self.data[current_audio_file]
+
+        while '%s-%02d.wav' % (audio_file_base, i) in self.data:
             i += 1
-        self.data['audio-%02d' % i] = np.zeros((size, channel),
-                                               dtype=np.float32)
-        self.samplerate['audio-%02d' % i] = samplerate
-        clip.audio_file = 'audio-%02d' % i
+        audio_file = '%s-%02d.wav' % (audio_file_base, i)
+        self.data[audio_file] = np.zeros((size, channel),
+                                         dtype=np.float32)
+        self.samplerate[audio_file] = samplerate
+        clip.audio_file = audio_file
 
     def save(self):
         if self.file_name:
