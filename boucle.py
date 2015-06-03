@@ -16,9 +16,16 @@ midi_in = client.midi_inports.register("input")
 midi_out = client.midi_outports.register("output")
 outL = client.outports.register("output_L")
 outR = client.outports.register("output_R")
+inL = client.inports.register("input_L")
+inR = client.inports.register("input_R")
 
 app = QApplication(sys.argv)
 gui = Gui(song, client)
+
+CLIP_TRANSITION = {Clip.STARTING: Clip.START,
+                   Clip.STOPPING: Clip.STOP,
+                   Clip.PREPARE_RECORD: Clip.RECORDING,
+                   Clip.RECORDING: Clip.STOP}
 
 
 def my_callback(frames):
@@ -28,6 +35,8 @@ def my_callback(frames):
     outR_buffer = outR.get_array()
     outL_buffer[:] = 0
     outR_buffer[:] = 0
+    inL_buffer = inL.get_array()
+    inR_buffer = inR.get_array()
 
     # check midi in
     if gui.is_learn_device_mode:
@@ -40,7 +49,7 @@ def my_callback(frames):
         gui.readQueueIn.emit()
     midi_out.clear_buffer()
 
-    if(state == 1):
+    if state == 1 and 'beats_per_minute' in position:
         frame = position['frame']
         fps = position['frame_rate']
         bpm = position['beats_per_minute']
@@ -54,20 +63,15 @@ def my_callback(frames):
                                                frame_per_beat)) * bpm,
                                              60 * fps *
                                              clip.beat_diviser)
-            clip_offset = clip_offset / bpm
+            clip_offset = round(clip_offset / bpm)
 
             # next beat is in block ?
             if (clip_offset + blocksize) > clip_period:
                 next_clip_offset = (clip_offset + blocksize) - clip_period
-                next_clip_offset = blocksize - next_clip_offset
+                next_clip_offset = round(blocksize - next_clip_offset)
                 # print("new beat in block : {}".format(next_clip_offset))
             else:
                 next_clip_offset = None
-
-            # round index
-            clip_offset = round(clip_offset)
-            if next_clip_offset:
-                next_clip_offset = round(next_clip_offset)
 
             if clip.state == Clip.START or clip.state == Clip.STOPPING:
                 # is there enough audio data ?
@@ -85,6 +89,27 @@ def my_callback(frames):
                     # print("buffer[:{0}] = sample[{1}:{2}]".
                     #      format(length, clip_offset, clip_offset+length))
 
+            if clip.state == Clip.RECORDING:
+                if next_clip_offset:
+                    song.write_data(clip,
+                                    0,
+                                    clip_offset,
+                                    inL_buffer[:next_clip_offset])
+                    song.write_data(clip,
+                                    1,
+                                    clip_offset,
+                                    inR_buffer[:next_clip_offset])
+                else:
+                    song.write_data(clip,
+                                    0,
+                                    clip_offset,
+                                    inL_buffer)
+                    song.write_data(clip,
+                                    1,
+                                    clip_offset,
+                                    inR_buffer)
+                clip.last_offset = clip_offset
+
             if next_clip_offset and (clip.state == Clip.START
                                      or clip.state == Clip.STARTING):
                 length = min(song.length(clip), blocksize - next_clip_offset)
@@ -97,19 +122,31 @@ def my_callback(frames):
                                                                     1,
                                                                     0,
                                                                     length)
-                clip.last_offset = next_clip_offset
+                clip.last_offset = 0
                 # print("buffer[{0}:] = sample[:{1}]".
                 #      format(next_clip_offset, length))
 
+            if next_clip_offset and clip.state == Clip.PREPARE_RECORD:
+                song.write_data(clip,
+                                0,
+                                0,
+                                inL_buffer[next_clip_offset:])
+                song.write_data(clip,
+                                1,
+                                0,
+                                inR_buffer[next_clip_offset:])
+
             # starting or stopping clip
             if clip_offset == 0 or next_clip_offset:
-                if clip.state == Clip.STARTING:
-                    clip.state = Clip.START
-                    gui.updateUi.emit()
-                if clip.state == Clip.STOPPING:
-                    clip.state = Clip.STOP
+                try:
+                    # reset record offset
+                    if clip.state == Clip.RECORDING:
+                        clip.frame_offset = 0
+                    clip.state = CLIP_TRANSITION[clip.state]
                     clip.last_offset = 0
                     gui.updateUi.emit()
+                except KeyError:
+                    pass
 
         # apply master volume
         outL_buffer[:] *= song.volume
@@ -138,5 +175,12 @@ with client:
 
     client.connect(outL, playback[0])
     client.connect(outR, playback[1])
+
+    record = client.get_ports(is_physical=True, is_output=True)
+    if not record:
+        raise RuntimeError("No physical record ports")
+
+    client.connect(record[0], inL)
+    client.connect(record[1], inR)
 
     app.exec_()

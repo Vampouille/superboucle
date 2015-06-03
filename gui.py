@@ -107,19 +107,33 @@ class Gui(QMainWindow, Ui_MainWindow):
             "background-color: rgb(0, 130, 240);}")
     RED = ("#cell_frame { border: 0px; border-radius: 10px; "
            "background-color: rgb(255, 21, 65);}")
+    AMBER = ("#cell_frame { border: 0px; border-radius: 10px; "
+             "background-color: rgb(255, 102, 0);}")
     PURPLE = ("#cell_frame { border: 0px; border-radius: 10px; "
               "background-color: rgb(130, 0, 240);}")
     DEFAULT = ("#cell_frame { border: 0px; border-radius: 10px; "
                "background-color: rgb(217, 217, 217);}")
 
+    RECORD_BLINK = ("QPushButton {background-color: rgb(255, 255, 255);}"
+                    "QPushButton:pressed {background-color: "
+                    "rgb(98, 98, 98);}")
+
+    RECORD_DEFAULT = ("QPushButton {background-color: rgb(0, 0, 0);}"
+                      "QPushButton:pressed {background-color: "
+                      "rgb(98, 98, 98);}")
+
     STATE_COLORS = {Clip.STOP: RED,
                     Clip.STARTING: GREEN,
                     Clip.START: GREEN,
-                    Clip.STOPPING: RED}
+                    Clip.STOPPING: RED,
+                    Clip.PREPARE_RECORD: AMBER,
+                    Clip.RECORDING: AMBER}
     STATE_BLINK = {Clip.STOP: False,
                    Clip.STARTING: True,
                    Clip.START: False,
-                   Clip.STOPPING: True}
+                   Clip.STOPPING: True,
+                   Clip.PREPARE_RECORD: True,
+                   Clip.RECORDING: False}
 
     BLINK_DURATION = 200
     PROGRESS_PERIOD = 300
@@ -172,10 +186,13 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
         self.deleteButton.clicked.connect(self.onDeleteClipClicked)
+        self.recordButton.clicked.connect(self.onRecord)
 
         self.blktimer = QTimer()
         self.blktimer.state = False
         self.blktimer.timeout.connect(self.toogleBlinkButton)
+        self.blktimer.state = False
+        self.blktimer.start(self.BLINK_DURATION)
 
         self.disptimer = QTimer()
         self.disptimer.start(self.PROGRESS_PERIOD)
@@ -221,7 +238,20 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onStartStopClicked(self):
         clip = self.sender().parent().parent().clip
-        self.song.toogle(clip.x, clip.y)
+        if self.song.is_record:
+            self.song.is_record = False
+            # calculate buffer size
+            state, position = self._jack_client.transport_query()
+            bps = position['beats_per_minute'] / 60
+            fps = position['frame_rate']
+            size = (1 / bps) * clip.beat_diviser * fps
+            self.song.init_record_buffer(clip, 2, size, fps)
+            # set frame offset based on jack block size
+            clip.frame_offset = self._jack_client.blocksize
+            clip.state = Clip.PREPARE_RECORD
+            self.recordButton.setStyleSheet(self.RECORD_DEFAULT)
+        else:
+            self.song.toogle(clip.x, clip.y)
         self.update()
 
     def onEdit(self):
@@ -259,6 +289,11 @@ class Gui(QMainWindow, Ui_MainWindow):
                 self.frame_clip.setEnabled(False)
                 self.song.removeClip(self.last_clip)
                 self.initUI(self.song)
+
+    def onRecord(self):
+        self.song.is_record = not self.song.is_record
+        if not self.song.is_record:
+            self.recordButton.setStyleSheet(self.RECORD_DEFAULT)
 
     def onMasterVolumeChange(self):
         self.song.volume = (self.master_volume.value() / 256)
@@ -442,13 +477,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.btn_matrix[x][y].setStyleSheet(color)
         self.btn_matrix[x][y].blink = blink
         self.btn_matrix[x][y].color = color
-        if blink and not self.blktimer.isActive():
-            self.blktimer.state = False
-            self.blktimer.start(self.BLINK_DURATION)
-        if not blink and self.blktimer.isActive():
-            if not any([btn.blink for line in self.btn_matrix
-                        for btn in line]):
-                self.blktimer.stop()
 
     def toogleBlinkButton(self):
         for line in self.btn_matrix:
@@ -458,6 +486,11 @@ class Gui(QMainWindow, Ui_MainWindow):
                         btn.setStyleSheet(btn.color)
                     else:
                         btn.setStyleSheet(self.DEFAULT)
+        if self.song.is_record:
+            if self.blktimer.state:
+                self.recordButton.setStyleSheet(self.RECORD_BLINK)
+            else:
+                self.recordButton.setStyleSheet(self.RECORD_DEFAULT)
 
         self.blktimer.state = not self.blktimer.state
 

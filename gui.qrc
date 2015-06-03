@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>icons/record_24.png</file>
     <file>icons/white_goto_24.png</file>
     <file>icons/white_pause_24.png</file>
     <file>icons/white_play_24.png</file>

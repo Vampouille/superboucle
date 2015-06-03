@@ -46,7 +46,7 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>235</width>
+          <width>236</width>
           <height>849</height>
          </size>
         </property>
@@ -86,7 +86,7 @@
           <rect>
            <x>0</x>
            <y>90</y>
-           <width>235</width>
+           <width>236</width>
            <height>760</height>
           </rect>
          </property>
@@ -155,9 +155,9 @@ color: black;</string>
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>350</y>
+            <y>320</y>
             <width>216</width>
-            <height>401</height>
+            <height>431</height>
            </rect>
           </property>
           <property name="styleSheet">
@@ -401,7 +401,7 @@ border-radius: 2px;</string>
          <widget class="QPushButton" name="playButton">
           <property name="geometry">
            <rect>
-            <x>50</x>
+            <x>55</x>
             <y>170</y>
             <width>36</width>
             <height>30</height>
@@ -429,7 +429,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
          <widget class="QPushButton" name="pauseButton">
           <property name="geometry">
            <rect>
-            <x>90</x>
+            <x>100</x>
             <y>170</y>
             <width>36</width>
             <height>30</height>
@@ -539,51 +539,17 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
            </size>
           </property>
          </widget>
-         <widget class="QSpinBox" name="gotoTarget">
-          <property name="geometry">
-           <rect>
-            <x>135</x>
-            <y>180</y>
-            <width>47</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>999999999</number>
-          </property>
-         </widget>
-         <widget class="QLabel" name="label_9">
-          <property name="geometry">
-           <rect>
-            <x>136</x>
-            <y>168</y>
-            <width>44</width>
-            <height>14</height>
-           </rect>
-          </property>
-          <property name="font">
-           <font>
-            <pointsize>8</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>Position</string>
-          </property>
-         </widget>
          <widget class="QWidget" name="formLayoutWidget">
           <property name="geometry">
            <rect>
-            <x>30</x>
+            <x>20</x>
             <y>220</y>
-            <width>161</width>
-            <height>61</height>
+            <width>196</width>
+            <height>83</height>
            </rect>
           </property>
           <layout class="QFormLayout" name="formLayout_2">
-           <item row="0" column="0">
+           <item row="1" column="0">
             <widget class="QLabel" name="label_10">
              <property name="font">
               <font>
@@ -605,7 +571,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
+           <item row="1" column="1">
             <widget class="QDoubleSpinBox" name="bpm">
              <property name="minimum">
               <double>1.000000000000000</double>
@@ -618,7 +584,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
+           <item row="2" column="0">
             <widget class="QLabel" name="label_11">
              <property name="font">
               <font>
@@ -640,7 +606,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
+           <item row="2" column="1">
             <widget class="QSpinBox" name="beat_per_bar">
              <property name="minimum">
               <number>1</number>
@@ -650,7 +616,67 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
              </property>
             </widget>
            </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_12">
+             <property name="font">
+              <font>
+               <family>Lato</family>
+               <pointsize>11</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+               <kerning>true</kerning>
+              </font>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">color: rgb(160, 6, 89);</string>
+             </property>
+             <property name="text">
+              <string>Goto Position</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="gotoTarget">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>999999999</number>
+             </property>
+            </widget>
+           </item>
           </layout>
+         </widget>
+         <widget class="QPushButton" name="recordButton">
+          <property name="geometry">
+           <rect>
+            <x>145</x>
+            <y>170</y>
+            <width>36</width>
+            <height>30</height>
+           </rect>
+          </property>
+          <property name="toolTip">
+           <string>Pause</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QPushButton {background-color: rgb(0, 0, 0);}
+QPushButton:pressed {background-color: rgb(98, 98, 98);}
+</string>
+          </property>
+          <property name="icon">
+           <iconset resource="gui.qrc">
+            <normaloff>:/icons/icons/record_24.png</normaloff>:/icons/icons/record_24.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
+          </property>
          </widget>
         </widget>
        </widget>
@@ -731,8 +757,8 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
     <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
-    <addaction name="actionQuit"/>
     <addaction name="actionSave_As"/>
+    <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuDevice">
     <property name="title">

@@ -31,15 +31,27 @@ class Clip():
     STARTING = 1
     START = 2
     STOPPING = 3
+    PREPARE_RECORD = 4
+    RECORDING = 5
 
     TRANSITION = {STOP: STARTING,
                   STARTING: STOP,
                   START: STOPPING,
-                  STOPPING: START}
+                  STOPPING: START,
+                  PREPARE_RECORD: RECORDING,
+                  RECORDING: PREPARE_RECORD}
+    RECORD_TRANSITION = {STOP: PREPARE_RECORD,
+                         PREPARE_RECORD: STOP,
+                         STARTING: STOP,
+                         START: STOP,
+                         STOPPING: STOP,
+                         RECORDING: STOP}
     STATE_DESCRIPTION = {0: "STOP",
                          1: "STARTING",
                          2: "START",
-                         3: "STOPPING"}
+                         3: "STOPPING",
+                         4: "PREPARE_RECORD",
+                         5: "RECORDING"}
 
     def __init__(self, audio_file=None, name='',
                  volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1):
@@ -70,6 +82,7 @@ class Song():
         self.width = width
         self.height = height
         self.file_name = None
+        self.is_record = False
 
     def addClip(self, clip, x, y):
         if self.clips_matrix[x][y]:
@@ -86,7 +99,10 @@ class Song():
     def toogle(self, x, y):
         clip = self.clips_matrix[x][y]
         if clip:
-            clip.state = Clip.TRANSITION[clip.state]
+            if self.is_record:
+                clip.state = Clip.RECORD_TRANSITION[clip.state]
+            else:
+                clip.state = Clip.TRANSITION[clip.state]
 
     def channels(self, clip):
         if clip.audio_file is None:
@@ -114,6 +130,29 @@ class Song():
 
         return (self.data[clip.audio_file][offset:offset+length, channel]
                 * clip.volume)
+
+    def write_data(self, clip, channel, offset, data):
+        if clip.audio_file is None:
+            raise Exception("No audio buffer available")
+
+        if offset + data.shape[0] > self.length(clip):
+            raise Exception(("attempt to write data outside of buffer"
+                             ": %s + %s > %s ")
+                            % (offset, data.shape[0], self.length(clip)))
+
+        self.data[clip.audio_file][offset:offset+data.shape[0], channel] = data
+        # print("Write %s bytes at offset %s to channel %s" % (data.shape[0],
+        #                                                     offset,
+        #                                                     channel))
+
+    def init_record_buffer(self, clip, channel, size, samplerate):
+        i = 0
+        while 'audio-%02d' % i in self.data:
+            i += 1
+        self.data['audio-%02d' % i] = np.zeros((size, channel),
+                                               dtype=np.float32)
+        self.samplerate['audio-%02d' % i] = samplerate
+        clip.audio_file = 'audio-%02d' % i
 
     def save(self):
         if self.file_name:

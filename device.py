@@ -40,6 +40,10 @@ class Device():
             return self.green_vel
         elif state == Clip.STOPPING:
             return self.blink_red_vel
+        elif state == Clip.PREPARE_RECORD:
+            return self.blink_red_vel
+        elif state == Clip.RECORDING:
+            return self.red_vel
         else:
             raise Exception("Invalid state")
 
