@@ -62,7 +62,8 @@ class AddClipDialog(QDialog, Ui_Dialog):
             new_clip = Clip(basename(wav_id))
 
         elif self.type == 'empty':
-            new_clip = Clip()
+            new_clip = Clip(audio_file=None,
+                            name='audio-%02d' % len(self.gui.song.clips))
 
         if new_clip:
             self.cell.clip = new_clip
