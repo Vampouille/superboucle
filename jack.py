@@ -25,9 +25,9 @@ http://jackclient-python.rtfd.org/
 """
 __version__ = "0.2.0"
 
+import errno as _errno
+import platform as _platform
 from cffi import FFI as _FFI
-import sys
-import platform
 
 _ffi = _FFI()
 _ffi.cdef("""
@@ -77,7 +77,7 @@ typedef void (*JackClientRegistrationCallback)(const char* name, int /* register
 typedef void (*JackPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int connect, void* arg);
 typedef int (*JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void* arg);
 typedef void (*JackFreewheelCallback)(int starting, void* arg);
-/* not implemented: JackShutdownCallback */
+/* not implemented: JackShutdownCallback (only JackInfoShutdownCallback is used) */
 typedef void (*JackInfoShutdownCallback)(jack_status_t code, const char* reason, void* arg);
 /* JACK_DEFAULT_AUDIO_TYPE: see _AUDIO */
 /* JACK_DEFAULT_MIDI_TYPE: see _MIDI */
@@ -128,7 +128,7 @@ int jack_deactivate(jack_client_t* client);
 int jack_get_client_pid(const char* name);
 /* not implemented: jack_client_thread_id */
 int jack_is_realtime(jack_client_t* client);
-/* not implemented (and deprecated): jack_thread_wait */
+/* deprecated: jack_thread_wait */
 /* not implemented: jack_cycle_wait */
 /* not implemented: jack_cycle_signal */
 /* not implemented: jack_set_process_thread */
@@ -255,8 +255,7 @@ float jack_get_xrun_delayed_usecs(jack_client_t* client);
 /* midiport.h */
 
 typedef unsigned char jack_midi_data_t;
-typedef struct _jack_midi_event
-{
+typedef struct _jack_midi_event {
     jack_nframes_t time;
     size_t size;
     jack_midi_data_t* buffer;
@@ -269,16 +268,11 @@ size_t jack_midi_max_event_size(void* port_buffer);
 jack_midi_data_t* jack_midi_event_reserve(void* port_buffer, jack_nframes_t time, size_t data_size);
 int jack_midi_event_write(void* port_buffer, jack_nframes_t time, const jack_midi_data_t* data, size_t data_size);
 uint32_t jack_midi_get_lost_event_count(void* port_buffer);
-
-/* errno.h */
-
-#define EEXIST 17
 """)
 
 # Packed structure
 _ffi.cdef("""
-struct _jack_position
-{
+struct _jack_position {
     jack_unique_t unique_1;
     jack_time_t usecs;
     jack_nframes_t frame_rate;
@@ -302,19 +296,13 @@ struct _jack_position
 };
 """, packed=True)
 
-# load library based on OS
-os_name = platform.system()
-is_64bits = sys.maxsize > 2**32
-if os_name == 'Linux':
-    _lib = _ffi.dlopen("jack")
-elif os_name == 'Windows':
-    if is_64bits:
+if _platform.system() == 'Windows':
+    if _platform.architecture()[0] == '64bit':
         _lib = _ffi.dlopen("libjack64")
     else:
         _lib = _ffi.dlopen("libjack")
 else:
-    # OSX not implemented, need tester
-    raise Exception("OSX not implemented")
+    _lib = _ffi.dlopen("jack")
 
 _AUDIO = b"32 bit float mono audio"
 _MIDI = b"8 bit raw midi"
@@ -651,6 +639,10 @@ class Client(object):
         destination : str or Port
             The other end of the connection. Must be an input port.
 
+        See Also
+        --------
+        OwnPort.connect
+
         """
         if isinstance(source, Port):
             source = source.name
@@ -658,7 +650,7 @@ class Client(object):
             destination = destination.name
         err = _lib.jack_connect(self._ptr, source.encode(),
                                 destination.encode())
-        if err == _lib.EEXIST:
+        if err == _errno.EEXIST:
             raise JackError("Connection {0!r} -> {1!r} "
                             "already exists".format(source, destination))
         _check(err,
@@ -689,37 +681,19 @@ class Client(object):
         """Stop JACK transport."""
         _lib.jack_transport_stop(self._ptr)
 
-    def set_timebase_callback(self,
-                              conditional, timebase_callback, userdata=None):
-        """Register as timebase master for the JACK subsystem.
+    @property
+    def transport_state(self):
+        """JACK transport state.
 
-        The timebase master registers a callback that updates extended position
-        information such as beats or timecode whenever necessary. Without this
-        extended information, there is no need for this function.
+        This is one of :attr:`STOPPED`, :attr:`ROLLING`,
+        :attr:`STARTING`, :attr:`NETSTARTING`.
 
-        There is never more than one master at a time. When a new client takes
-        over, the former timebase_callback is no longer called. Taking over the
-        timebase may be done conditionally, so it fails if there was a master
-        already.
+        See Also
+        --------
+        transport_query
 
-        The method may be called whether the client has been activated or not.
-
-        Parameters
-        ----------
-        conditional : int
-            non-zero for a conditional request.
-        timebase_callback : callable
-            realtime function that returns position information.
-        arg :
-            an argument for the timebase_callback function.
         """
-        @self._callback("JackTimebaseCallback")
-        def callback_wrapper(state, nframes, pos, new_pos, _):
-            return timebase_callback(state, nframes, pos, new_pos, userdata)
-
-        _check(_lib.jack_set_timebase_callback(
-            self._ptr, conditional, callback_wrapper, _ffi.NULL),
-            "Error setting timebase callback")
+        return TransportState(_lib.jack_transport_query(self._ptr, _ffi.NULL))
 
     def transport_locate(self, frame):
         """Reposition the JACK transport to a new frame number.
@@ -736,6 +710,31 @@ class Client(object):
     def transport_query(self):
         """Query the current transport state and position.
 
+        This is a convenience function that does the same as
+        :meth:`transport_query_struct` but it only returns the valid
+        fields in an easy-to-use ``dict``.
+
+        Returns
+        -------
+        state : TransportState
+            The transport state can take following values:
+            :attr:`STOPPED`, :attr:`ROLLING`, :attr:`STARTING` and
+            :attr:`NETSTARTING`.
+        position : dict
+            A dictionary containing only the valid fields of the
+            structure returned by :meth:`transport_query_struct`.
+
+        See Also
+        --------
+        :attr:`transport_state`
+
+        """
+        state, pos = self.transport_query_struct()
+        return TransportState(state), position2dict(pos)
+
+    def transport_query_struct(self):
+        """Query the current transport state and position.
+
         This function is realtime-safe, and can be called from any
         thread.  If called from the process thread, the returned
         position corresponds to the first frame of the current cycle and
@@ -747,11 +746,16 @@ class Client(object):
             The transport state can take following values:
             :attr:`STOPPED`, :attr:`ROLLING`, :attr:`STARTING` and
             :attr:`NETSTARTING`.
-        position : CFFI struct object
+        position : jack_position_t
             See the `JACK transport documentation`__ for the available
             fields.
 
-            __ http://jackaudio.org/files/docs/html/structjack__position__t.html
+            __ http://jackaudio.org/files/docs/html/
+               structjack__position__t.html
+
+        See Also
+        --------
+        transport_query
 
         """
         state = _lib.jack_transport_query(self._ptr, self._position)
@@ -788,7 +792,7 @@ class Client(object):
         _check(_lib.jack_set_freewheel(self._ptr, onoff),
                "Error setting freewheel mode")
 
-    def set_shutdown_callback(self, callback, userdata=None):
+    def set_shutdown_callback(self, callback):
         """Register shutdown callback.
 
         Register a function (and optional argument) to be called if and
@@ -800,14 +804,14 @@ class Client(object):
         the rest of the application knows that the JACK client thread
         has shut down.
 
-        .. note:: clients do not need to call this.  It exists only to
+        .. note:: Clients do not need to call this.  It exists only to
            help more complex clients understand what is going on.  It
            should be called before :meth:`activate`.
 
-        .. note:: application should typically signal another thread to
-           correctly finish cleanup, that is by calling :meth:`close`
-           (since :meth:`close` cannot be called directly in the context
-           of the thread that calls the shutdown callback).
+        .. note:: The `callback` should typically signal another thread
+           to correctly finish cleanup by calling :meth:`close` (since
+           :meth:`close` cannot be called directly in the context of the
+           thread that calls the shutdown callback).
 
         Parameters
         ----------
@@ -815,35 +819,31 @@ class Client(object):
             User-supplied function that is called whenever the JACK
             daemon is shutdown.  It must have this signature::
 
-                callback(status:Status, reason:str, userdata) -> None
+                callback(status:Status, reason:str) -> None
 
             The argument `status` is of type :class:`jack.Status`.
 
-            Note that after server shutdown, `self`
-            is *not* deallocated by libjack, the application is
-            responsible to properly use :meth:`close` to release client
-            ressources.
+            .. note:: After server shutdown, the client is *not*
+               deallocated by JACK, the user (that's you!) is
+               responsible to properly use :meth:`close` to release
+               client ressources.
 
             .. warning:: :meth:`close` cannot be safely used inside the
                shutdown callback and has to be called outside of the
                callback context.
-        userdata : anything
-            This will be passed as third argument when `callback` is
-            called.
 
         """
         @self._callback("JackInfoShutdownCallback")
         def callback_wrapper(code, reason, _):
-            return callback(Status(code), _ffi.string(reason).decode(),
-                            userdata)
+            return callback(Status(code), _ffi.string(reason).decode())
 
         _lib.jack_on_info_shutdown(self._ptr, callback_wrapper, _ffi.NULL)
 
-    def set_process_callback(self, callback, userdata=None):
+    def set_process_callback(self, callback):
         """Register process callback.
 
         Tell the JACK server to call `callback` whenever there is work
-        be done, passing `userdata` as the second argument.
+        be done.
 
         The code in the supplied function must be suitable for real-time
         execution.  That means that it cannot call functions that might
@@ -860,7 +860,7 @@ class Client(object):
             User-supplied function that is called by the engine anytime
             there is work to be done.  It must have this signature::
 
-                callback(frames:int, userdata) -> int
+                callback(frames:int) -> int
 
             The argument `frames` specifies the number of frames that
             have to be processed in the current audio block. It will be
@@ -871,45 +871,41 @@ class Client(object):
             on error (if `callback` shall not be called again).
             You can use the module constants :data:`CALL_AGAIN` and
             :data:`STOP_CALLING`, respectively.
-        userdata : anything
-            This will be passed as second argument whenever `callback`
-            is called.
 
         """
         @self._callback("JackProcessCallback", error=STOP_CALLING)
         def callback_wrapper(frames, _):
-            return callback(frames, userdata)
+            return callback(frames)
 
         _check(_lib.jack_set_process_callback(
             self._ptr, callback_wrapper, _ffi.NULL),
             "Error setting process callback")
 
-    def set_freewheel_callback(self, callback, userdata=None):
+    def set_freewheel_callback(self, callback):
         """Register freewheel callback.
 
         Tell the JACK server to call `callback` whenever we enter or
-        leave "freewheel" mode, passing `userdata` as the second
-        argument. The first argument to the callback will be ``True`` if
-        JACK is entering freewheel mode, and ``False`` otherwise.
+        leave "freewheel" mode.
+        The argument to the callback will be ``True`` if JACK is
+        entering freewheel mode, and ``False`` otherwise.
 
         All "notification events" are received in a separated non RT
         thread, the code in the supplied function does not need to be
         suitable for real-time execution.
 
-        .. note:: this function cannot be called while the client is
+        .. note:: This function cannot be called while the client is
            activated (after :meth:`activate` has been called).
 
         Parameters
         ----------
         callback : callable
-            User-supplied function that is called whenever jackd starts
+            User-supplied function that is called whenever JACK starts
             or stops freewheeling.  It must have this signature::
 
-                callback(starting:bool, userdata) -> None
+                callback(starting:bool) -> None
 
-        userdata : anything
-            This will be passed as second argument whenever `callback`
-            is called.
+            The argument `starting` is ``True`` if we start to
+            freewheel, ``False`` otherwise.
 
         See Also
         --------
@@ -918,13 +914,13 @@ class Client(object):
         """
         @self._callback("JackFreewheelCallback")
         def callback_wrapper(starting, _):
-            return callback(bool(starting), userdata)
+            return callback(bool(starting))
 
         _check(_lib.jack_set_freewheel_callback(
             self._ptr, callback_wrapper, _ffi.NULL),
             "Error setting freewheel callback")
 
-    def set_blocksize_callback(self, callback, userdata=None):
+    def set_blocksize_callback(self, callback):
         """Register blocksize callback.
 
         Tell JACK to call `callback` whenever the size of the the buffer
@@ -936,7 +932,7 @@ class Client(object):
         thread, the code in the supplied function does not need to be
         suitable for real-time execution.
 
-        .. note:: this function cannot be called while the client is
+        .. note:: This function cannot be called while the client is
            activated (after :meth:`activate` has been called).
 
         Parameters
@@ -945,31 +941,34 @@ class Client(object):
             User-supplied function that is invoked whenever the JACK
             engine buffer size changes.  It must have this signature::
 
-                callback(blocksize:int, userdata) -> int
+                callback(blocksize:int) -> int
 
+            The argument `blocksize` is the new buffer size.
             The `callback` must return zero on success and non-zero on
             error. You can use the module constants :data:`jack.SUCCESS`
             and :data:`jack.FAILURE`, respectively.
 
-            Although this function is called in the JACK process thread,
-            the normal process cycle is suspended during its operation,
-            causing a gap in the audio flow.  So, the `callback` can
-            allocate storage, touch memory not previously referenced,
-            and perform other operations that are not realtime safe.
-        userdata : anything
-            This will be passed as second argument whenever `callback`
-            is called.
+            .. note:: Although this function is called in the JACK
+               process thread, the normal process cycle is suspended
+               during its operation, causing a gap in the audio flow.
+               So, the `callback` can allocate storage, touch memory not
+               previously referenced, and perform other operations that
+               are not realtime safe.
+
+        See Also
+        --------
+        :attr:`blocksize`
 
         """
         @self._callback("JackBufferSizeCallback", error=FAILURE)
         def callback_wrapper(blocksize, _):
-            return callback(blocksize, userdata)
+            return callback(blocksize)
 
         _check(_lib.jack_set_buffer_size_callback(
             self._ptr, callback_wrapper, _ffi.NULL),
             "Error setting blocksize callback")
 
-    def set_samplerate_callback(self, callback, userdata=None):
+    def set_samplerate_callback(self, callback):
         """Register samplerate callback.
 
         Tell the JACK server to call `callback` whenever the system
@@ -979,7 +978,7 @@ class Client(object):
         thread, the code in the supplied function does not need to be
         suitable for real-time execution.
 
-        .. note:: this function cannot be called while the client is
+        .. note:: This function cannot be called while the client is
            activated (after :meth:`activate` has been called).
 
         Parameters
@@ -988,36 +987,37 @@ class Client(object):
             User-supplied function that is called when the engine sample
             rate changes.  It must have this signature::
 
-                callback(samplerate:int, userdata) -> int
+                callback(samplerate:int) -> int
 
             The argument `samplerate` is the new engine sample rate.
             The `callback` must return zero on success and non-zero on
             error. You can use the module constants :data:`jack.SUCCESS`
             and :data:`jack.FAILURE`, respectively.
-        userdata : anything
-            This will be passed as second argument whenever `callback`
-            is called.
+
+        See Also
+        --------
+        :attr:`samplerate`
 
         """
         @self._callback("JackSampleRateCallback", error=FAILURE)
         def callback_wrapper(samplerate, _):
-            return callback(samplerate, userdata)
+            return callback(samplerate)
 
         _check(_lib.jack_set_sample_rate_callback(
             self._ptr, callback_wrapper, _ffi.NULL),
             "Error setting samplerate callback")
 
-    def set_client_registration_callback(self, callback, userdata=None):
+    def set_client_registration_callback(self, callback):
         """Register client registration callback.
 
         Tell the JACK server to call `callback` whenever a client is
-        registered or unregistered, passing `userdata` as a parameter.
+        registered or unregistered.
 
         All "notification events" are received in a separated non RT
         thread, the code in the supplied function does not need to be
         suitable for real-time execution.
 
-        .. note:: this function cannot be called while the client is
+        .. note:: This function cannot be called while the client is
            activated (after :meth:`activate` has been called).
 
         Parameters
@@ -1026,36 +1026,32 @@ class Client(object):
             User-supplied function that is called whenever a client is
             registered or unregistered.  It must have this signature::
 
-                callback(name:str, register:bool, userdata) -> None
+                callback(name:str, register:bool) -> None
 
             The first argument contains the client name, the second
             argument is ``True`` if the client is being registered and
             ``False`` if the client is being unregistered.
-        userdata : anything
-            This will be passed as third argument whenever `callback`
-            is called.
 
         """
         @self._callback("JackClientRegistrationCallback")
         def callback_wrapper(name, register, _):
-            return callback(_ffi.string(name).decode(), bool(register),
-                            userdata)
+            return callback(_ffi.string(name).decode(), bool(register))
 
         _check(_lib.jack_set_client_registration_callback(
             self._ptr, callback_wrapper, _ffi.NULL),
             "Error setting client registration callback")
 
-    def set_port_registration_callback(self, callback, userdata=None):
+    def set_port_registration_callback(self, callback):
         """Register port registration callback.
 
         Tell the JACK server to call `callback` whenever a port is
-        registered or unregistered, passing `userdata` as a parameter.
+        registered or unregistered.
 
         All "notification events" are received in a separated non RT
         thread, the code in the supplied function does not need to be
         suitable for real-time execution.
 
-        .. note:: this function cannot be called while the client is
+        .. note:: This function cannot be called while the client is
            activated (after :meth:`activate` has been called).
 
         Parameters
@@ -1065,37 +1061,38 @@ class Client(object):
             port is registered or unregistered.
             It must have this signature::
 
-                callback(port:Port, register:bool, userdata) -> None
+                callback(port:Port, register:bool) -> None
 
             The first argument is a :class:`Port`, :class:`MidiPort`,
             :class:`OwnPort` or :class:`OwnMidiPort` object, the second
             argument is ``True`` if the port is being registered,
             ``False`` if the port is being unregistered.
-        userdata : anything
-            This will be passed as third argument whenever `callback` is
-            called.
+
+        See Also
+        --------
+        Ports.register
 
         """
         @self._callback("JackPortRegistrationCallback")
         def callback_wrapper(port, register, _):
             port = self._wrap_port_ptr(_lib.jack_port_by_id(self._ptr, port))
-            return callback(port, bool(register), userdata)
+            return callback(port, bool(register))
 
         _check(_lib.jack_set_port_registration_callback(
             self._ptr, callback_wrapper, _ffi.NULL),
             "Error setting port registration callback")
 
-    def set_port_connect_callback(self, callback, userdata=None):
+    def set_port_connect_callback(self, callback):
         """Register port connect callback.
 
         Tell the JACK server to call `callback` whenever a port is
-        connected or disconnected, passing `userdata` as a parameter.
+        connected or disconnected.
 
         All "notification events" are received in a separated non RT
         thread, the code in the supplied function does not need to be
         suitable for real-time execution.
 
-        .. note:: this function cannot be called while the client is
+        .. note:: This function cannot be called while the client is
            activated (after :meth:`activate` has been called).
 
         Parameters
@@ -1104,39 +1101,40 @@ class Client(object):
             User-supplied function that is called whenever a port is
             connected or disconnected.  It must have this signature::
 
-                callback(a:Port, b:Port, connect:bool, userdata) -> None
+                callback(a:Port, b:Port, connect:bool) -> None
 
             The first and second arguments contain :class:`Port`,
             :class:`MidiPort`, :class:`OwnPort` or :class:`OwnMidiPort`
             objects of the ports which are connected or disconnected.
             The third argument is ``True`` if the ports were connected
             and ``False`` if the ports were disconnected.
-        userdata : anything
-            This will be passed as fourth argument whenever `callback`
-            is called.
+
+        See Also
+        --------
+        Client.connect, OwnPort.connect
 
         """
         @self._callback("JackPortConnectCallback")
         def callback_wrapper(a, b, connect, _):
             a = self._wrap_port_ptr(_lib.jack_port_by_id(self._ptr, a))
             b = self._wrap_port_ptr(_lib.jack_port_by_id(self._ptr, b))
-            return callback(a, b, bool(connect), userdata)
+            return callback(a, b, bool(connect))
 
         _check(_lib.jack_set_port_connect_callback(
             self._ptr, callback_wrapper, _ffi.NULL),
             "Error setting port connect callback")
 
-    def set_port_rename_callback(self, callback, userdata=None):
+    def set_port_rename_callback(self, callback):
         """Register port rename callback.
 
         Tell the JACK server to call `callback` whenever a port is
-        renamed, passing `userdata` as a parameter.
+        renamed.
 
         All "notification events" are received in a separated non RT
         thread, the code in the supplied function does not need to be
         suitable for real-time execution.
 
-        .. note:: this function cannot be called while the client is
+        .. note:: This function cannot be called while the client is
            activated (after :meth:`activate` has been called).
 
         Parameters
@@ -1145,7 +1143,7 @@ class Client(object):
             User-supplied function that is called whenever the port name
             has been changed.  It must have this signature::
 
-                callback(port:Port, old:str, new:str, userdata) -> int
+                callback(port:Port, old:str, new:str) -> int
 
             The first argument is the port that has been renamed (a
             :class:`Port`, :class:`MidiPort`, :class:`OwnPort` or
@@ -1154,32 +1152,42 @@ class Client(object):
             The `callback` must return zero on success and non-zero on
             error. You can use the module constants :data:`jack.SUCCESS`
             and :data:`jack.FAILURE`, respectively.
-        userdata : anything
-            This will be passed as fourth argument whenever `callback`
-            is called.
+
+        See Also
+        --------
+        :attr:`Port.shortname`
+
+        Notes
+        -----
+        The port rename callback is not available in JACK 1!
+        See `this mailing list posting`__ and `this commit message`__.
+
+        __ http://comments.gmane.org/gmane.comp.audio.jackit/28888
+        __ https://github.com/jackaudio/jack1/commit/
+           94c819accfab2612050e875c24cf325daa0fd26d
 
         """
         @self._callback("JackPortRenameCallback", error=FAILURE)
         def callback_wrapper(port, old_name, new_name, _):
             port = self._wrap_port_ptr(_lib.jack_port_by_id(self._ptr, port))
             return callback(port, _ffi.string(old_name).decode(),
-                            _ffi.string(new_name).decode(), userdata)
+                            _ffi.string(new_name).decode())
 
         _check(_lib.jack_set_port_rename_callback(
             self._ptr, callback_wrapper, _ffi.NULL),
             "Error setting port rename callback")
 
-    def set_graph_order_callback(self, callback, userdata=None):
+    def set_graph_order_callback(self, callback):
         """Register graph order callback.
 
         Tell the JACK server to call `callback` whenever the processing
-        graph is reordered, passing `userdata` as a parameter.
+        graph is reordered.
 
         All "notification events" are received in a separated non RT
         thread, the code in the supplied function does not need to be
         suitable for real-time execution.
 
-        .. note:: this function cannot be called while the client is
+        .. note:: This function cannot be called while the client is
            activated (after :meth:`activate` has been called).
 
         Parameters
@@ -1189,35 +1197,32 @@ class Client(object):
             processing graph is reordered.
             It must have this signature::
 
-                callback(userdata) -> int
+                callback() -> int
 
             The `callback` must return zero on success and non-zero on
             error. You can use the module constants :data:`jack.SUCCESS`
             and :data:`jack.FAILURE`, respectively.
-        userdata : anything
-            This will be passed as argument whenever `callback` is
-            called.
 
         """
         @self._callback("JackGraphOrderCallback", error=FAILURE)
         def callback_wrapper(_):
-            return callback(userdata)
+            return callback()
 
         _check(_lib.jack_set_graph_order_callback(
             self._ptr, callback_wrapper, _ffi.NULL),
             "Error setting graph order callback")
 
-    def set_xrun_callback(self, callback, userdata=None):
+    def set_xrun_callback(self, callback):
         """Register xrun callback.
 
         Tell the JACK server to call `callback` whenever there is an
-        xrun, passing `userdata` as a parameter.
+        xrun.
 
         All "notification events" are received in a separated non RT
         thread, the code in the supplied function does not need to be
         suitable for real-time execution.
 
-        .. note:: this function cannot be called while the client is
+        .. note:: This function cannot be called while the client is
            activated (after :meth:`activate` has been called).
 
         Parameters
@@ -1226,14 +1231,11 @@ class Client(object):
             User-supplied function that is called whenever an xrun has
             occured.  It must have this signature::
 
-                callback(userdata) -> int
+                callback() -> int
 
             The `callback` must return zero on success and non-zero on
             error. You can use the module constants :data:`jack.SUCCESS`
             and :data:`jack.FAILURE`, respectively.
-        userdata : anything
-            This will be passed as argument whenever `callback` is
-            called.
 
         See Also
         --------
@@ -1242,11 +1244,94 @@ class Client(object):
         """
         @self._callback("JackXRunCallback", error=FAILURE)
         def callback_wrapper(_):
-            return callback(userdata)
+            return callback()
 
         _check(_lib.jack_set_xrun_callback(
             self._ptr, callback_wrapper, _ffi.NULL),
             "Error setting xrun callback")
+
+    def set_timebase_callback(self, callback=None, conditional=False):
+        """Register as timebase master for the JACK subsystem.
+
+        The timebase master registers a callback that updates extended
+        position information such as beats or timecode whenever
+        necessary.  Without this extended information, there is no need
+        for this function.
+
+        There is never more than one master at a time.  When a new
+        client takes over, the former callback is no longer called.
+        Taking over the timebase may be done conditionally, so that
+        `callback` is not registered if there was a master already.
+
+        Parameters
+        ----------
+        callback : callable
+            Realtime function that returns extended position
+            information.  Its output affects all of the following process
+            cycle.  This realtime function must not wait.
+            It is called immediately after the process callback (see
+            :meth:`set_process_callback`) in the same thread whenever
+            the transport is rolling, or when any client has requested a
+            new position in the previous cycle.  The first cycle after
+            :meth:`set_timebase_callback()` is also treated as a new
+            position, or the first cycle after :meth:`activate()` if the
+            client had been inactive.
+            The `callback` must have this signature::
+
+                callback(state:int, blocksize:int, pos:jack_position_t, new_pos:bool) -> None
+
+            `state`
+                The current transport state.
+                See :attr:`transport_state`.
+            `blocksize`
+                The number of frames in the current period.
+                See :attr:`blocksize`.
+            `pos`
+                The position structure for the next cycle; `pos.frame`
+                will be its frame number.  If `new_pos` is ``False``,
+                this structure contains extended position information
+                from the current cycle.  If `new_pos` is ``True``, it
+                contains whatever was set by the requester.
+                The `callback`'s task is to update the extended
+                information here.  See :meth:`transport_query_struct`
+                for details about `jack_position_t`.
+            `new_pos`
+                ``True`` for a newly requested `pos`, or for the first
+                cycle after the timebase callback is defined.
+
+            .. note:: The `pos` argument must not be used to set
+               `pos.frame`.  To change position, use
+               :meth:`transport_reposition_struct()` or
+               :meth:`transport_locate()`.  These functions are
+               realtime-safe, the timebase callback can call them
+               directly.
+        conditional : bool
+            Set to ``True`` for a conditional request.
+
+        Returns
+        -------
+        bool
+            ``True`` if the timebase callback was registered.
+            ``False`` if a conditional request failed because another
+            timebase master is already registered.
+
+        """
+        if callback is None:
+            return lambda cb: self.set_timebase_callback(cb, conditional)
+
+        @self._callback("JackTimebaseCallback")
+        def callback_wrapper(state, blocksize, pos, new_pos, _):
+            return callback(state, blocksize, pos, bool(new_pos))
+
+        err = _lib.jack_set_timebase_callback(self._ptr, conditional,
+                                              callback_wrapper, _ffi.NULL)
+
+        # Because of a bug in JACK2 version <= 1.9.10, we also check for -1.
+        # See https://github.com/jackaudio/jack2/pull/123
+        if conditional and err in (_errno.EBUSY, -1):
+            return False
+        _check(err, "Error setting timebase callback")
+        return True
 
     def get_uuid_for_client_name(self, name):
         """Get the session ID for a client name.
@@ -2216,9 +2301,13 @@ def _make_statusbase():
 
     names = set(['__gt__', '__ge__'])
     names.update(numbers.Integral.__abstractmethods__)
-    methods = dict((name, redirect(name)) for name in names)
-    methods.update({'__eq__': lambda self, other: int(self) == other})
-    return type("_StatusBase", (), methods)
+    namespace = dict((name, redirect(name)) for name in names)
+    namespace.update({
+        '__slots__': '_code',
+        '__init__': lambda self, code: setattr(self, '_code', code),
+        '__eq__': lambda self, other: int(self) == other,
+    })
+    return type("_StatusBase", (), namespace)
 
 _StatusBase = _make_statusbase()
 del _make_statusbase
@@ -2228,8 +2317,7 @@ class Status(_StatusBase):
 
     """Representation of the JACK status bits."""
 
-    def __init__(self, statuscode):
-        self._code = statuscode
+    __slots__ = ()
 
     def __repr__(self):
         flags = ", ".join(name for name in dir(self)
@@ -2322,11 +2410,52 @@ class Status(_StatusBase):
         return bool(self & flag)
 
 
+class TransportState(_StatusBase):
+
+    """Representation of the JACK transport state.
+
+    See Also
+    --------
+    :attr:`Client.transport_state`, :meth:`Client.transport_query`
+
+    """
+
+    __slots__ = ()
+
+    def __repr__(self):
+        return "jack." + {
+            _lib.JackTransportStopped: 'STOPPED',
+            _lib.JackTransportRolling: 'ROLLING',
+            _lib.JackTransportStarting: 'STARTING',
+            _lib.JackTransportNetStarting: 'NETSTARTING',
+        }[int(self)]
+
+
 class JackError(Exception):
 
     """Exception for all kinds of JACK-related errors."""
 
     pass
+
+
+def position2dict(pos):
+    """Convert CFFI position struct to a dict."""
+    assert pos.unique_1 == pos.unique_2
+
+    keys = ['usecs', 'frame_rate', 'frame']
+    if pos.valid & _lib.JackPositionBBT:
+        keys += ['bar', 'beat', 'tick', 'bar_start_tick', 'beats_per_bar',
+                 'beat_type', 'ticks_per_beat', 'beats_per_minute']
+    if pos.valid & _lib.JackPositionTimecode:
+        keys += ['frame_time', 'next_time']
+    if pos.valid & _lib.JackBBTFrameOffset:
+        keys += ['bbt_offset']
+    if pos.valid & _lib.JackAudioVideoRatio:
+        keys += ['audio_frames_per_video_frame']
+    if pos.valid & _lib.JackVideoFrameOffset:
+        keys += ['video_offset']
+
+    return dict((k, getattr(pos, k)) for k in keys)
 
 
 def version():
