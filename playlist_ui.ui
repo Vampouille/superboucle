@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Manage Devices</string>
   </property>
-  <widget class="QPushButton" name="deleteSongBtn">
+  <widget class="QPushButton" name="removeSongBtn">
    <property name="geometry">
     <rect>
      <x>290</x>
@@ -23,10 +23,10 @@
     </rect>
    </property>
    <property name="text">
-    <string>Delete Song</string>
+    <string>Remove Song</string>
    </property>
   </widget>
-  <widget class="QListWidget" name="playlist">
+  <widget class="QListWidget" name="playlistList">
    <property name="geometry">
     <rect>
      <x>20</x>
@@ -36,7 +36,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QPushButton" name="exportPlaylistBtn">
+  <widget class="QPushButton" name="savePlaylistBtn">
    <property name="geometry">
     <rect>
      <x>290</x>
@@ -46,10 +46,10 @@
     </rect>
    </property>
    <property name="text">
-    <string>Export Playlist</string>
+    <string>Save Playlist</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="importPlaylistBtn">
+  <widget class="QPushButton" name="loadPlaylistBtn">
    <property name="geometry">
     <rect>
      <x>290</x>
@@ -59,7 +59,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Import Playlist</string>
+    <string>Load Playlist</string>
    </property>
   </widget>
   <widget class="QPushButton" name="loadSongBtn">
@@ -75,7 +75,7 @@
     <string>Load Song</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="addSongBtn">
+  <widget class="QPushButton" name="addSongsBtn">
    <property name="geometry">
     <rect>
      <x>290</x>
@@ -85,7 +85,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Add Song</string>
+    <string>Add Songs</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_5">
