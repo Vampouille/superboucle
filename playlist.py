@@ -34,7 +34,7 @@ class PlaylistDialog(QDialog, Ui_Dialog):
                                          expanduser('~'),
                                          'Super Boucle Song (*.sbs)'))
         for file_name in file_names:
-            self.loadSong(file_name)
+            self.addSong(file_name)
 
     def onLoadPlaylist(self):
         file_name, a = (
@@ -49,9 +49,9 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         playlist = json.loads(read_data)
         self.clearPlaylist()
         for file_name in playlist:
-            self.loadSong(file_name)
+            self.addSong(file_name)
 
-    def loadSong(self, file_name):
+    def addSong(self, file_name):
         self.playlistList.addItem(file_name)
         self.gui.playlist.append(load_song_from_file(file_name))
 
@@ -73,14 +73,14 @@ class PlaylistDialog(QDialog, Ui_Dialog):
 
     def onLoadSong(self):
         id = self.playlistList.currentRow()
-        self.loadFromList(id)
+        self.loadSong(id)
 
     def onSongDoubleClick(self, item):
         id = self.playlistList.row(item)
-        self.loadFromList(id)
+        self.loadSong(id)
 
 
-    def loadFromList(self, id):
+    def loadSong(self, id):
         if id != -1:
             print(id)
             song = self.gui.playlist[id]
