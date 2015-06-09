@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QDialog, QFileDialog
 from playlist_ui import Ui_Dialog
 from clip import load_song_from_file, verify_ext
 import json
-from os.path import expanduser
+from os.path import expanduser, basename, splitext
 
 
 class PlaylistDialog(QDialog, Ui_Dialog):
@@ -22,10 +22,11 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         self.show()
 
     def onRemove(self):
-        if self.playlistList.currentRow() != -1:
-            song = self.gui.playlist[self.playlistList.currentRow()]
+        id = self.playlistList.currentRow()
+        if id != -1:
+            song = self.gui.playlist[id]
             self.gui.playlist.remove(song)
-            self.playlistList.takeItem(self.playlistList.currentRow())
+            self.playlistList.takeItem(id)
 
     def onAddSongs(self):
         file_names, a = (
@@ -52,7 +53,8 @@ class PlaylistDialog(QDialog, Ui_Dialog):
             self.addSong(file_name)
 
     def addSong(self, file_name):
-        self.playlistList.addItem(file_name)
+        name, ext = splitext(basename(file_name))
+        self.playlistList.addItem(name)
         self.gui.playlist.append(load_song_from_file(file_name))
 
     def clearPlaylist(self):
