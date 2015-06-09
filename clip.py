@@ -28,12 +28,10 @@ def verify_ext(file, ext):
 
 
 class Communicate(QtCore.QObject):
-
     updateUI = QtCore.pyqtSignal()
 
 
 class Clip():
-
     STOP = 0
     STARTING = 1
     START = 2
@@ -61,7 +59,7 @@ class Clip():
                          5: "RECORDING"}
 
     def __init__(self, audio_file=None, name='',
-                 volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1, route_out=0):
+                 volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1, route_out=0, mute_group=0):
 
         if name is '' and audio_file:
             self.name = audio_file
@@ -75,10 +73,10 @@ class Clip():
         self.audio_file = audio_file
         self.last_offset = 0
         self.route_out = route_out
+        self.mute_group = mute_group
 
 
 class Song():
-
     def __init__(self, width, height):
         self.clips_matrix = [[None for y in range(height)]
                              for x in range(width)]
@@ -142,7 +140,7 @@ class Song():
             raise Exception("Index out of range : {0} + {1} > {2}".
                             format(length, offset, self.length(clip)))
 
-        return (self.data[clip.audio_file][offset:offset+length, channel]
+        return (self.data[clip.audio_file][offset:offset + length, channel]
                 * clip.volume)
 
     def write_data(self, clip, channel, offset, data):
@@ -154,10 +152,10 @@ class Song():
                              ": %s + %s > %s ")
                             % (offset, data.shape[0], self.length(clip)))
 
-        self.data[clip.audio_file][offset:offset+data.shape[0], channel] = data
+        self.data[clip.audio_file][offset:offset + data.shape[0], channel] = data
         # print("Write %s bytes at offset %s to channel %s" % (data.shape[0],
-        #                                                     offset,
-        #                                                     channel))
+        # offset,
+        # channel))
 
     def init_record_buffer(self, clip, channel, size, samplerate):
         i = 0
@@ -199,6 +197,7 @@ class Song():
                              'beat_offset': str(clip.beat_offset),
                              'beat_diviser': str(clip.beat_diviser),
                              'route_out': str(clip.route_out),
+                             'mute_group': str(clip.mute_group),
                              'audio_file': basename(
                                  clip.audio_file)}
                 if clip_file['audio_file'] is None:
@@ -261,7 +260,8 @@ def load_song_from_file(file):
                             parser[section].getint('frame_offset', 0),
                             parser[section].getfloat('beat_offset', 0.0),
                             parser[section].getint('beat_diviser'),
-                            parser[section].getint('route_out'))
+                            parser[section].getint('route_out', 0),
+                            parser[section].getint('mute_group', 0))
                 res.addClip(clip, x, y)
 
     return res
