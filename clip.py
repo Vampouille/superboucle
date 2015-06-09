@@ -75,7 +75,6 @@ class Clip():
         self.audio_file = audio_file
         self.last_offset = 0
         self.route_out = route_out
-        #print(route_out)
 
 
 class Song():
@@ -199,7 +198,7 @@ class Song():
                              'frame_offset': str(clip.frame_offset),
                              'beat_offset': str(clip.beat_offset),
                              'beat_diviser': str(clip.beat_diviser),
-                             #'route_out': str(clip.route_out),
+                             'route_out': str(clip.route_out),
                              'audio_file': basename(
                                  clip.audio_file)}
                 if clip_file['audio_file'] is None:
@@ -261,8 +260,8 @@ def load_song_from_file(file):
                             parser[section].getfloat('volume', 1.0),
                             parser[section].getint('frame_offset', 0),
                             parser[section].getfloat('beat_offset', 0.0),
-                            parser[section].getint('beat_diviser'))
-                            #parser[section].getint('route_out'))
+                            parser[section].getint('beat_diviser'),
+                            parser[section].getint('route_out'))
                 res.addClip(clip, x, y)
 
     return res
