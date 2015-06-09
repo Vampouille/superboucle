@@ -450,7 +450,11 @@ border-radius: 2px;</string>
            </property>
            <layout class="QFormLayout" name="formLayout">
             <item row="0" column="0">
-             <widget class="QSpinBox" name="route_out"/>
+             <widget class="QSpinBox" name="route_out">
+              <property name="maximum">
+               <number>7</number>
+              </property>
+             </widget>
             </item>
             <item row="0" column="1">
              <widget class="QLabel" name="label_9">
