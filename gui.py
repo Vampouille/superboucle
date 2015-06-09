@@ -77,7 +77,6 @@ def pos2str(pos):
 
 
 class Cell(QWidget, Ui_Cell):
-
     def __init__(self, parent, clip, x, y):
         super(Cell, self).__init__(parent)
 
@@ -98,7 +97,6 @@ class Cell(QWidget, Ui_Cell):
 
 
 class Gui(QMainWindow, Ui_MainWindow):
-
     NOTEON = 0x9
     NOTEOFF = 0x8
     MIDICTRL = 11
@@ -187,6 +185,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
         self.route_out.valueChanged.connect(self.onRouteOutChange)
+        self.mute_group.valueChanged.connect(self.onMuteGroupChange)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
         self.revertButton.clicked.connect(self.onRevertClip)
@@ -220,7 +219,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         self.song = song
         self.frame_clip.setEnabled(False)
-        self.master_volume.setValue(song.volume*256)
+        self.master_volume.setValue(song.volume * 256)
         self.bpm.setValue(song.bpm)
         self.beat_per_bar.setValue(song.beat_per_bar)
         for x in range(song.width):
@@ -275,12 +274,13 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.beat_offset.setValue(self.last_clip.beat_offset)
             self.beat_diviser.setValue(self.last_clip.beat_diviser)
             self.route_out.setValue(self.last_clip.route_out)
-            self.clip_volume.setValue(self.last_clip.volume*256)
+            self.mute_group.setValue(self.last_clip.mute_group)
+            self.clip_volume.setValue(self.last_clip.volume * 256)
             state, position = self._jack_client.transport_query()
             fps = position['frame_rate']
             bps = self.bpm.value() / 60
             if self.bpm.value() and fps:
-                size_in_beat = (bps/fps)*self.song.length(self.last_clip)
+                size_in_beat = (bps / fps) * self.song.length(self.last_clip)
             else:
                 size_in_beat = "No BPM info"
             clip_description = ("Size in sample : %s\nSize in beat : %s"
@@ -378,6 +378,9 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onRouteOutChange(self):
         self.last_clip.route_out = self.route_out.value()
+
+    def onMuteGroupChange(self):
+        self.last_clip.mute_group = self.mute_group.value()
 
     def onFrameOffsetChange(self):
         self.last_clip.frame_offset = self.frame_offset.value()
