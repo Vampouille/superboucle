@@ -196,6 +196,8 @@ with client:
     if not playback:
         raise RuntimeError("No physical playback ports")
 
+    #if user has other connections that standard Main Out (i.e complex connections with dedicated outputs),
+    #then it is much better to leave the user creates his connections with jack patchbay instead of connecting automatically here.
     # client.connect(outL, playback[0])
     # client.connect(outR, playback[1])
 
