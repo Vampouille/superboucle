@@ -119,7 +119,6 @@ class Song():
             if clip.mute_group:
                 for c in filter(lambda x: x and x.mute_group == clip.mute_group and x != clip,
                                 np.array(self.clips_matrix).flat):
-                    # x.mute_group == clip.mute_group
                     c.state = Clip.STOPPING if c.state == Clip.START else Clip.STOP
 
 
