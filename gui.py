@@ -186,7 +186,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
-        #self.route_out.valueChanged.connect(self.onRouteOutChange)
+        self.route_out.valueChanged.connect(self.onRouteOutChange)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
         self.revertButton.clicked.connect(self.onRevertClip)
@@ -274,7 +274,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.frame_offset.setValue(self.last_clip.frame_offset)
             self.beat_offset.setValue(self.last_clip.beat_offset)
             self.beat_diviser.setValue(self.last_clip.beat_diviser)
-            #self.route_out.setValue(self.last_clip.route_out)
+            self.route_out.setValue(self.last_clip.route_out)
             self.clip_volume.setValue(self.last_clip.volume*256)
             state, position = self._jack_client.transport_query()
             fps = position['frame_rate']
@@ -376,8 +376,8 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onBeatDiviserChange(self):
         self.last_clip.beat_diviser = self.beat_diviser.value()
 
-    #def onRouteOutChange(self):
-        #self.last_clip.route_out = self.route_out.value()
+    def onRouteOutChange(self):
+        self.last_clip.route_out = self.route_out.value()
 
     def onFrameOffsetChange(self):
         self.last_clip.frame_offset = self.frame_offset.value()
