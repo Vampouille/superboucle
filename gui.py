@@ -20,7 +20,7 @@ from device import Device
 import struct
 from queue import Queue, Empty
 import pickle
-from os.path import expanduser
+from os.path import expanduser, dirname
 import numpy as np
 import soundfile as sf
 
@@ -112,10 +112,11 @@ class Cell(QWidget, Ui_Cell):
     def openClip(self):
         audio_file, a = QFileDialog.getOpenFileName(self,
                                                     'Open Clip file',
-                                                    expanduser("~"),
+                                                    self.gui.add_clip_file_path,
                                                     'All files (*.*)')
         if audio_file:
             wav_id = basename(audio_file)
+            self.gui.add_clip_file_path = dirname(audio_file)
             if wav_id in self.gui.song.data:
                 i = 0
                 while "%s-%02d" % (wav_id, i) in self.gui.song.data:
@@ -185,6 +186,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.updateUi.connect(self.update)
         self.readQueueIn.connect(self.readQueue)
         self.current_vol_block = 0
+
+        self.add_clip_file_path = expanduser("~")
 
         # Load devices
         self.deviceGroup = QActionGroup(self.menuDevice)
