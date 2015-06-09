@@ -3,7 +3,7 @@ UI = gui_ui.py cell_ui.py learn_ui.py learn_cell_ui.py manage_ui.py new_song_ui.
 
 
 run : $(UI) gui_rc.py
-	./boucle.py
+	#./boucle.py
 
 %_ui.py : %_ui.ui
 	@echo "compiling $<"
