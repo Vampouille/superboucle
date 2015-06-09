@@ -13,6 +13,7 @@ from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
 from manage import ManageDialog
+from playlist import PlaylistDialog
 from new_song import NewSongDialog
 from add_clip import AddClipDialog
 from device import Device
@@ -156,6 +157,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         # Load devices
         self.deviceGroup = QActionGroup(self.menuDevice)
         self.devices = []
+        self.playlist = []
         settings = QSettings('superboucle', 'devices')
         if settings.contains('devices') and settings.value('devices'):
             for raw_device in settings.value('devices'):
@@ -174,6 +176,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionSave_As.triggered.connect(self.onActionSaveAs)
         self.actionAdd_Device.triggered.connect(self.onAddDevice)
         self.actionManage_Devices.triggered.connect(self.onManageDevice)
+        self.actionPlaylist_Editor.triggered.connect(self.onPlaylistEditor)
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
         self.rewindButton.clicked.connect(self.onRewindClicked)
@@ -432,6 +435,9 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onManageDevice(self):
         ManageDialog(self)
+
+    def onPlaylistEditor(self):
+        PlaylistDialog(self)
 
     def onActionFullScreen(self):
         if self.isFullScreen():
