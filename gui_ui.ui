@@ -197,7 +197,7 @@ color: black;</string>
            <property name="geometry">
             <rect>
              <x>20</x>
-             <y>40</y>
+             <y>50</y>
              <width>71</width>
              <height>19</height>
             </rect>
@@ -283,7 +283,7 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
            <property name="geometry">
             <rect>
              <x>20</x>
-             <y>130</y>
+             <y>120</y>
              <width>101</width>
              <height>19</height>
             </rect>
@@ -307,9 +307,9 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
            <property name="geometry">
             <rect>
              <x>10</x>
-             <y>290</y>
+             <y>300</y>
              <width>196</width>
-             <height>71</height>
+             <height>61</height>
             </rect>
            </property>
            <property name="styleSheet">
@@ -328,9 +328,9 @@ border-radius: 2px;</string>
            <property name="geometry">
             <rect>
              <x>30</x>
-             <y>150</y>
+             <y>140</y>
              <width>160</width>
-             <height>64</height>
+             <height>61</height>
             </rect>
            </property>
            <layout class="QFormLayout" name="formLayout_3">
@@ -440,8 +440,8 @@ border-radius: 2px;</string>
            <property name="geometry">
             <rect>
              <x>30</x>
-             <y>250</y>
-             <width>170</width>
+             <y>260</y>
+             <width>182</width>
              <height>31</height>
             </rect>
            </property>
@@ -459,35 +459,40 @@ border-radius: 2px;</string>
                </font>
               </property>
               <property name="text">
-               <string>Route to Output</string>
+               <string>Dedicated Output</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QLabel" name="label_13">
+          <widget class="QWidget" name="formLayoutWidget_4">
            <property name="geometry">
             <rect>
-             <x>20</x>
-             <y>230</y>
-             <width>171</width>
-             <height>19</height>
+             <x>30</x>
+             <y>220</y>
+             <width>170</width>
+             <height>31</height>
             </rect>
            </property>
-           <property name="font">
-            <font>
-             <family>Lato</family>
-             <pointsize>11</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Dedicated Output</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
+           <layout class="QFormLayout" name="formLayout_4">
+            <item row="0" column="0">
+             <widget class="QSpinBox" name="mute_group"/>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="label_15">
+              <property name="font">
+               <font>
+                <family>Lato</family>
+                <pointsize>10</pointsize>
+                <italic>true</italic>
+               </font>
+              </property>
+              <property name="text">
+               <string>Mute Group</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </widget>
          </widget>
          <widget class="QPushButton" name="playButton">
