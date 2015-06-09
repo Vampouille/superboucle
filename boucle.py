@@ -14,8 +14,12 @@ song = Song(8, 8)
 client = jack.Client("Super Boucle")
 midi_in = client.midi_inports.register("input")
 midi_out = client.midi_outports.register("output")
-outL = client.outports.register("output_L")
-outR = client.outports.register("output_R")
+outL = client.outports.register("MAIN_L")
+outR = client.outports.register("MAIN_R")
+
+outL1 = client.outports.register("Out_1_L")
+outR1 = client.outports.register("Out_1_R")
+
 inL = client.inports.register("input_L")
 inR = client.inports.register("input_R")
 
@@ -37,6 +41,11 @@ def my_callback(frames):
     outR_buffer[:] = 0
     inL_buffer = inL.get_array()
     inR_buffer = inR.get_array()
+
+    outL1_buffer = outL1.get_array()
+    outR1_buffer = outR1.get_array()
+    outL1_buffer[:] = 0
+    outR1_buffer[:] = 0
 
     # check midi in
     if gui.is_learn_device_mode:
@@ -88,6 +97,9 @@ def my_callback(frames):
                     clip.last_offset = clip_offset
                     # print("buffer[:{0}] = sample[{1}:{2}]".
                     #      format(length, clip_offset, clip_offset+length))
+
+
+
 
             if clip.state == Clip.RECORDING:
                 if next_clip_offset:
