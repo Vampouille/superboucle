@@ -39,23 +39,7 @@ class AddClipDialog(QDialog, Ui_Dialog):
         new_clip = None
 
         if self.type == 'new':
-            audio_file, a = QFileDialog.getOpenFileName(self,
-                                                        'Open Clip file',
-                                                        expanduser("~"),
-                                                        'All files (*.*)')
-            if audio_file:
-                wav_id = basename(audio_file)
-                if wav_id in self.gui.song.data:
-                    i = 0
-                    while "%s-%02d" % (wav_id, i) in self.gui.song.data:
-                        i += 1
-                    wav_id = "%s-%02d" % (wav_id, i)
-
-                data, samplerate = sf.read(audio_file, dtype=np.float32)
-                self.gui.song.data[wav_id] = data
-                self.gui.song.samplerate[wav_id] = samplerate
-
-                new_clip = Clip(basename(wav_id))
+            new_clip = self.cell.openClip()
 
         elif self.type == 'use':
             wav_id = self.fileList.currentText()
@@ -66,15 +50,4 @@ class AddClipDialog(QDialog, Ui_Dialog):
                             name='audio-%02d' % len(self.gui.song.clips))
 
         if new_clip:
-            self.cell.clip = new_clip
-            self.cell.clip_name.setText(new_clip.name)
-            self.cell.start_stop.clicked.connect(self.gui.onStartStopClicked)
-            self.cell.edit.setText("Edit")
-            self.cell.edit.clicked.disconnect(self.gui.onAddClipClicked)
-            self.cell.edit.clicked.connect(self.gui.onEdit)
-            self.cell.start_stop.setEnabled(True)
-            self.cell.clip_position.setEnabled(True)
-            self.gui.song.addClip(new_clip,
-                                  self.cell.pos_x,
-                                  self.cell.pos_y)
-            self.gui.update()
+            self.cell.setClip(new_clip)

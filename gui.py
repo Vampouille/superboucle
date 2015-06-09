@@ -6,9 +6,9 @@ Gui
 """
 
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog,
-                             QAction, QActionGroup, QMessageBox)
-from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings
-from clip import Clip, load_song_from_file, verify_ext
+                             QAction, QActionGroup, QMessageBox, QApplication)
+from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings, Qt
+from clip import Clip, load_song_from_file, verify_ext, basename
 from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
@@ -81,6 +81,7 @@ class Cell(QWidget, Ui_Cell):
     def __init__(self, parent, clip, x, y):
         super(Cell, self).__init__(parent)
 
+        self.gui = parent
         self.pos_x, self.pos_y = x, y
         self.clip = clip
         self.blink, self.color = False, None
@@ -95,6 +96,37 @@ class Cell(QWidget, Ui_Cell):
             self.clip_position.setEnabled(False)
             self.edit.setText("Add Clip...")
             self.edit.clicked.connect(parent.onAddClipClicked)
+
+    def setClip(self, new_clip):
+        self.clip = new_clip
+        self.clip_name.setText(new_clip.name)
+        self.start_stop.clicked.connect(self.gui.onStartStopClicked)
+        self.edit.setText("Edit")
+        self.edit.clicked.disconnect(self.gui.onAddClipClicked)
+        self.edit.clicked.connect(self.gui.onEdit)
+        self.start_stop.setEnabled(True)
+        self.clip_position.setEnabled(True)
+        self.gui.song.addClip(new_clip, self.pos_x, self.pos_y)
+        self.gui.update()
+
+    def openClip(self):
+        audio_file, a = QFileDialog.getOpenFileName(self,
+                                                    'Open Clip file',
+                                                    expanduser("~"),
+                                                    'All files (*.*)')
+        if audio_file:
+            wav_id = basename(audio_file)
+            if wav_id in self.gui.song.data:
+                i = 0
+                while "%s-%02d" % (wav_id, i) in self.gui.song.data:
+                    i += 1
+                wav_id = "%s-%02d" % (wav_id, i)
+
+            data, samplerate = sf.read(audio_file, dtype=np.float32)
+            self.gui.song.data[wav_id] = data
+            self.gui.song.samplerate[wav_id] = samplerate
+
+            return Clip(basename(wav_id))
 
 
 class Gui(QMainWindow, Ui_MainWindow):
@@ -293,7 +325,11 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.clip_description.setText(clip_description)
 
     def onAddClipClicked(self):
-        AddClipDialog(self, self.sender().parent().parent())
+        cell = self.sender().parent().parent()
+        if QApplication.keyboardModifiers() == Qt.ControlModifier:
+            cell.setClip(cell.openClip())
+        else:
+            AddClipDialog(self, cell)
 
     def onRevertClip(self):
         if self.last_clip and self.last_clip.audio_file:
