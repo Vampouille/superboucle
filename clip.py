@@ -110,11 +110,18 @@ class Song():
 
     def toogle(self, x, y):
         clip = self.clips_matrix[x][y]
-        if clip:
-            if self.is_record:
-                clip.state = Clip.RECORD_TRANSITION[clip.state]
-            else:
-                clip.state = Clip.TRANSITION[clip.state]
+        if clip is None:
+            return
+        if self.is_record:
+            clip.state = Clip.RECORD_TRANSITION[clip.state]
+        else:
+            clip.state = Clip.TRANSITION[clip.state]
+            if clip.mute_group:
+                for c in filter(lambda x: x and x.mute_group == clip.mute_group and x != clip,
+                                np.array(self.clips_matrix).flat):
+                    # x.mute_group == clip.mute_group
+                    c.state = Clip.STOPPING if c.state == Clip.START else Clip.STOP
+
 
     def channels(self, clip):
         if clip.audio_file is None:
