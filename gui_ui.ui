@@ -330,7 +330,7 @@ border-radius: 2px;</string>
              <x>30</x>
              <y>140</y>
              <width>160</width>
-             <height>61</height>
+             <height>64</height>
             </rect>
            </property>
            <layout class="QFormLayout" name="formLayout_3">
@@ -870,6 +870,8 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
      <string>View</string>
     </property>
     <addaction name="actionFullScreen"/>
+    <addaction name="separator"/>
+    <addaction name="actionPlaylist_Editor"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuDevice"/>
@@ -932,6 +934,14 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
   <action name="actionManage_Devices">
    <property name="text">
     <string>Manage Devices...</string>
+   </property>
+  </action>
+  <action name="actionPlaylist_Editor">
+   <property name="text">
+    <string>Playlist Editor</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>
