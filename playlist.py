@@ -57,7 +57,7 @@ class PlaylistDialog(QDialog, Ui_Dialog):
 
     def clearPlaylist(self):
         self.playlistList.clear()
-        self.gui.playlist.clear()
+        self.gui.playlist[:] = []
 
     def onSavePlaylist(self):
         file_name, a = (
