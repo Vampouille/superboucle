@@ -43,11 +43,14 @@
    </property>
   </widget>
   <widget class="QRadioButton" name="newButton">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>40</x>
      <y>20</y>
-     <width>99</width>
+     <width>141</width>
      <height>21</height>
     </rect>
    </property>
