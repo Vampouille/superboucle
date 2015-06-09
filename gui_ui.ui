@@ -278,12 +278,15 @@ color: black;</string>
 QSpinBox::down-button { width: 40px; }
 QSpinBox { border : 0px; border-radius: 2px}</string>
            </property>
+           <property name="minimum">
+            <number>1</number>
+           </property>
           </widget>
           <widget class="QLabel" name="label_3">
            <property name="geometry">
             <rect>
              <x>20</x>
-             <y>130</y>
+             <y>120</y>
              <width>101</width>
              <height>19</height>
             </rect>
@@ -328,7 +331,7 @@ border-radius: 2px;</string>
            <property name="geometry">
             <rect>
              <x>30</x>
-             <y>150</y>
+             <y>140</y>
              <width>160</width>
              <height>64</height>
             </rect>
