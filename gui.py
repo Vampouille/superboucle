@@ -219,6 +219,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionPlaylist_Editor.triggered.connect(self.onPlaylistEditor)
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
+        self.bpm.valueChanged.connect(self.onBpmChange)
+        self.beat_per_bar.valueChanged.connect(self.onBeatPerBarChange)
         self.rewindButton.clicked.connect(self.onRewindClicked)
         self.playButton.clicked.connect(self._jack_client.transport_start)
         self.pauseButton.clicked.connect(self._jack_client.transport_stop)
@@ -383,6 +385,12 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onMasterVolumeChange(self):
         self.song.volume = (self.master_volume.value() / 256)
+
+    def onBpmChange(self):
+        self.song.bpm = self.bpm.value()
+
+    def onBeatPerBarChange(self):
+        self.song.beat_per_bar = self.beat_per_bar.value()
 
     def onStartClicked(self):
         pass
