@@ -1,94 +1,119 @@
 # SuperBoucle
 
-SuperBoucle is midi controllable live sampler synced with jack transport.
+SuperBoucle is a loop based software fully controllable with any midi
+device. SuperBoucle is also synced with jack transport. You can use it on live
+performance or for composition.
 
 SuperBoucle is composed of a matrix of sample controllable with external midi
-device like pad. SuperBoucle will send back information to the pad (light up
-pad button). Sample will always start and stop on a beat. You can adjust length
-of sample in beat and offset in beat. But you can also adjust sample offset in
-raw frame count negative or positive. Which mean sample can start before next
-beat (useful for reversed sample).
+device like pad. SuperBoucle will send back information to midi device (light
+up led). Sample will always start and stop on a beat or group of beats. You can
+adjust duration of sample (loop period) in beat and offset in beat. But you can
+also adjust sample offset in raw frame count negative or positive. Which mean
+sample can start before next beat (useful for reversed sample). You can record
+loop of any size, adjust BPM, reverse, normalize samples, ...
+
+Typical usage :
+
+* You just need to control jack transport (play, pause, rewind) with extrnal
+  midi device and want a button to jump to a specified location in song.
+* You have some instruments patterns but you have no idea of song structure.
+* You make live performance with pre-recorded instruments (you have no bass
+  player for example) and you don't want to have a predefinied structure for
+  the song (maybe part 2 will be longer on some live performance)
+
+## Features
+
+* Jack Transport
+* Record
+* Auto record lantency
+* Audio input / output
+* Midi input / output
+* Normalize and revert samples
+* Negative sample offset, sample offset in beats or frames
+* Load several formats: WAV, FLAC, AIFF, ...  (no MP3 for the moment)
+* Full intuitive MIDI learn interface
+* Support any MIDI device : generic keyboard, pad, BCF, Akai APC, ...
+* Fully controllable by MIDI device or mouse/keyboard
+* Goto function to move jack transport to specified location
 
 ## Requirements
 
 ### Linux
 
 * Python 3
-* Pip
- 
-		sudo aptitude install python3-pip
-* python cffi 0.9.2
- 
-	 	 sudo aptitude remove python3-cffi
-		 sudo aptitude install libffi-dev build-essential libpython3.4-dev
-	 	 sudo pip3 install cffi
-* python soundfile 0.7.0 (may takes some times)
- 
- 		 sudo pip3 install PySoundFile
-* python numpy 1.9.2
- 
-	 	 sudo aptitude remove python3-numpy
-		 sudo pip3 install numpy (may be already installated)
-* python PyQT 5 
-
-	 	 sudo aptitude install python3-pyqt5
-* package libjack-jackd2-dev, libsndfile1-dev
- 
- 		 sudo aptitude install libjack-jackd2-dev libsndfile1-dev
+* Pip for python 3
+* Python modules : Cffi, PySoundFile, Numpy, PyQT 5
 * Running jack server
 
 ### Windows
 
-* Jack Audio Kit (see http://jackaudio.org/downloads/)
+* Jack Audio Kit
 
 ## Installation
 
-Download SuperBoucle from SourceForge Files : https://sourceforge.net/projects/superboucle/files/
-
 ### Linux
 
-This should work on Ubuntu and derived (Tested on mint 17 and ubuntu trusty) :
+* Install Jack server :
 
-	sudo aptitude remove python3-cffi python3-numpy
-	sudo aptitude install python3-pip libffi-dev build-essential libpython3.4-dev libjack-jackd2-dev libsndfile1-dev python3-pyqt5
+        sudo aptitude install jackd2 qjackctl
+
+* Install midi bridge (optional) : 
+
+        sudo aptitude install a2jmidid
+
+* Install python modules : 
+
+        sudo aptitude install python3 python3-pip python3-cffi python3-numpy python3-pyqt5
+        sudo pip3 install PySoundFile
+
+* Download and extract last version of SuperBoucle from https://sourceforge.net/projects/superboucle/files/
 
 ### Windows
-Run Jack Audio Kit setup first and then run SuperBoucle windows Setup
 
-## Running 
+* Run Jack Audio Kit setup : http://jackaudio.org/downloads/
+* Run SuperBoucle windows Setup from https://sourceforge.net/projects/superboucle/files/
+
+## Running
 
 ### Linux
 
-Start Jack audio server and then run SuperBoucle.sh script :
-	 
+Start Jack audio server and then run SuperBoucle.sh script from SuperBoucle directory :
+
 	./SuperBoucle.sh
 
 ### Windows
 
-Start "Jack PortAudio" from start menu and then start SuperBoucle with desktop icon
+Start "Jack PortAudio" from start menu and then start SuperBoucle from start menu.
+
+## Contact
+
+Feel free to send an email to superboucle@nura.eu if you have any questions,
+remarks or if you find a bug.
 
 ## Midi devices
 
- SuperBoucle can be controlled with external midi device like generic midi
- keyboard, midi drum, Akai APC series, Novation LaunchPad, ... In order to
- configure a new controller, you have to select 'Add device...' entry in
- Device menu. Another solution is to import a .sbm (SuperBoucle Mapping) file
- contanning device configuration. Currently, there is only configuration file
- for Launchpad S and generic midi keyboard. Feel free to send me new device
- configuration, I will include it in next release.
+SuperBoucle can be controlled with external midi device like generic midi
+keyboard, midi drum, Akai APC series, Novation LaunchPad, Behringer BCF, ... In
+order to configure a new controller, you have to select 'Add device...'  entry
+in Device menu. Another solution is to import a .sbm (SuperBoucle Mapping) file
+contanning device configuration. Feel free to send me new device configuration,
+I will include it in next release.
 
 ### What can be controlled by external midi device ?
 
-* You can start or stop clip/sample.
-* You can start, pause transport
-* You can jump to beggining of song or at specified position
-* You can adjust master volume
-* You can adjust volume of each clip/sample
+You can : 
+
+* Start or stop clip/sample.
+* Start, pause jack transport
+* Jump to beggining of song or at specified position
+* Adjust master volume
+* Adjust volume of each clip/sample
+* Select clip to record and start record
 
 ### Device Name
 
-Set the device name. Use a short name of your choice. This is only for
-display purpose.
+Set the device name. Use a name of your choice. This is only for display
+purpose.
 
 ### Start/Stop configuration
 
@@ -120,6 +145,7 @@ description of the new controller (channel and controller id).
 If you have available buttons, you can associated them to transport actions. In
 'Transport' part, click one transport button and press desired button on midi
 device. You should see a description of the new button.
+Record button can also be associated with midi button is this section.
 
 ### Clip/sample volume configuration
 
@@ -142,12 +168,17 @@ button corresponding to line 1 on midi device, then button for line 2,
 ### Colors
 
 SuperBoucle will send information to external midi midi to indication
-clip/sample status : 
-* no clip (black / no light)
-* clip will start (blink green)
-* clip is playing (green)
-* clip will stop (blink red)
-* clip is stopped (red)
+clip/sample status :
+
+| Clip state        | Color            |
+| ----------------- | ---------------- |
+| no clip           | black / no light |
+| clip will start   | blink green      |
+| clip is playing   | green            |
+| clip will stop    | blink red        |
+| clip is stopped   | red              |
+| clip will record  | blink amber      |
+| clip is recording | amber            |
 
 In order to light button on external midi device, SuperBoucle will send
 Note On midi message corresponding to channel and pitch of buttons in
