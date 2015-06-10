@@ -14,7 +14,7 @@ loop of any size, adjust BPM, reverse, normalize samples, ...
 
 Typical usage :
 
-* You just need to control jack transport (play, pause, rewind) with extrnal
+* You just need to control jack transport (play, pause, rewind) with external
   midi device and want a button to jump to a specified location in song.
 * You have some instruments patterns but you have no idea of song structure.
 * You make live performance with pre-recorded instruments (you have no bass
