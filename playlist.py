@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QFileDialog
+from PyQt5.QtWidgets import QDialog, QFileDialog, QAbstractItemView
 from playlist_ui import Ui_Dialog
 from clip import load_song_from_file, verify_ext
 import json
@@ -18,6 +18,8 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         self.savePlaylistBtn.clicked.connect(self.onSavePlaylist)
         self.loadSongBtn.clicked.connect(self.onLoadSong)
         self.playlistList.itemDoubleClicked.connect(self.onSongDoubleClick)
+        self.playlistList.setDragDropMode(QAbstractItemView.InternalMove)
+        self.playlistList.model().rowsMoved.connect(self.onMoveRows)
         self.finished.connect(self.onFinished)
         self.show()
 
@@ -27,6 +29,11 @@ class PlaylistDialog(QDialog, Ui_Dialog):
             song = self.gui.playlist[id]
             self.gui.playlist.remove(song)
             self.playlistList.takeItem(id)
+
+    def onMoveRows(self, sourceParent, sourceStart, sourceEnd, destinationParent, destinationRow):
+        l = self.gui.playlist
+        destinationRow -= destinationRow > sourceStart
+        l.insert(destinationRow, l.pop(sourceStart))
 
     def onAddSongs(self):
         file_names, a = (
