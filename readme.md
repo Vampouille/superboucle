@@ -25,7 +25,7 @@ Typical usage :
 
 * Jack Transport
 * Record
-* Auto record lantency
+* Auto record latency
 * Audio input / output
 * Midi input / output
 * Normalize and revert samples
