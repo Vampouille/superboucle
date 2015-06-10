@@ -4,14 +4,15 @@ from clip import load_song_from_file, verify_ext
 import json
 from os.path import expanduser, basename, splitext
 
+def getSongs(file_names):
+    return list(map(load_song_from_file, file_names))
 
 class PlaylistDialog(QDialog, Ui_Dialog):
     def __init__(self, parent):
         super(PlaylistDialog, self).__init__(parent)
         self.gui = parent
         self.setupUi(self)
-        for song in self.gui.playlist:
-            self.playlistList.addItem(song.file_name)
+        self.updateList()
         self.removeSongBtn.clicked.connect(self.onRemove)
         self.addSongsBtn.clicked.connect(self.onAddSongs)
         self.loadPlaylistBtn.clicked.connect(self.onLoadPlaylist)
@@ -23,12 +24,18 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         self.finished.connect(self.onFinished)
         self.show()
 
+    def updateList(self):
+        self.playlistList.clear()
+        for song in self.gui.playlist:
+            name, ext = splitext(basename(song.file_name))
+            self.playlistList.addItem(name)
+
     def onRemove(self):
         id = self.playlistList.currentRow()
         if id != -1:
             song = self.gui.playlist[id]
             self.gui.playlist.remove(song)
-            self.playlistList.takeItem(id)
+            self.updateList()
 
     def onMoveRows(self, sourceParent, sourceStart, sourceEnd, destinationParent, destinationRow):
         l = self.gui.playlist
@@ -41,8 +48,8 @@ class PlaylistDialog(QDialog, Ui_Dialog):
                                          'add Songs',
                                          expanduser('~'),
                                          'Super Boucle Song (*.sbs)'))
-        for file_name in file_names:
-            self.addSong(file_name)
+        self.gui.playlist += getSongs(file_names)
+        self.updateList()
 
     def onLoadPlaylist(self):
         file_name, a = (
@@ -54,15 +61,8 @@ class PlaylistDialog(QDialog, Ui_Dialog):
             return
         with open(file_name, 'r') as f:
             read_data = f.read()
-        playlist = json.loads(read_data)
-        self.clearPlaylist()
-        for file_name in playlist:
-            self.addSong(file_name)
-
-    def addSong(self, file_name):
-        name, ext = splitext(basename(file_name))
-        self.playlistList.addItem(name)
-        self.gui.playlist.append(load_song_from_file(file_name))
+        self.gui.playlist = getSongs(json.loads(read_data))
+        self.updateList()
 
     def clearPlaylist(self):
         self.playlistList.clear()
@@ -87,7 +87,6 @@ class PlaylistDialog(QDialog, Ui_Dialog):
     def onSongDoubleClick(self, item):
         id = self.playlistList.row(item)
         self.loadSong(id)
-
 
     def loadSong(self, id):
         if id != -1:

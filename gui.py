@@ -13,7 +13,7 @@ from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
 from manage import ManageDialog
-from playlist import PlaylistDialog
+from playlist import PlaylistDialog, getSongs
 from new_song import NewSongDialog
 from add_clip import AddClipDialog
 from device import Device
@@ -192,7 +192,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         # Load devices
         self.deviceGroup = QActionGroup(self.menuDevice)
         self.devices = []
-        self.playlist = []
         settings = QSettings('superboucle', 'devices')
         if settings.contains('devices') and settings.value('devices'):
             for raw_device in settings.value('devices'):
@@ -201,6 +200,12 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.devices.append(Device({'name': 'No Device', }))
         self.updateDevices()
         self.deviceGroup.triggered.connect(self.onDeviceSelect)
+
+        # Load playlist
+        self.playlist = []
+        settings = QSettings('superboucle', 'playlist')
+        if settings.contains('playlist') and settings.value('playlist'):
+            self.playlist = getSongs(settings.value('playlist'))
 
         # Load song
         self.initUI(song)
@@ -277,6 +282,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         settings = QSettings('superboucle', 'devices')
         settings.setValue('devices',
                           [pickle.dumps(x.mapping) for x in self.devices])
+        settings = QSettings('superboucle', 'playlist')
+        settings.setValue('playlist', [song.file_name for song in self.playlist])
 
     def onStartStopClicked(self):
         clip = self.sender().parent().parent().clip
