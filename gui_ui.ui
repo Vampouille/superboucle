@@ -258,7 +258,7 @@ color: black;</string>
             </font>
            </property>
            <property name="text">
-            <string>Beat Diviser</string>
+            <string>Beat Amount</string>
            </property>
           </widget>
           <widget class="QSpinBox" name="beat_diviser">
@@ -848,7 +848,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
      <x>0</x>
      <y>0</y>
      <width>1111</width>
-     <height>27</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
