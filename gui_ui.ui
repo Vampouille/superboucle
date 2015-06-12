@@ -330,10 +330,13 @@ border-radius: 2px;</string>
              <x>10</x>
              <y>140</y>
              <width>160</width>
-             <height>80</height>
+             <height>71</height>
             </rect>
            </property>
            <layout class="QFormLayout" name="formLayout_3">
+            <property name="verticalSpacing">
+             <number>0</number>
+            </property>
             <item row="0" column="0">
              <widget class="QSpinBox" name="frame_offset">
               <property name="minimum">
@@ -440,18 +443,17 @@ border-radius: 2px;</string>
            <property name="geometry">
             <rect>
              <x>10</x>
-             <y>250</y>
-             <width>182</width>
-             <height>35</height>
+             <y>246</y>
+             <width>184</width>
+             <height>30</height>
             </rect>
            </property>
            <layout class="QFormLayout" name="formLayout">
+            <property name="fieldGrowthPolicy">
+             <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+            </property>
             <item row="0" column="0">
-             <widget class="QSpinBox" name="route_out">
-              <property name="maximum">
-               <number>7</number>
-              </property>
-             </widget>
+             <widget class="QComboBox" name="route_out"/>
             </item>
             <item row="0" column="1">
              <widget class="QLabel" name="label_9">
@@ -473,7 +475,7 @@ border-radius: 2px;</string>
            <property name="geometry">
             <rect>
              <x>10</x>
-             <y>220</y>
+             <y>210</y>
              <width>170</width>
              <height>35</height>
             </rect>
@@ -876,6 +878,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
     <addaction name="actionFullScreen"/>
     <addaction name="separator"/>
     <addaction name="actionPlaylist_Editor"/>
+    <addaction name="actionPort_Manager"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuDevice"/>
@@ -942,6 +945,9 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
    <property name="text">
     <string>Manage Devices...</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
   </action>
   <action name="actionPlaylist_Editor">
    <property name="text">
@@ -949,6 +955,14 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
    </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionPort_Manager">
+   <property name="text">
+    <string>Port Manager</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+M</string>
    </property>
   </action>
  </widget>

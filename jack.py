@@ -327,7 +327,6 @@ FAILURE = 1
 
 
 class Client(object):
-
     """A client that can connect to the JACK audio server."""
 
     def __init__(self, name, use_exact_name=False, no_start_server=False,
@@ -833,6 +832,7 @@ class Client(object):
                callback context.
 
         """
+
         @self._callback("JackInfoShutdownCallback")
         def callback_wrapper(code, reason, _):
             return callback(Status(code), _ffi.string(reason).decode())
@@ -873,6 +873,7 @@ class Client(object):
             :data:`STOP_CALLING`, respectively.
 
         """
+
         @self._callback("JackProcessCallback", error=STOP_CALLING)
         def callback_wrapper(frames, _):
             return callback(frames)
@@ -912,6 +913,7 @@ class Client(object):
         set_freewheel
 
         """
+
         @self._callback("JackFreewheelCallback")
         def callback_wrapper(starting, _):
             return callback(bool(starting))
@@ -960,6 +962,7 @@ class Client(object):
         :attr:`blocksize`
 
         """
+
         @self._callback("JackBufferSizeCallback", error=FAILURE)
         def callback_wrapper(blocksize, _):
             return callback(blocksize)
@@ -999,6 +1002,7 @@ class Client(object):
         :attr:`samplerate`
 
         """
+
         @self._callback("JackSampleRateCallback", error=FAILURE)
         def callback_wrapper(samplerate, _):
             return callback(samplerate)
@@ -1033,6 +1037,7 @@ class Client(object):
             ``False`` if the client is being unregistered.
 
         """
+
         @self._callback("JackClientRegistrationCallback")
         def callback_wrapper(name, register, _):
             return callback(_ffi.string(name).decode(), bool(register))
@@ -1073,6 +1078,7 @@ class Client(object):
         Ports.register
 
         """
+
         @self._callback("JackPortRegistrationCallback")
         def callback_wrapper(port, register, _):
             port = self._wrap_port_ptr(_lib.jack_port_by_id(self._ptr, port))
@@ -1114,6 +1120,7 @@ class Client(object):
         Client.connect, OwnPort.connect
 
         """
+
         @self._callback("JackPortConnectCallback")
         def callback_wrapper(a, b, connect, _):
             a = self._wrap_port_ptr(_lib.jack_port_by_id(self._ptr, a))
@@ -1167,6 +1174,7 @@ class Client(object):
            94c819accfab2612050e875c24cf325daa0fd26d
 
         """
+
         @self._callback("JackPortRenameCallback", error=FAILURE)
         def callback_wrapper(port, old_name, new_name, _):
             port = self._wrap_port_ptr(_lib.jack_port_by_id(self._ptr, port))
@@ -1204,6 +1212,7 @@ class Client(object):
             and :data:`jack.FAILURE`, respectively.
 
         """
+
         @self._callback("JackGraphOrderCallback", error=FAILURE)
         def callback_wrapper(_):
             return callback()
@@ -1242,6 +1251,7 @@ class Client(object):
         :attr:`xrun_delayed_usecs`
 
         """
+
         @self._callback("JackXRunCallback", error=FAILURE)
         def callback_wrapper(_):
             return callback()
@@ -1438,10 +1448,12 @@ class Client(object):
 
     def _callback(self, cdecl, **kwargs):
         """Wrapper for ffi.callback() that keeps callback alive."""
+
         def callback_decorator(python_callable):
             function_ptr = _ffi.callback(cdecl, python_callable, **kwargs)
             self._keepalive.append(function_ptr)
             return function_ptr
+
         return callback_decorator
 
     def _register_port(self, name, porttype, is_terminal, is_physical, flags):
@@ -1491,7 +1503,6 @@ class Client(object):
 
 
 class Port(object):
-
     """A JACK audio port.
 
     This class cannot be instantiated directly.  Instead, instances of
@@ -1611,7 +1622,6 @@ class Port(object):
 
 
 class MidiPort(Port):
-
     """A JACK MIDI port.
 
     This class is derived from :class:`Port` and has exactly the same
@@ -1635,7 +1645,6 @@ class MidiPort(Port):
 
 
 class OwnPort(Port):
-
     """A JACK audio port owned by a :class:`Client` object.
 
     This class is derived from :class:`Port`.  :class:`OwnPort` objects
@@ -1781,11 +1790,11 @@ class OwnPort(Port):
 
         """
         import numpy as np
+
         return np.frombuffer(self.get_buffer(), dtype=np.float32)
 
 
 class OwnMidiPort(MidiPort, OwnPort):
-
     """A JACK MIDI port owned by a :class:`Client` object.
 
     This class is derived from :class:`OwnPort` and :class:`MidiPort`,
@@ -1948,7 +1957,6 @@ class OwnMidiPort(MidiPort, OwnPort):
 
 
 class Ports(object):
-
     """A list of input/output ports.
 
     This class is not meant to be instantiated directly.  It is only
@@ -2027,6 +2035,15 @@ class Ports(object):
         self._portlist.append(port)
         return port
 
+    def unregister_range(self, start=None, end=None, step=1):
+        for id in range(len(self._portlist))[start:end:abs(step)][::-1]:
+            self._portlist[id].unregister()
+
+    def unregister(self, shortname):
+        for p in self._portlist:
+            if p.name == shortname:
+                p.unregister()
+
     def clear(self):
         """Unregister all ports in the list.
 
@@ -2040,7 +2057,6 @@ class Ports(object):
 
 
 class RingBuffer(object):
-
     """JACK's lock-free ringbuffer."""
 
     def __init__(self, size):
@@ -2293,7 +2309,6 @@ def _make_statusbase():
     import numbers
 
     def redirect(name):
-
         def redirected(self, *args):
             return getattr(self._code, name)(*args)
 
@@ -2309,12 +2324,12 @@ def _make_statusbase():
     })
     return type("_StatusBase", (), namespace)
 
+
 _StatusBase = _make_statusbase()
 del _make_statusbase
 
 
 class Status(_StatusBase):
-
     """Representation of the JACK status bits."""
 
     __slots__ = ()
@@ -2411,7 +2426,6 @@ class Status(_StatusBase):
 
 
 class TransportState(_StatusBase):
-
     """Representation of the JACK transport state.
 
     See Also
@@ -2432,7 +2446,6 @@ class TransportState(_StatusBase):
 
 
 class JackError(Exception):
-
     """Exception for all kinds of JACK-related errors."""
 
     pass
@@ -2549,6 +2562,7 @@ def _set_error_or_info_function(callback, setter):
 
         _keepalive[setter] = callback_wrapper
     setter(callback_wrapper)
+
 
 _keepalive = {}
 

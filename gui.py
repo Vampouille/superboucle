@@ -4,16 +4,17 @@
 """
 Gui
 """
-
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog,
                              QAction, QActionGroup, QMessageBox, QApplication)
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings, Qt
+
 from clip import Clip, load_song_from_file, verify_ext, basename
 from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
 from manage import ManageDialog
 from playlist import PlaylistDialog, getSongs
+from port_manager import PortManager
 from new_song import NewSongDialog
 from add_clip import AddClipDialog
 from device import Device
@@ -171,6 +172,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     BLINK_DURATION = 200
     PROGRESS_PERIOD = 300
+    CHANNELS = ["L", "R"]
 
     updateUi = pyqtSignal()
     readQueueIn = pyqtSignal()
@@ -208,6 +210,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.playlist = getSongs(settings.value('playlist'))
 
         # Load song
+        self.dedicated_outputs = {}
         self.initUI(song)
 
         self.actionNew.triggered.connect(self.onActionNew)
@@ -217,6 +220,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionAdd_Device.triggered.connect(self.onAddDevice)
         self.actionManage_Devices.triggered.connect(self.onManageDevice)
         self.actionPlaylist_Editor.triggered.connect(self.onPlaylistEditor)
+        self.actionPort_Manager.triggered.connect(self.onPortManager)
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
         self.bpm.valueChanged.connect(self.onBpmChange)
@@ -229,7 +233,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
-        self.route_out.valueChanged.connect(self.onRouteOutChange)
+        self.route_out.activated.connect(self.onRouteOutChange)  # currentIndexChanged
         self.mute_group.valueChanged.connect(self.onMuteGroupChange)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
@@ -258,6 +262,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                            for x in range(song.width)]
         self.state_matrix = [[-1 for y in range(song.height)]
                              for x in range(song.width)]
+
         for i in reversed(range(self.gridLayout.count())):
             self.gridLayout.itemAt(i).widget().close()
             self.gridLayout.itemAt(i).widget().setParent(None)
@@ -278,7 +283,17 @@ class Gui(QMainWindow, Ui_MainWindow):
         for init_cmd in self.device.init_command:
             self.queue_out.put(init_cmd)
 
+        self.updatePorts()
         self.update()
+
+    def updatePorts(self):
+
+        self._jack_client.outports.unregister_range(2)
+        self.dedicated_outputs = {}
+        for os in self.song.outputs:
+            o = ((os + "_{channel}").format(channel=c) for c in Gui.CHANNELS)
+            o = tuple(map(self._jack_client.outports.register, o))
+            self.dedicated_outputs[os] = o
 
     def closeEvent(self, event):
         settings = QSettings('superboucle', 'devices')
@@ -320,7 +335,11 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.frame_offset.setValue(self.last_clip.frame_offset)
             self.beat_offset.setValue(self.last_clip.beat_offset)
             self.beat_diviser.setValue(self.last_clip.beat_diviser)
-            self.route_out.setValue(self.last_clip.route_out)
+            self.route_out.clear()
+            self.route_out.insertItem(0, "None")
+            self.route_out.insertItems(1, self.song.outputs)
+            ro, op = self.last_clip.route_out, self.song.outputs
+            self.route_out.setCurrentIndex(op.index(ro) + 1 if ro in op else 0)
             self.mute_group.setValue(self.last_clip.mute_group)
             self.clip_volume.setValue(self.last_clip.volume * 256)
             state, position = self._jack_client.transport_query()
@@ -434,7 +453,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.last_clip.beat_diviser = self.beat_diviser.value()
 
     def onRouteOutChange(self):
-        self.last_clip.route_out = self.route_out.value()
+        self.last_clip.route_out = self.route_out.currentText()
 
     def onMuteGroupChange(self):
         self.last_clip.mute_group = self.mute_group.value()
@@ -492,6 +511,9 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onPlaylistEditor(self):
         PlaylistDialog(self)
+
+    def onPortManager(self):
+        PortManager(self)
 
     def onActionFullScreen(self):
         if self.isFullScreen():
