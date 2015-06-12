@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QFileDialog
+from PyQt5.QtWidgets import QDialog
 from os.path import expanduser
 import numpy as np
 import soundfile as sf

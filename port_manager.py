@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QFileDialog, QAbstractItemView, QInputDialog, QLineEdit, QListWidgetItem
+from PyQt5.QtWidgets import QDialog, QAbstractItemView, QInputDialog, QLineEdit, QListWidgetItem
 from PyQt5.QtCore import Qt
 from port_manager_ui import Ui_Dialog
 from clip import verify_ext
@@ -50,11 +50,7 @@ class PortManager(QDialog, Ui_Dialog):
         self.updateList()
 
     def onLoadPortlist(self):
-        file_name, a = (
-            QFileDialog.getOpenFileName(self,
-                                        'Open file',
-                                        expanduser('~'),
-                                        'Super Boucle Portlist (*.sbl)'))
+        file_name, a = self.gui.getOpenFileName('Open Portlist', 'Super Boucle Portlist (*.sbl)', self)
         if not file_name:
             return
         with open(file_name, 'r') as f:
@@ -63,11 +59,7 @@ class PortManager(QDialog, Ui_Dialog):
         self.updateList()
 
     def onSavePortlist(self):
-        file_name, a = (
-            QFileDialog.getSaveFileName(self,
-                                        'Save As',
-                                        expanduser('~'),
-                                        'Super Boucle Portlist (*.sbl)'))
+        file_name, a = self.gui.getSaveFileName('Save Portlist', 'Super Boucle Portlist (*.sbl)', self)
 
         if file_name:
             file_name = verify_ext(file_name, 'sbl')
