@@ -4,8 +4,16 @@ from clip import load_song_from_file, verify_ext
 import json
 from os.path import expanduser, basename, splitext
 
+
 def getSongs(file_names):
-    return list(map(load_song_from_file, file_names))
+    r = []
+    for f in file_names:
+        try:
+            r.append(load_song_from_file(f))
+        except Exception as e:
+            print("could not load File {}.\nError: {}".format(f, e))
+    return r
+
 
 class PlaylistDialog(QDialog, Ui_Dialog):
     def __init__(self, parent):
@@ -63,10 +71,6 @@ class PlaylistDialog(QDialog, Ui_Dialog):
             read_data = f.read()
         self.gui.playlist = getSongs(json.loads(read_data))
         self.updateList()
-
-    def clearPlaylist(self):
-        self.playlistList.clear()
-        self.gui.playlist[:] = []
 
     def onSavePlaylist(self):
         file_name, a = (

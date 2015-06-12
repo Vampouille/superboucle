@@ -77,7 +77,7 @@ class Clip():
 
 
 class Song():
-    def __init__(self, width, height):
+    def __init__(self, width, height, outputs):
         self.clips_matrix = [[None for y in range(height)]
                              for x in range(width)]
         self.clips = []
@@ -87,6 +87,7 @@ class Song():
         self.beat_per_bar = 4
         self.width = width
         self.height = height
+        self.outputs = outputs
         self.file_name = None
         self.is_record = False
 
@@ -195,7 +196,8 @@ class Song():
                                     'bpm': self.bpm,
                                     'beat_per_bar': self.beat_per_bar,
                                     'width': self.width,
-                                    'height': self.height}
+                                    'height': self.height,
+                                    'outputs': ",".join(self.outputs)}
             for clip in self.clips:
                 clip_file = {'name': clip.name,
                              'volume': str(clip.volume),
@@ -225,14 +227,20 @@ class Song():
         self.file_name = file
 
 
+def getDefaultOutputNames(number, pattern="Out_{group}"):
+    return [pattern.format(group=i) for i in range(number)]
+
+
 def load_song_from_file(file):
     with ZipFile(file) as zip:
         with zip.open('metadata.ini') as metadata_res:
             metadata = TextIOWrapper(metadata_res)
             parser = configparser.ConfigParser()
             parser.read_file(metadata)
+            outputs = parser['DEFAULT'].get('outputs', '')
             res = Song(parser['DEFAULT'].getint('width'),
-                       parser['DEFAULT'].getint('height'))
+                       parser['DEFAULT'].getint('height'),
+                       outputs.split(",") if len(outputs) else [])
             res.file_name = file
             res.volume = parser['DEFAULT'].getfloat('volume')
             res.bpm = parser['DEFAULT'].getfloat('bpm')
@@ -266,7 +274,7 @@ def load_song_from_file(file):
                             parser[section].getint('frame_offset', 0),
                             parser[section].getfloat('beat_offset', 0.0),
                             parser[section].getint('beat_diviser'),
-                            parser[section].getint('route_out', 0),
+                            parser[section].get('route_out', 'None'),
                             parser[section].getint('mute_group', 0))
                 res.addClip(clip, x, y)
 

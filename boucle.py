@@ -4,21 +4,18 @@
 
 import jack
 import sys
-from clip import Clip, Song
+from clip import Clip, Song, getDefaultOutputNames
 from gui import Gui
 from PyQt5.QtWidgets import QApplication
 from queue import Empty
 
-song = Song(8, 8)
+song = Song(8, 8, getDefaultOutputNames(8))
 
 client = jack.Client("Super Boucle")
 midi_in = client.midi_inports.register("input")
 midi_out = client.midi_outports.register("output")
 outL = client.outports.register("MAIN_L")
 outR = client.outports.register("MAIN_R")
-
-dedicatedOutputs = [(client.outports.register("Out_%s_L" % i),
-                     client.outports.register("Out_%s_R" % i)) for i in range(8)]
 
 inL = client.inports.register("input_L")
 inR = client.inports.register("input_R")
@@ -42,11 +39,11 @@ def my_callback(frames):
     inL_buffer = inL.get_array()
     inR_buffer = inR.get_array()
 
-    dedicatedOutBuffers = [(L.get_array(), R.get_array()) for (L, R) in dedicatedOutputs]
+    dedicated_out_buffers = {k: tuple(vc.get_array() for vc in v) for k, v in gui.dedicated_outputs.items()}
 
-    for (lb, rb) in dedicatedOutBuffers:
-        lb[:] = 0
-        rb[:] = 0
+    for bs in dedicated_out_buffers.values():
+        for b in bs:
+            b[:] = 0
 
     # check midi in
     if gui.is_learn_device_mode:
@@ -77,8 +74,8 @@ def my_callback(frames):
 
             buffers = [(outL_buffer, outR_buffer)]  # list of all output buffers that the clip is writing
             # if the route out setting is valid, add the corresponding dedicated buffer
-            if (clip.route_out in range(len(dedicatedOutBuffers))):
-                buffers.append(dedicatedOutBuffers[clip.route_out])
+            if (clip.route_out in dedicated_out_buffers):
+                buffers.append(dedicated_out_buffers[clip.route_out])
 
             # next beat is in block ?
             if (clip_offset + blocksize) > clip_period:
@@ -196,8 +193,8 @@ with client:
     if not playback:
         raise RuntimeError("No physical playback ports")
 
-    #if user has other connections that standard Main Out (i.e complex connections with dedicated outputs),
-    #then it is much better to leave the user creates his connections with jack patchbay instead of connecting automatically here.
+    # if user has other connections that standard Main Out (i.e complex connections with dedicated outputs),
+    # then it is much better to leave the user creates his connections with jack patchbay instead of connecting automatically here.
     # client.connect(outL, playback[0])
     # client.connect(outR, playback[1])
 
@@ -205,7 +202,7 @@ with client:
     if not record:
         raise RuntimeError("No physical record ports")
 
-    #client.connect(record[0], inL)
-    #client.connect(record[1], inR)
+    # client.connect(record[0], inL)
+    # client.connect(record[1], inR)
 
     app.exec_()
