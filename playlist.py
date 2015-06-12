@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QDialog, QFileDialog, QAbstractItemView
 from playlist_ui import Ui_Dialog
 from clip import load_song_from_file, verify_ext
 import json
-from os.path import expanduser, basename, splitext
+from os.path import basename, splitext
 
 
 def getSongs(file_names):
@@ -51,20 +51,12 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         l.insert(destinationRow, l.pop(sourceStart))
 
     def onAddSongs(self):
-        file_names, a = (
-            QFileDialog.getOpenFileNames(self,
-                                         'add Songs',
-                                         expanduser('~'),
-                                         'Super Boucle Song (*.sbs)'))
+        file_names, a = self.gui.getSaveFileName('Add Songs', 'Super Boucle Song (*.sbs)', self, QFileDialog.getOpenFileNames)
         self.gui.playlist += getSongs(file_names)
         self.updateList()
 
     def onLoadPlaylist(self):
-        file_name, a = (
-            QFileDialog.getOpenFileName(self,
-                                        'Open file',
-                                        expanduser('~'),
-                                        'Super Boucle Playlist (*.sbp)'))
+        file_name, a = self.gui.getOpenFileName('Open Playlist', 'Super Boucle Playlist (*.sbp)', self)
         if not file_name:
             return
         with open(file_name, 'r') as f:
@@ -73,11 +65,7 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         self.updateList()
 
     def onSavePlaylist(self):
-        file_name, a = (
-            QFileDialog.getSaveFileName(self,
-                                        'Save As',
-                                        expanduser('~'),
-                                        'Super Boucle Playlist (*.sbp)'))
+        file_name, a = self.gui.getSaveFileName('Save Playlist', 'Super Boucle Playlist (*.sbp)', self)
 
         if file_name:
             file_name = verify_ext(file_name, 'sbp')
