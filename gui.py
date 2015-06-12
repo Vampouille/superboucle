@@ -4,22 +4,24 @@
 """
 Gui
 """
-
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog,
-                             QAction, QActionGroup, QMessageBox)
-from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings
-from clip import Clip, load_song_from_file, verify_ext
+                             QAction, QActionGroup, QMessageBox, QApplication)
+from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings, Qt
+
+from clip import Clip, load_song_from_file, verify_ext, basename
 from gui_ui import Ui_MainWindow
 from cell_ui import Ui_Cell
 from learn import LearnDialog
 from manage import ManageDialog
+from playlist import PlaylistDialog, getSongs
+from port_manager import PortManager
 from new_song import NewSongDialog
 from add_clip import AddClipDialog
 from device import Device
 import struct
 from queue import Queue, Empty
 import pickle
-from os.path import expanduser
+from os.path import expanduser, dirname
 import numpy as np
 import soundfile as sf
 
@@ -77,10 +79,10 @@ def pos2str(pos):
 
 
 class Cell(QWidget, Ui_Cell):
-
     def __init__(self, parent, clip, x, y):
         super(Cell, self).__init__(parent)
 
+        self.gui = parent
         self.pos_x, self.pos_y = x, y
         self.clip = clip
         self.blink, self.color = False, None
@@ -96,9 +98,36 @@ class Cell(QWidget, Ui_Cell):
             self.edit.setText("Add Clip...")
             self.edit.clicked.connect(parent.onAddClipClicked)
 
+    def setClip(self, new_clip):
+        self.clip = new_clip
+        self.clip_name.setText(new_clip.name)
+        self.start_stop.clicked.connect(self.gui.onStartStopClicked)
+        self.edit.setText("Edit")
+        self.edit.clicked.disconnect(self.gui.onAddClipClicked)
+        self.edit.clicked.connect(self.gui.onEdit)
+        self.start_stop.setEnabled(True)
+        self.clip_position.setEnabled(True)
+        self.gui.song.addClip(new_clip, self.pos_x, self.pos_y)
+        self.gui.update()
+
+    def openClip(self):
+        audio_file, a = self.gui.getOpenFileName('Open Clip', 'All files (*.*)', self)
+        if audio_file and a:
+            wav_id = basename(audio_file)
+            if wav_id in self.gui.song.data:
+                i = 0
+                while "%s-%02d" % (wav_id, i) in self.gui.song.data:
+                    i += 1
+                wav_id = "%s-%02d" % (wav_id, i)
+
+            data, samplerate = sf.read(audio_file, dtype=np.float32)
+            self.gui.song.data[wav_id] = data
+            self.gui.song.samplerate[wav_id] = samplerate
+
+            return Clip(basename(wav_id))
+
 
 class Gui(QMainWindow, Ui_MainWindow):
-
     NOTEON = 0x9
     NOTEOFF = 0x8
     MIDICTRL = 11
@@ -139,6 +168,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     BLINK_DURATION = 200
     PROGRESS_PERIOD = 300
+    CHANNELS = ["L", "R"]
 
     updateUi = pyqtSignal()
     readQueueIn = pyqtSignal()
@@ -167,7 +197,18 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.updateDevices()
         self.deviceGroup.triggered.connect(self.onDeviceSelect)
 
+        # Load playlist
+        self.playlist = []
+        self.settings = QSettings('superboucle', 'session')
+        if self.settings.contains('playlist') and self.settings.value('playlist'):
+            self.playlist = getSongs(self.settings.value('playlist'))
+        self.paths_used = {}
+        if self.settings.contains('paths_used') and self.settings.value('paths_used'):
+            self.paths_used = self.settings.value('paths_used')
+
+
         # Load song
+        self.dedicated_outputs = {}
         self.initUI(song)
 
         self.actionNew.triggered.connect(self.onActionNew)
@@ -176,8 +217,12 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionSave_As.triggered.connect(self.onActionSaveAs)
         self.actionAdd_Device.triggered.connect(self.onAddDevice)
         self.actionManage_Devices.triggered.connect(self.onManageDevice)
+        self.actionPlaylist_Editor.triggered.connect(self.onPlaylistEditor)
+        self.actionPort_Manager.triggered.connect(self.onPortManager)
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
+        self.bpm.valueChanged.connect(self.onBpmChange)
+        self.beat_per_bar.valueChanged.connect(self.onBeatPerBarChange)
         self.rewindButton.clicked.connect(self.onRewindClicked)
         self.playButton.clicked.connect(self._jack_client.transport_start)
         self.pauseButton.clicked.connect(self._jack_client.transport_stop)
@@ -186,6 +231,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
+        self.route_out.activated.connect(self.onRouteOutChange)  # currentIndexChanged
+        self.mute_group.valueChanged.connect(self.onMuteGroupChange)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
         self.revertButton.clicked.connect(self.onRevertClip)
@@ -213,13 +260,14 @@ class Gui(QMainWindow, Ui_MainWindow):
                            for x in range(song.width)]
         self.state_matrix = [[-1 for y in range(song.height)]
                              for x in range(song.width)]
+
         for i in reversed(range(self.gridLayout.count())):
             self.gridLayout.itemAt(i).widget().close()
             self.gridLayout.itemAt(i).widget().setParent(None)
 
         self.song = song
         self.frame_clip.setEnabled(False)
-        self.master_volume.setValue(song.volume*256)
+        self.master_volume.setValue(song.volume * 256)
         self.bpm.setValue(song.bpm)
         self.beat_per_bar.setValue(song.beat_per_bar)
         for x in range(song.width):
@@ -233,12 +281,24 @@ class Gui(QMainWindow, Ui_MainWindow):
         for init_cmd in self.device.init_command:
             self.queue_out.put(init_cmd)
 
+        self.updatePorts()
         self.update()
+
+    def updatePorts(self):
+
+        self._jack_client.outports.unregister_range(2)
+        self.dedicated_outputs = {}
+        for os in self.song.outputs:
+            o = ((os + "_{channel}").format(channel=c) for c in Gui.CHANNELS)
+            o = tuple(map(self._jack_client.outports.register, o))
+            self.dedicated_outputs[os] = o
 
     def closeEvent(self, event):
         settings = QSettings('superboucle', 'devices')
         settings.setValue('devices',
                           [pickle.dumps(x.mapping) for x in self.devices])
+        self.settings.setValue('playlist', [song.file_name for song in self.playlist])
+        self.settings.setValue('paths_used', self.paths_used)
 
     def onStartStopClicked(self):
         clip = self.sender().parent().parent().clip
@@ -273,12 +333,18 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.frame_offset.setValue(self.last_clip.frame_offset)
             self.beat_offset.setValue(self.last_clip.beat_offset)
             self.beat_diviser.setValue(self.last_clip.beat_diviser)
-            self.clip_volume.setValue(self.last_clip.volume*256)
+            self.route_out.clear()
+            self.route_out.insertItem(0, "None")
+            self.route_out.insertItems(1, self.song.outputs)
+            ro, op = self.last_clip.route_out, self.song.outputs
+            self.route_out.setCurrentIndex(op.index(ro) + 1 if ro in op else 0)
+            self.mute_group.setValue(self.last_clip.mute_group)
+            self.clip_volume.setValue(self.last_clip.volume * 256)
             state, position = self._jack_client.transport_query()
             fps = position['frame_rate']
             bps = self.bpm.value() / 60
             if self.bpm.value() and fps:
-                size_in_beat = (bps/fps)*self.song.length(self.last_clip)
+                size_in_beat = (bps / fps) * self.song.length(self.last_clip)
             else:
                 size_in_beat = "No BPM info"
             clip_description = ("Size in sample : %s\nSize in beat : %s"
@@ -288,7 +354,11 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.clip_description.setText(clip_description)
 
     def onAddClipClicked(self):
-        AddClipDialog(self, self.sender().parent().parent())
+        cell = self.sender().parent().parent()
+        if QApplication.keyboardModifiers() == Qt.ControlModifier:
+            cell.setClip(cell.openClip())
+        else:
+            AddClipDialog(self, cell)
 
     def onRevertClip(self):
         if self.last_clip and self.last_clip.audio_file:
@@ -305,12 +375,7 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onExportClip(self):
         if self.last_clip and self.last_clip.audio_file:
             audio_file = self.last_clip.audio_file
-            file_name, a = (
-                QFileDialog.getSaveFileName(self,
-                                            'Export Clip : %s'
-                                            % self.last_clip.name,
-                                            expanduser('~'),
-                                            'WAVE (*.wav)'))
+            file_name, a = self.getOpenFileName('Export Clip : %s' % self.last_clip.name, 'WAVE (*.wav)')
 
             if file_name:
                 file_name = verify_ext(file_name, 'wav')
@@ -332,6 +397,12 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onMasterVolumeChange(self):
         self.song.volume = (self.master_volume.value() / 256)
+
+    def onBpmChange(self):
+        self.song.bpm = self.bpm.value()
+
+    def onBeatPerBarChange(self):
+        self.song.beat_per_bar = self.beat_per_bar.value()
 
     def onStartClicked(self):
         pass
@@ -374,6 +445,12 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onBeatDiviserChange(self):
         self.last_clip.beat_diviser = self.beat_diviser.value()
 
+    def onRouteOutChange(self):
+        self.last_clip.route_out = self.route_out.currentText()
+
+    def onMuteGroupChange(self):
+        self.last_clip.mute_group = self.mute_group.value()
+
     def onFrameOffsetChange(self):
         self.last_clip.frame_offset = self.frame_offset.value()
 
@@ -383,13 +460,19 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onActionNew(self):
         NewSongDialog(self)
 
+    def getOpenFileName(self, title, file_type, parent=None, dialog=QFileDialog.getOpenFileName):
+        path = self.paths_used.get(file_type, expanduser('~'))
+        file_name, a = dialog(parent or self, title, path, file_type)
+        if a and file_name:
+            self.paths_used[file_type] = dirname(file_name)
+        return file_name, a
+
+    def getSaveFileName(self, *args):
+        return self.getOpenFileName(*args, dialog=QFileDialog.getSaveFileName)
+
     def onActionOpen(self):
-        file_name, a = (
-            QFileDialog.getOpenFileName(self,
-                                        'Open file',
-                                        expanduser('~'),
-                                        'Super Boucle Song (*.sbs)'))
-        if file_name:
+        file_name, a = self.getOpenFileName('Open Song', 'Super Boucle Song (*.sbs)')
+        if a and file_name:
             self.setEnabled(False)
             message = QMessageBox(self)
             message.setWindowTitle("Loading ....")
@@ -406,11 +489,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.onActionSaveAs()
 
     def onActionSaveAs(self):
-        file_name, a = (
-            QFileDialog.getSaveFileName(self,
-                                        'Save As',
-                                        expanduser('~'),
-                                        'Super Boucle Song (*.sbs)'))
+        file_name, a = self.getSaveFileName('Save Song', 'Super Boucle Song (*.sbs)')
 
         if file_name:
             file_name = verify_ext(file_name, 'sbs')
@@ -424,6 +503,12 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onManageDevice(self):
         ManageDialog(self)
+
+    def onPlaylistEditor(self):
+        PlaylistDialog(self)
+
+    def onPortManager(self):
+        PortManager(self)
 
     def onActionFullScreen(self):
         if self.isFullScreen():

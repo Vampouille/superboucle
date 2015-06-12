@@ -28,12 +28,10 @@ def verify_ext(file, ext):
 
 
 class Communicate(QtCore.QObject):
-
     updateUI = QtCore.pyqtSignal()
 
 
 class Clip():
-
     STOP = 0
     STARTING = 1
     START = 2
@@ -61,7 +59,7 @@ class Clip():
                          5: "RECORDING"}
 
     def __init__(self, audio_file=None, name='',
-                 volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1):
+                 volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1, route_out=0, mute_group=0):
 
         if name is '' and audio_file:
             self.name = audio_file
@@ -74,11 +72,12 @@ class Clip():
         self.state = Clip.STOP
         self.audio_file = audio_file
         self.last_offset = 0
+        self.route_out = route_out
+        self.mute_group = mute_group
 
 
 class Song():
-
-    def __init__(self, width, height):
+    def __init__(self, width, height, outputs):
         self.clips_matrix = [[None for y in range(height)]
                              for x in range(width)]
         self.clips = []
@@ -88,6 +87,7 @@ class Song():
         self.beat_per_bar = 4
         self.width = width
         self.height = height
+        self.outputs = outputs
         self.file_name = None
         self.is_record = False
 
@@ -111,11 +111,18 @@ class Song():
 
     def toogle(self, x, y):
         clip = self.clips_matrix[x][y]
-        if clip:
-            if self.is_record:
-                clip.state = Clip.RECORD_TRANSITION[clip.state]
-            else:
-                clip.state = Clip.TRANSITION[clip.state]
+        if clip is None:
+            return
+        if self.is_record:
+            clip.state = Clip.RECORD_TRANSITION[clip.state]
+        else:
+            clip.state = Clip.TRANSITION[clip.state]
+            if clip.mute_group:
+                for c in self.clips:
+                    if c and c.mute_group == clip.mute_group and c != clip:
+                        c.state = Clip.STOPPING if c.state == Clip.START \
+                            else Clip.STOP if c.state == Clip.STARTING \
+                            else c.state
 
     def channels(self, clip):
         if clip.audio_file is None:
@@ -141,7 +148,7 @@ class Song():
             raise Exception("Index out of range : {0} + {1} > {2}".
                             format(length, offset, self.length(clip)))
 
-        return (self.data[clip.audio_file][offset:offset+length, channel]
+        return (self.data[clip.audio_file][offset:offset + length, channel]
                 * clip.volume)
 
     def write_data(self, clip, channel, offset, data):
@@ -153,10 +160,10 @@ class Song():
                              ": %s + %s > %s ")
                             % (offset, data.shape[0], self.length(clip)))
 
-        self.data[clip.audio_file][offset:offset+data.shape[0], channel] = data
+        self.data[clip.audio_file][offset:offset + data.shape[0], channel] = data
         # print("Write %s bytes at offset %s to channel %s" % (data.shape[0],
-        #                                                     offset,
-        #                                                     channel))
+        # offset,
+        # channel))
 
     def init_record_buffer(self, clip, channel, size, samplerate):
         i = 0
@@ -190,13 +197,16 @@ class Song():
                                     'bpm': self.bpm,
                                     'beat_per_bar': self.beat_per_bar,
                                     'width': self.width,
-                                    'height': self.height}
+                                    'height': self.height,
+                                    'outputs': ",".join(self.outputs)}
             for clip in self.clips:
                 clip_file = {'name': clip.name,
                              'volume': str(clip.volume),
                              'frame_offset': str(clip.frame_offset),
                              'beat_offset': str(clip.beat_offset),
                              'beat_diviser': str(clip.beat_diviser),
+                             'route_out': str(clip.route_out),
+                             'mute_group': str(clip.mute_group),
                              'audio_file': basename(
                                  clip.audio_file)}
                 if clip_file['audio_file'] is None:
@@ -218,14 +228,20 @@ class Song():
         self.file_name = file
 
 
+def getDefaultOutputNames(number, pattern="Out_{group}"):
+    return [pattern.format(group=i) for i in range(number)]
+
+
 def load_song_from_file(file):
     with ZipFile(file) as zip:
         with zip.open('metadata.ini') as metadata_res:
             metadata = TextIOWrapper(metadata_res)
             parser = configparser.ConfigParser()
             parser.read_file(metadata)
+            outputs = parser['DEFAULT'].get('outputs', '')
             res = Song(parser['DEFAULT'].getint('width'),
-                       parser['DEFAULT'].getint('height'))
+                       parser['DEFAULT'].getint('height'),
+                       outputs.split(",") if len(outputs) else [])
             res.file_name = file
             res.volume = parser['DEFAULT'].getfloat('volume')
             res.bpm = parser['DEFAULT'].getfloat('bpm')
@@ -258,7 +274,9 @@ def load_song_from_file(file):
                             parser[section].getfloat('volume', 1.0),
                             parser[section].getint('frame_offset', 0),
                             parser[section].getfloat('beat_offset', 0.0),
-                            parser[section].getint('beat_diviser'))
+                            parser[section].getint('beat_diviser'),
+                            parser[section].get('route_out', 'None'),
+                            parser[section].getint('mute_group', 0))
                 res.addClip(clip, x, y)
 
     return res
