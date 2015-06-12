@@ -119,9 +119,10 @@ class Song():
             clip.state = Clip.TRANSITION[clip.state]
             if clip.mute_group:
                 for c in self.clips:
-                    c.state = Clip.STOPPING if c.state == Clip.START \
-                        else Clip.STOP if c.state == Clip.STARTING \
-                        else c.state
+                    if c and c.mute_group == clip.mute_group and c != clip:
+                        c.state = Clip.STOPPING if c.state == Clip.START \
+                            else Clip.STOP if c.state == Clip.STARTING \
+                            else c.state
 
     def channels(self, clip):
         if clip.audio_file is None:
