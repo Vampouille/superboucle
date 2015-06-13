@@ -18,6 +18,8 @@ class PortManager(QDialog, Ui_Dialog):
         self.savePortlistBtn.clicked.connect(self.onSavePortlist)
         self.portList.setDragDropMode(QAbstractItemView.InternalMove)
         self.portList.model().rowsMoved.connect(self.onMoveRows)
+        self.autoconnectCBox.setChecked(self.gui.auto_connect)
+        self.autoconnectCBox.stateChanged.connect(self.onCheckAutoconnect)
         self.finished.connect(self.onFinished)
         self.show()
 
@@ -65,6 +67,9 @@ class PortManager(QDialog, Ui_Dialog):
             file_name = verify_ext(file_name, 'sbl')
             with open(file_name, 'w') as f:
                 f.write(json.dumps(self.gui.song.outputs))
+
+    def onCheckAutoconnect(self):
+        self.gui.auto_connect = self.autoconnectCBox.isChecked()
 
     def onFinished(self):
         pass
