@@ -193,16 +193,17 @@ with client:
     if not playback:
         raise RuntimeError("No physical playback ports")
 
-    # if user has other connections that standard Main Out (i.e complex connections with dedicated outputs),
-    # then it is much better to leave the user creates his connections with jack patchbay instead of connecting automatically here.
-    # client.connect(outL, playback[0])
-    # client.connect(outR, playback[1])
-
     record = client.get_ports(is_physical=True, is_output=True)
     if not record:
         raise RuntimeError("No physical record ports")
 
-    # client.connect(record[0], inL)
-    # client.connect(record[1], inR)
+    # if user has other connections that standard Main Out (i.e complex connections with dedicated outputs),
+    # then it is much better to leave the user creates his connections with jack patchbay instead of connecting automatically here.
+    if gui.auto_connect:
+        client.connect(outL, playback[0])
+        client.connect(outR, playback[1])
+
+        client.connect(record[0], inL)
+        client.connect(record[1], inR)
 
     app.exec_()

@@ -197,14 +197,14 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.updateDevices()
         self.deviceGroup.triggered.connect(self.onDeviceSelect)
 
+        # TODO: find a nicer way to store settings - discussion desirable.
         # Load playlist
-        self.playlist = []
         self.settings = QSettings('superboucle', 'session')
-        if self.settings.contains('playlist') and self.settings.value('playlist'):
-            self.playlist = getSongs(self.settings.value('playlist'))
-        self.paths_used = {}
-        if self.settings.contains('paths_used') and self.settings.value('paths_used'):
-            self.paths_used = self.settings.value('paths_used')
+        # Qsetting appear to serialize empty lists as @QInvalid which is then read as None :(
+        self.playlist = getSongs(self.settings.value('playlist', []) or [])
+        self.paths_used = self.settings.value('paths_used', {})
+
+        self.auto_connect = self.settings.value('auto_connect', 'true') == "true"
 
 
         # Load song
@@ -299,6 +299,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                           [pickle.dumps(x.mapping) for x in self.devices])
         self.settings.setValue('playlist', [song.file_name for song in self.playlist])
         self.settings.setValue('paths_used', self.paths_used)
+        self.settings.setValue('auto_connect', self.auto_connect)
 
     def onStartStopClicked(self):
         clip = self.sender().parent().parent().clip
