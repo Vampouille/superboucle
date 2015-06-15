@@ -267,7 +267,11 @@ class LearnDialog(QDialog, Ui_Dialog):
 
         channel = status & 0xF
         msg_type = status >> 4
-        btn_id = (msg_type, channel, pitch, velocity)
+        # -1: special value for velocity sensitive pad
+        btn_id = (msg_type,
+                  channel,
+                  pitch,
+                  -1 if velocity not in [0, 127] else velocity)
         btn_key = (msg_type >> 1, channel, pitch)
         ctrl_key = (msg_type, channel, pitch)
 

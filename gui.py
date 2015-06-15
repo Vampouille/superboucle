@@ -471,14 +471,18 @@ class Gui(QMainWindow, Ui_MainWindow):
                     channel = status & 0xF
                     msg_type = status >> 4
                     self.processNote(msg_type, channel, pitch, vel)
-                else:
-                    print("Invalid message length")
+                # else:
+                # print("Invalid message length")
         except Empty:
             pass
 
     def processNote(self, msg_type, channel, pitch, vel):
 
-        btn_key = (msg_type, channel, pitch, vel)
+        btn_id = (msg_type,
+                  channel,
+                  pitch,
+                  vel)
+        btn_id_vel = (msg_type, channel, pitch, -1)
         ctrl_key = (msg_type, channel, pitch)
 
         # master volume
@@ -486,15 +490,15 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.song.master_volume = vel / 127
             (self.master_volume
              .setValue(self.song.master_volume * 256))
-        elif btn_key == self.device.play_btn:
+        elif self.device.play_btn in [btn_id, btn_id_vel]:
             self._jack_client.transport_start()
-        elif btn_key == self.device.pause_btn:
+        elif self.device.pause_btn in [btn_id, btn_id_vel]:
             self._jack_client.transport_stop()
-        elif btn_key == self.device.rewind_btn:
+        elif self.device.rewind_btn in [btn_id, btn_id_vel]:
             self.onRewindClicked()
-        elif btn_key == self.device.goto_btn:
+        elif self.device.goto_btn in [btn_id, btn_id_vel]:
             self.onGotoClicked()
-        elif btn_key == self.device.record_btn:
+        elif self.device.record_btn in [btn_id, btn_id_vel]:
             self.onRecord()
         elif ctrl_key in self.device.ctrls:
             try:
@@ -504,10 +508,18 @@ class Gui(QMainWindow, Ui_MainWindow):
                         [self.current_vol_block])
                 if clip:
                     clip.volume = vel / 127
+                    if self.last_clip == clip:
+                        self.clip_volume.setValue(self.last_clip.volume * 256)
             except KeyError:
                 pass
-        elif btn_key in self.device.block_buttons:
-            self.current_vol_block = self.device.block_buttons.index(btn_key)
+        elif (btn_id in self.device.block_buttons
+              or btn_id_vel in self.device.block_buttons):
+            try:
+                self.current_vol_block = (
+                    self.device.block_buttons.index(btn_id))
+            except ValueError:
+                self.current_vol_block = (
+                    self.device.block_buttons.index(btn_id_vel))
             for i in range(len(self.device.block_buttons)):
                 (a, b_channel, b_pitch, b) = self.device.block_buttons[i]
                 if i == self.current_vol_block:
@@ -518,14 +530,19 @@ class Gui(QMainWindow, Ui_MainWindow):
                                     b_pitch,
                                     color))
         else:
+            x, y = -1, -1
             try:
-                x, y = self.device.getXY(btn_key)
-                if (x >= 0 and y >= 0):
-                    self.startStop(x, y)
+                x, y = self.device.getXY(btn_id)
             except IndexError:
                 pass
             except KeyError:
-                pass
+                try:
+                    x, y = self.device.getXY(btn_id_vel)
+                except KeyError:
+                    pass
+
+            if (x >= 0 and y >= 0):
+                self.startStop(x, y)
 
     def setCellColor(self, x, y, color, blink=False):
         self.btn_matrix[x][y].setStyleSheet(color)

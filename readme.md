@@ -110,6 +110,12 @@ You can :
 * Adjust volume of each clip/sample
 * Select clip to record and start record
 
+### Velocity sensitive MIDI device
+
+For those type of device, don't press button/pad with maximum velocity. In
+order to detect velocity sensitive device, superboucle need to receive MIDI
+message with velocity different than 0 or 127.
+
 ### Device Name
 
 Set the device name. Use a name of your choice. This is only for display
