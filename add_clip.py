@@ -7,7 +7,6 @@ from clip import Clip, basename
 
 
 class AddClipDialog(QDialog, Ui_Dialog):
-
     def __init__(self, parent, cell):
         super(AddClipDialog, self).__init__(parent)
         self.gui = parent

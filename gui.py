@@ -111,7 +111,8 @@ class Cell(QWidget, Ui_Cell):
         self.gui.update()
 
     def openClip(self):
-        audio_file, a = self.gui.getOpenFileName('Open Clip', 'All files (*.*)', self)
+        audio_file, a = self.gui.getOpenFileName('Open Clip',
+                                                 'All files (*.*)', self)
         if audio_file and a:
             wav_id = basename(audio_file)
             if wav_id in self.gui.song.data:
@@ -204,7 +205,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.playlist = getSongs(self.settings.value('playlist', []) or [])
         self.paths_used = self.settings.value('paths_used', {})
 
-        self.auto_connect = self.settings.value('auto_connect', 'true') == "true"
+        self.auto_connect = self.settings.value('auto_connect',
+                                                'true') == "true"
 
 
         # Load song
@@ -231,7 +233,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
-        self.route_out.activated.connect(self.onRouteOutChange)  # currentIndexChanged
+        self.route_out.activated.connect(
+            self.onRouteOutChange)  # currentIndexChanged
         self.mute_group.valueChanged.connect(self.onMuteGroupChange)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
@@ -297,7 +300,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         settings = QSettings('superboucle', 'devices')
         settings.setValue('devices',
                           [pickle.dumps(x.mapping) for x in self.devices])
-        self.settings.setValue('playlist', [song.file_name for song in self.playlist])
+        self.settings.setValue('playlist',
+                               [song.file_name for song in self.playlist])
         self.settings.setValue('paths_used', self.paths_used)
         self.settings.setValue('auto_connect', self.auto_connect)
 
@@ -376,7 +380,8 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onExportClip(self):
         if self.last_clip and self.last_clip.audio_file:
             audio_file = self.last_clip.audio_file
-            file_name, a = self.getOpenFileName('Export Clip : %s' % self.last_clip.name, 'WAVE (*.wav)')
+            file_name, a = self.getOpenFileName(
+                'Export Clip : %s' % self.last_clip.name, 'WAVE (*.wav)')
 
             if file_name:
                 file_name = verify_ext(file_name, 'wav')
@@ -461,7 +466,8 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onActionNew(self):
         NewSongDialog(self)
 
-    def getOpenFileName(self, title, file_type, parent=None, dialog=QFileDialog.getOpenFileName):
+    def getOpenFileName(self, title, file_type, parent=None,
+                        dialog=QFileDialog.getOpenFileName):
         path = self.paths_used.get(file_type, expanduser('~'))
         file_name, a = dialog(parent or self, title, path, file_type)
         if a and file_name:
@@ -472,7 +478,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         return self.getOpenFileName(*args, dialog=QFileDialog.getSaveFileName)
 
     def onActionOpen(self):
-        file_name, a = self.getOpenFileName('Open Song', 'Super Boucle Song (*.sbs)')
+        file_name, a = self.getOpenFileName('Open Song',
+                                            'Super Boucle Song (*.sbs)')
         if a and file_name:
             self.setEnabled(False)
             message = QMessageBox(self)
@@ -490,7 +497,8 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.onActionSaveAs()
 
     def onActionSaveAs(self):
-        file_name, a = self.getSaveFileName('Save Song', 'Super Boucle Song (*.sbs)')
+        file_name, a = self.getSaveFileName('Save Song',
+                                            'Super Boucle Song (*.sbs)')
 
         if file_name:
             file_name = verify_ext(file_name, 'sbs')

@@ -2,7 +2,6 @@ from clip import Clip
 
 
 class Device():
-
     NOTEON = 0x90
     NOTEOFF = 0x80
 
@@ -24,8 +23,8 @@ class Device():
         (msg_type, channel, pitch, velocity) = self.start_stop[y][x]
         return (self.NOTEON + channel, pitch, self.get_color(state))
 
-#    def __str__(self):
-#        return str(self.mapping)
+    #    def __str__(self):
+    #        return str(self.mapping)
 
     def get_color(self, state):
         if state is None:
