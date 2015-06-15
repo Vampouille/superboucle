@@ -45,18 +45,24 @@ class PlaylistDialog(QDialog, Ui_Dialog):
             self.gui.playlist.remove(song)
             self.updateList()
 
-    def onMoveRows(self, sourceParent, sourceStart, sourceEnd, destinationParent, destinationRow):
+    def onMoveRows(self, sourceParent, sourceStart, sourceEnd,
+                   destinationParent, destinationRow):
         l = self.gui.playlist
         destinationRow -= destinationRow > sourceStart
         l.insert(destinationRow, l.pop(sourceStart))
 
     def onAddSongs(self):
-        file_names, a = self.gui.getSaveFileName('Add Songs', 'Super Boucle Song (*.sbs)', self, QFileDialog.getOpenFileNames)
+        file_names, a = self.gui.getSaveFileName('Add Songs',
+                                                 'Super Boucle Song (*.sbs)',
+                                                 self,
+                                                 QFileDialog.getOpenFileNames)
         self.gui.playlist += getSongs(file_names)
         self.updateList()
 
     def onLoadPlaylist(self):
-        file_name, a = self.gui.getOpenFileName('Open Playlist', 'Super Boucle Playlist (*.sbp)', self)
+        file_name, a = self.gui.getOpenFileName('Open Playlist',
+                                                'Super Boucle Playlist (*.sbp)',
+                                                self)
         if not file_name:
             return
         with open(file_name, 'r') as f:
@@ -65,12 +71,15 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         self.updateList()
 
     def onSavePlaylist(self):
-        file_name, a = self.gui.getSaveFileName('Save Playlist', 'Super Boucle Playlist (*.sbp)', self)
+        file_name, a = self.gui.getSaveFileName('Save Playlist',
+                                                'Super Boucle Playlist (*.sbp)',
+                                                self)
 
         if file_name:
             file_name = verify_ext(file_name, 'sbp')
             with open(file_name, 'w') as f:
-                f.write(json.dumps([song.file_name for song in self.gui.playlist]))
+                f.write(
+                    json.dumps([song.file_name for song in self.gui.playlist]))
 
     def onLoadSong(self):
         id = self.playlistList.currentRow()

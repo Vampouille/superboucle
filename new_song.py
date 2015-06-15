@@ -14,5 +14,6 @@ class NewSongDialog(QDialog, Ui_Dialog):
     def accept(self):
         self.gui.initUI(Song(self.widthSpinBox.value(),
                              self.heightSpinBox.value(),
-                             getDefaultOutputNames(self.outputsSpinBox.value())))
+                             getDefaultOutputNames(
+                                 self.outputsSpinBox.value())))
         super(NewSongDialog, self).accept()

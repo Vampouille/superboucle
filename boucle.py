@@ -39,7 +39,8 @@ def my_callback(frames):
     inL_buffer = inL.get_array()
     inR_buffer = inR.get_array()
 
-    dedicated_out_buffers = {k: tuple(vc.get_array() for vc in v) for k, v in gui.dedicated_outputs.items()}
+    dedicated_out_buffers = {k: tuple(vc.get_array() for vc in v) for k, v in
+                             gui.dedicated_outputs.items()}
 
     for bs in dedicated_out_buffers.values():
         for b in bs:
@@ -65,14 +66,18 @@ def my_callback(frames):
 
         for clip in song.clips:
             frame_per_beat = fpm / bpm
-            clip_period = (fpm * clip.beat_diviser) / bpm  # length of the clip in frames
-            total_frame_offset = clip.frame_offset + (clip.beat_offset * frame_per_beat)
+            clip_period = (
+                              fpm * clip.beat_diviser) / bpm  # length of the clip in frames
+            total_frame_offset = clip.frame_offset + (
+                clip.beat_offset * frame_per_beat)
             # frame_beat: how many times the clip hast been played already (???)
             # clip_offset: position in the clip about to be played
-            frame_beat, clip_offset = divmod((frame - total_frame_offset) * bpm, fpm * clip.beat_diviser)
+            frame_beat, clip_offset = divmod(
+                (frame - total_frame_offset) * bpm, fpm * clip.beat_diviser)
             clip_offset = round(clip_offset / bpm)
 
-            buffers = [(outL_buffer, outR_buffer)]  # list of all output buffers that the clip is writing
+            buffers = [(outL_buffer,
+                        outR_buffer)]  # list of all output buffers that the clip is writing
             # if the route out setting is valid, add the corresponding dedicated buffer
             if (clip.route_out in dedicated_out_buffers):
                 buffers.append(dedicated_out_buffers[clip.route_out])

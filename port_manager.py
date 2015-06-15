@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QDialog, QAbstractItemView, QInputDialog, QLineEdit, QListWidgetItem
+from PyQt5.QtWidgets import QDialog, QAbstractItemView, QInputDialog, \
+    QLineEdit, QListWidgetItem
 from PyQt5.QtCore import Qt
 from port_manager_ui import Ui_Dialog
 from clip import verify_ext
@@ -38,21 +39,26 @@ class PortManager(QDialog, Ui_Dialog):
             self.gui.song.outputs.remove(song)
             self.updateList()
 
-    def onMoveRows(self, sourceParent, sourceStart, sourceEnd, destinationParent, destinationRow):
+    def onMoveRows(self, sourceParent, sourceStart, sourceEnd,
+                   destinationParent, destinationRow):
         l = self.gui.song.outputs
         destinationRow -= destinationRow > sourceStart
         l.insert(destinationRow, l.pop(sourceStart))
 
     def onAddPort(self):
-        text, ok = QInputDialog.getText(self, "Add a port..", "port name ", QLineEdit.Normal,
-                                        "Out_{}".format(len(self.gui.song.outputs)))
+        text, ok = QInputDialog.getText(self, "Add a port..", "port name ",
+                                        QLineEdit.Normal,
+                                        "Out_{}".format(
+                                            len(self.gui.song.outputs)))
         if not ok:
             return
         self.gui.song.outputs.append(text)
         self.updateList()
 
     def onLoadPortlist(self):
-        file_name, a = self.gui.getOpenFileName('Open Portlist', 'Super Boucle Portlist (*.sbl)', self)
+        file_name, a = self.gui.getOpenFileName('Open Portlist',
+                                                'Super Boucle Portlist (*.sbl)',
+                                                self)
         if not file_name:
             return
         with open(file_name, 'r') as f:
@@ -61,7 +67,9 @@ class PortManager(QDialog, Ui_Dialog):
         self.updateList()
 
     def onSavePortlist(self):
-        file_name, a = self.gui.getSaveFileName('Save Portlist', 'Super Boucle Portlist (*.sbl)', self)
+        file_name, a = self.gui.getSaveFileName('Save Portlist',
+                                                'Super Boucle Portlist (*.sbl)',
+                                                self)
 
         if file_name:
             file_name = verify_ext(file_name, 'sbl')

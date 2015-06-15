@@ -12,14 +12,12 @@ _init_cmd_regexp = re.compile("^\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*$")
 
 
 class LearnCell(QWidget, Ui_LearnCell):
-
     def __init__(self, parent):
         super(LearnCell, self).__init__(parent)
         self.setupUi(self)
 
 
 class LearnDialog(QDialog, Ui_Dialog):
-
     NOTEON = 0x9
     NOTEOFF = 0x8
     MIDICTRL = 11

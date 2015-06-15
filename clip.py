@@ -59,7 +59,8 @@ class Clip():
                          5: "RECORDING"}
 
     def __init__(self, audio_file=None, name='',
-                 volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1, route_out=0, mute_group=0):
+                 volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1,
+                 route_out=0, mute_group=0):
 
         if name is '' and audio_file:
             self.name = audio_file
@@ -160,7 +161,8 @@ class Song():
                              ": %s + %s > %s ")
                             % (offset, data.shape[0], self.length(clip)))
 
-        self.data[clip.audio_file][offset:offset + data.shape[0], channel] = data
+        self.data[clip.audio_file][offset:offset + data.shape[0],
+        channel] = data
         # print("Write %s bytes at offset %s to channel %s" % (data.shape[0],
         # offset,
         # channel))
