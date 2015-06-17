@@ -39,6 +39,10 @@ class Clip():
     PREPARE_RECORD = 4
     RECORDING = 5
 
+    CHANNEL_NAMES = ["L", "R"]
+    CHANNEL_NAME_PATTERN = "{port}_{channel}"
+    DEFAULT_OUTPUT = "MAIN"
+
     TRANSITION = {STOP: STARTING,
                   STARTING: STOP,
                   START: STOPPING,
@@ -58,9 +62,15 @@ class Clip():
                          4: "PREPARE_RECORD",
                          5: "RECORDING"}
 
+    @staticmethod
+    def default_outports():
+        for name in Clip.CHANNEL_NAMES:
+            yield Clip.CHANNEL_NAME_PATTERN.format(port=Clip.DEFAULT_OUTPUT,
+                                                   channel=name)
+
     def __init__(self, audio_file=None, name='',
                  volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1,
-                 route_out=0, mute_group=0):
+                 output=DEFAULT_OUTPUT, mute_group=0):
 
         if name is '' and audio_file:
             self.name = audio_file
@@ -73,12 +83,12 @@ class Clip():
         self.state = Clip.STOP
         self.audio_file = audio_file
         self.last_offset = 0
-        self.route_out = route_out
+        self.output = output
         self.mute_group = mute_group
 
 
 class Song():
-    def __init__(self, width, height, outputs):
+    def __init__(self, width, height):
         self.clips_matrix = [[None for y in range(height)]
                              for x in range(width)]
         self.clips = []
@@ -88,7 +98,6 @@ class Song():
         self.beat_per_bar = 4
         self.width = width
         self.height = height
-        self.outputs = outputs
         self.file_name = None
         self.is_record = False
 
@@ -130,6 +139,27 @@ class Song():
             return 0
         else:
             return self.data[clip.audio_file].shape[1]
+
+    @property
+    def outputs(self):
+        seen = set()
+        seen_add = seen.add
+        return [c.output for c in self.clips if
+                not (c.output in seen or seen_add(c.output))]
+
+    def channel_names(self, output):
+        number = max(self.channels(clip) for clip in self.clips if
+                     clip.output == output)
+        for i in range(number):
+            try:
+                name = Clip.CHANNEL_NAMES[i]
+            except IndexError:
+                name = i + 1
+            yield (Clip.CHANNEL_NAME_PATTERN.format(port=output,
+                                                    channel=name))
+
+    def clips_by_output(self, output):
+        return (clip for clip in self.clips if clip.output == output)
 
     def length(self, clip):
         if clip.audio_file is None:
@@ -199,15 +229,14 @@ class Song():
                                     'bpm': self.bpm,
                                     'beat_per_bar': self.beat_per_bar,
                                     'width': self.width,
-                                    'height': self.height,
-                                    'outputs': ",".join(self.outputs)}
+                                    'height': self.height}
             for clip in self.clips:
                 clip_file = {'name': clip.name,
                              'volume': str(clip.volume),
                              'frame_offset': str(clip.frame_offset),
                              'beat_offset': str(clip.beat_offset),
                              'beat_diviser': str(clip.beat_diviser),
-                             'route_out': str(clip.route_out),
+                             'output': clip.output,
                              'mute_group': str(clip.mute_group),
                              'audio_file': basename(
                                  clip.audio_file)}
@@ -240,10 +269,8 @@ def load_song_from_file(file):
             metadata = TextIOWrapper(metadata_res)
             parser = configparser.ConfigParser()
             parser.read_file(metadata)
-            outputs = parser['DEFAULT'].get('outputs', '')
             res = Song(parser['DEFAULT'].getint('width'),
-                       parser['DEFAULT'].getint('height'),
-                       outputs.split(",") if len(outputs) else [])
+                       parser['DEFAULT'].getint('height'))
             res.file_name = file
             res.volume = parser['DEFAULT'].getfloat('volume')
             res.bpm = parser['DEFAULT'].getfloat('bpm')
@@ -277,7 +304,7 @@ def load_song_from_file(file):
                             parser[section].getint('frame_offset', 0),
                             parser[section].getfloat('beat_offset', 0.0),
                             parser[section].getint('beat_diviser'),
-                            parser[section].get('route_out', 'None'),
+                            parser[section].get('output', Clip.DEFAULT_OUTPUT),
                             parser[section].getint('mute_group', 0))
                 res.addClip(clip, x, y)
 

@@ -1,10 +1,8 @@
-from PyQt5.QtWidgets import QDialog, QAbstractItemView, QInputDialog, \
-    QLineEdit, QListWidgetItem
+from PyQt5.QtWidgets import QDialog, QLineEdit, QMessageBox, QListWidgetItem
 from PyQt5.QtCore import Qt
 from port_manager_ui import Ui_Dialog
-from clip import verify_ext
+from clip import verify_ext, Clip
 import json
-from os.path import expanduser, basename, splitext
 
 
 class PortManager(QDialog, Ui_Dialog):
@@ -17,10 +15,10 @@ class PortManager(QDialog, Ui_Dialog):
         self.addPortBtn.clicked.connect(self.onAddPort)
         self.loadPortlistBtn.clicked.connect(self.onLoadPortlist)
         self.savePortlistBtn.clicked.connect(self.onSavePortlist)
-        self.portList.setDragDropMode(QAbstractItemView.InternalMove)
-        self.portList.model().rowsMoved.connect(self.onMoveRows)
+        # self.portList.setDragDropMode(QAbstractItemView.InternalMove)
+        # self.portList.model().rowsMoved.connect(self.onMoveRows)
         self.autoconnectCBox.setChecked(self.gui.auto_connect)
-        self.autoconnectCBox.stateChanged.connect(self.onCheckAutoconnect)
+        # self.autoconnectCBox.stateChanged.connect(self.onCheckAutoconnect)
         self.finished.connect(self.onFinished)
         self.show()
 
@@ -32,28 +30,27 @@ class PortManager(QDialog, Ui_Dialog):
             self.portList.addItem(this_item)
         self.gui.updatePorts()
 
+    def onAddPort(self):
+        msg = "As of now you can only add Ports directly in the " \
+              "output field when editing clips."
+        QMessageBox.question(self, 'Not implemented.', msg, QMessageBox.Ok)
+        return
+        # text, ok = QInputDialog.getText(self, "Add a port..", "port name ",
+        #                                 QLineEdit.Normal,
+        #                                 "Out_{}".format(
+        #                                     len(self.gui.song.outputs)))
+        # if not ok:
+        #     return
+        # self.gui.song.outputs.append(text)
+        # self.updateList()
+
     def onRemove(self):
         id = self.portList.currentRow()
         if id != -1:
-            song = self.gui.song.outputs[id]
-            self.gui.song.outputs.remove(song)
+            currentOutput = self.gui.song.outputs[id]
+            for c in self.gui.song.clips_by_output(currentOutput):
+                c.output = Clip.DEFAULT_OUTPUT
             self.updateList()
-
-    def onMoveRows(self, sourceParent, sourceStart, sourceEnd,
-                   destinationParent, destinationRow):
-        l = self.gui.song.outputs
-        destinationRow -= destinationRow > sourceStart
-        l.insert(destinationRow, l.pop(sourceStart))
-
-    def onAddPort(self):
-        text, ok = QInputDialog.getText(self, "Add a port..", "port name ",
-                                        QLineEdit.Normal,
-                                        "Out_{}".format(
-                                            len(self.gui.song.outputs)))
-        if not ok:
-            return
-        self.gui.song.outputs.append(text)
-        self.updateList()
 
     def onLoadPortlist(self):
         file_name, a = self.gui.getOpenFileName('Open Portlist',
@@ -63,7 +60,11 @@ class PortManager(QDialog, Ui_Dialog):
             return
         with open(file_name, 'r') as f:
             read_data = f.read()
-        self.gui.song.outputs = json.loads(read_data)
+        portmatrix = json.loads(read_data)
+        for tp in zip(self.gui.song.clips_matrix, portmatrix):
+            for (clip, out) in zip(*tp):
+                if isinstance(clip, Clip):
+                    clip.output = out
         self.updateList()
 
     def onSavePortlist(self):
@@ -74,10 +75,11 @@ class PortManager(QDialog, Ui_Dialog):
         if file_name:
             file_name = verify_ext(file_name, 'sbl')
             with open(file_name, 'w') as f:
-                f.write(json.dumps(self.gui.song.outputs))
-
-    def onCheckAutoconnect(self):
-        self.gui.auto_connect = self.autoconnectCBox.isChecked()
+                data = [
+                    [c.output if isinstance(c, Clip) else Clip.DEFAULT_OUTPUT
+                     for c in cliprow] for cliprow in
+                    self.gui.song.clips_matrix]
+                f.write(json.dumps(data))
 
     def onFinished(self):
         pass
