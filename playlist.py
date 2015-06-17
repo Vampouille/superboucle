@@ -52,7 +52,7 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         l.insert(destinationRow, l.pop(sourceStart))
 
     def onAddSongs(self):
-        file_names, a = self.gui.getSaveFileName('Add Songs',
+        file_names, a = self.gui.getOpenFileName('Add Songs',
                                                  'Super Boucle Song (*.sbs)',
                                                  self,
                                                  QFileDialog.getOpenFileNames)

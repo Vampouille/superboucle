@@ -169,7 +169,6 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     BLINK_DURATION = 200
     PROGRESS_PERIOD = 300
-    CHANNELS = ["L", "R"]
 
     updateUi = pyqtSignal()
     readQueueIn = pyqtSignal()
@@ -284,7 +283,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         for init_cmd in self.device.init_command:
             self.queue_out.put(init_cmd)
 
-        self.updatePorts()
         self.update()
 
     def updatePorts(self):
@@ -471,7 +469,10 @@ class Gui(QMainWindow, Ui_MainWindow):
         path = self.paths_used.get(file_type, expanduser('~'))
         file_name, a = dialog(parent or self, title, path, file_type)
         if a and file_name:
-            self.paths_used[file_type] = dirname(file_name)
+            if isinstance(file_name, list):
+                self.paths_used[file_type] = dirname(file_name[0])
+            else:
+                self.paths_used[file_type] = dirname(file_name)
         return file_name, a
 
     def getSaveFileName(self, *args):
