@@ -444,8 +444,8 @@ border-radius: 2px;</string>
             <rect>
              <x>10</x>
              <y>246</y>
-             <width>184</width>
-             <height>30</height>
+             <width>194</width>
+             <height>31</height>
             </rect>
            </property>
            <layout class="QFormLayout" name="formLayout">
@@ -453,7 +453,11 @@ border-radius: 2px;</string>
              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
             </property>
             <item row="0" column="0">
-             <widget class="QComboBox" name="route_out"/>
+             <widget class="QComboBox" name="output">
+              <property name="editable">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
             <item row="0" column="1">
              <widget class="QLabel" name="label_9">
@@ -465,7 +469,7 @@ border-radius: 2px;</string>
                </font>
               </property>
               <property name="text">
-               <string>Dedicated Output</string>
+               <string>Output</string>
               </property>
              </widget>
             </item>
@@ -850,7 +854,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
      <x>0</x>
      <y>0</y>
      <width>1111</width>
-     <height>25</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

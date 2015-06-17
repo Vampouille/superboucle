@@ -4,18 +4,17 @@
 
 import jack
 import sys
-from clip import Clip, Song, getDefaultOutputNames
+from clip import Clip, Song
 from gui import Gui
 from PyQt5.QtWidgets import QApplication
 from queue import Empty
 
-song = Song(8, 8, getDefaultOutputNames(8))
+song = Song(8, 8)
 
 client = jack.Client("Super Boucle")
 midi_in = client.midi_inports.register("input")
 midi_out = client.midi_outports.register("output")
-outL = client.outports.register("MAIN_L")
-outR = client.outports.register("MAIN_R")
+main_outs = list(map(client.outports.register, Clip.default_outports()))
 
 inL = client.inports.register("input_L")
 inR = client.inports.register("input_R")
@@ -32,19 +31,16 @@ CLIP_TRANSITION = {Clip.STARTING: Clip.START,
 def my_callback(frames):
     song = gui.song
     state, position = client.transport_query()
-    outL_buffer = outL.get_array()
-    outR_buffer = outR.get_array()
-    outL_buffer[:] = 0
-    outR_buffer[:] = 0
+
     inL_buffer = inL.get_array()
     inR_buffer = inR.get_array()
 
-    dedicated_out_buffers = {k: tuple(vc.get_array() for vc in v) for k, v in
-                             gui.dedicated_outputs.items()}
+    gui.ports_initialised.wait()
+    output_buffers = {k: v.get_array() for k, v in
+                      gui.output_ports_by_name.items()}
 
-    for bs in dedicated_out_buffers.values():
-        for b in bs:
-            b[:] = 0
+    for b in output_buffers.values():
+        b[:] = 0
 
     # check midi in
     if gui.is_learn_device_mode:
@@ -65,6 +61,12 @@ def my_callback(frames):
         blocksize = client.blocksize
 
         for clip in song.clips:
+            # only process clips if their output is already registered
+            if clip.output not in gui.port_names_by_output:
+                continue
+            buffers = [output_buffers[n] for n in
+                       gui.port_names_by_output[clip.output]]
+
             frame_per_beat = fpm / bpm
             clip_period = (
                               fpm * clip.beat_diviser) / bpm  # length of the clip in frames
@@ -75,12 +77,6 @@ def my_callback(frames):
             frame_beat, clip_offset = divmod(
                 (frame - total_frame_offset) * bpm, fpm * clip.beat_diviser)
             clip_offset = round(clip_offset / bpm)
-
-            buffers = [(outL_buffer,
-                        outR_buffer)]  # list of all output buffers that the clip is writing
-            # if the route out setting is valid, add the corresponding dedicated buffer
-            if (clip.route_out in dedicated_out_buffers):
-                buffers.append(dedicated_out_buffers[clip.route_out])
 
             # next beat is in block ?
             if (clip_offset + blocksize) > clip_period:
@@ -94,17 +90,12 @@ def my_callback(frames):
                 # is there enough audio data ?
                 if clip_offset < song.length(clip):
                     length = min(song.length(clip) - clip_offset, frames)
-                    l_data = song.get_data(clip,
-                                           0,
-                                           clip_offset,
-                                           length)
-                    r_data = song.get_data(clip,
-                                           1,
-                                           clip_offset,
-                                           length)
-                    for (lBuffer, rBuffer) in buffers:
-                        lBuffer[:length] += l_data
-                        rBuffer[:length] += r_data
+                    for c in range(song.channels(clip)):
+                        data = song.get_data(clip,
+                                             c,
+                                             clip_offset,
+                                             length)
+                        buffers[c][:length] += data
 
                     clip.last_offset = clip_offset
                     # print("buffer[:{0}] = sample[{1}:{2}]".
@@ -135,17 +126,12 @@ def my_callback(frames):
                                      or clip.state == Clip.STARTING):
                 length = min(song.length(clip), blocksize - next_clip_offset)
                 if length:
-                    l_data = song.get_data(clip,
-                                           0,
-                                           0,
-                                           length)
-                    r_data = song.get_data(clip,
-                                           1,
-                                           0,
-                                           length)
-                    for (lBuffer, rBuffer) in buffers:
-                        lBuffer[next_clip_offset:] += l_data
-                        rBuffer[next_clip_offset:] += r_data
+                    for c in range(song.channels(clip)):
+                        data = song.get_data(clip,
+                                             c,
+                                             0,
+                                             length)
+                        buffers[c][next_clip_offset:] += data
 
                 clip.last_offset = 0
                 # print("buffer[{0}:] = sample[:{1}]".
@@ -174,8 +160,8 @@ def my_callback(frames):
                     pass
 
         # apply master volume
-        outL_buffer[:] *= song.volume
-        outR_buffer[:] *= song.volume
+        for b in output_buffers.values():
+            b[:] *= song.volume
 
     try:
         i = 1
@@ -202,11 +188,9 @@ with client:
     if not record:
         raise RuntimeError("No physical record ports")
 
-    # if user has other connections that standard Main Out (i.e complex connections with dedicated outputs),
-    # then it is much better to leave the user creates his connections with jack patchbay instead of connecting automatically here.
     if gui.auto_connect:
-        client.connect(outL, playback[0])
-        client.connect(outR, playback[1])
+        for o, p in zip(main_outs, playback):
+            client.connect(o, p)
 
         client.connect(record[0], inL)
         client.connect(record[1], inR)

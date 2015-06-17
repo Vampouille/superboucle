@@ -17,6 +17,7 @@ from playlist import PlaylistDialog, getSongs
 from port_manager import PortManager
 from new_song import NewSongDialog
 from add_clip import AddClipDialog
+from threading import Event
 from device import Device
 import struct
 from queue import Queue, Empty
@@ -108,6 +109,7 @@ class Cell(QWidget, Ui_Cell):
         self.start_stop.setEnabled(True)
         self.clip_position.setEnabled(True)
         self.gui.song.addClip(new_clip, self.pos_x, self.pos_y)
+        self.gui.updatePorts()
         self.gui.update()
 
     def openClip(self):
@@ -185,6 +187,9 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.readQueueIn.connect(self.readQueue)
         self.current_vol_block = 0
 
+        self.ports_initialised = Event()
+        self.ports_initialised.clear()
+
         # Load devices
         self.deviceGroup = QActionGroup(self.menuDevice)
         self.devices = []
@@ -209,7 +214,8 @@ class Gui(QMainWindow, Ui_MainWindow):
 
 
         # Load song
-        self.dedicated_outputs = {}
+        self.output_ports_by_name = {}
+        self.port_names_by_output = {}
         self.initUI(song)
 
         self.actionNew.triggered.connect(self.onActionNew)
@@ -232,8 +238,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
-        self.route_out.activated.connect(
-            self.onRouteOutChange)  # currentIndexChanged
+        self.output.activated.connect(
+            self.onOutputChange)  # currentIndexChanged
         self.mute_group.valueChanged.connect(self.onMuteGroupChange)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
@@ -267,7 +273,10 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.gridLayout.itemAt(i).widget().close()
             self.gridLayout.itemAt(i).widget().setParent(None)
 
+        self.ports_initialised.clear()
         self.song = song
+        self.updatePorts()
+
         self.frame_clip.setEnabled(False)
         self.master_volume.setValue(song.volume * 256)
         self.bpm.setValue(song.bpm)
@@ -287,12 +296,44 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def updatePorts(self):
 
-        self._jack_client.outports.unregister_range(2)
-        self.dedicated_outputs = {}
-        for os in self.song.outputs:
-            o = ((os + "_{channel}").format(channel=c) for c in Gui.CHANNELS)
-            o = tuple(map(self._jack_client.outports.register, o))
-            self.dedicated_outputs[os] = o
+        self.ports_initialised.clear()
+        client = self._jack_client
+        print("Outputs ports : ")
+        for port in client.outports:
+            print(port)
+
+        self.port_names_by_output = {o: list(self.song.channel_names(o)) for o
+                                     in self.song.outputs}
+
+        wanted_ports = set(
+            c for os in self.port_names_by_output.values() for c in os)
+
+        print("wanted ports:")
+        print(wanted_ports)
+
+        # remove unwanted ports
+        for port in [port for port in client.outports
+                     if port.shortname not in wanted_ports | set(
+                Clip.default_outports())]:
+            port.unregister()
+
+        print("Outputs after removing unused ports: ")
+        for port in client.outports:
+            print(port)
+
+        # create new ports
+        current_ports = set(port.shortname for port in client.outports)
+        for new_port_name in wanted_ports - current_ports:
+            client.outports.register(new_port_name)
+
+        print("Outputs after adding new ports: ")
+        for port in client.outports:
+            print(port)
+
+        self.output_ports_by_name = {port.shortname: port for port in
+                                     client.outports}
+        print(self.output_ports_by_name)
+        self.ports_initialised.set()
 
     def closeEvent(self, event):
         settings = QSettings('superboucle', 'devices')
@@ -336,11 +377,10 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.frame_offset.setValue(self.last_clip.frame_offset)
             self.beat_offset.setValue(self.last_clip.beat_offset)
             self.beat_diviser.setValue(self.last_clip.beat_diviser)
-            self.route_out.clear()
-            self.route_out.insertItem(0, "None")
-            self.route_out.insertItems(1, self.song.outputs)
-            ro, op = self.last_clip.route_out, self.song.outputs
-            self.route_out.setCurrentIndex(op.index(ro) + 1 if ro in op else 0)
+            ro, op = self.last_clip.output, self.song.outputs
+            self.output.clear()
+            self.output.insertItems(1, op)
+            self.output.setCurrentIndex(op.index(ro))
             self.mute_group.setValue(self.last_clip.mute_group)
             self.clip_volume.setValue(self.last_clip.volume * 256)
             state, position = self._jack_client.transport_query()
@@ -449,8 +489,9 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onBeatDiviserChange(self):
         self.last_clip.beat_diviser = self.beat_diviser.value()
 
-    def onRouteOutChange(self):
-        self.last_clip.route_out = self.route_out.currentText()
+    def onOutputChange(self):
+        self.last_clip.output = self.output.currentText()
+        self.updatePorts()
 
     def onMuteGroupChange(self):
         self.last_clip.mute_group = self.mute_group.value()
