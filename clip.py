@@ -1,7 +1,7 @@
 import numpy as np
 import soundfile as sf
 from PyQt5 import QtCore
-import configparser
+import configparser, json
 from zipfile import ZipFile
 from io import BytesIO, StringIO, TextIOWrapper
 import unicodedata
@@ -39,7 +39,11 @@ class Clip():
     PREPARE_RECORD = 4
     RECORDING = 5
 
-    CHANNEL_NAMES = ["L", "R"]
+    CHANNEL_NAMES = {
+        1: ["MONO"],
+        2: ["L", "R"]
+    }
+    MONO_CHANNEL_NAME = "{port}_MONO"
     CHANNEL_NAME_PATTERN = "{port}_{channel}"
     DEFAULT_OUTPUT = "MAIN"
 
@@ -64,7 +68,7 @@ class Clip():
 
     @staticmethod
     def default_outports():
-        for name in Clip.CHANNEL_NAMES:
+        for name in Clip.CHANNEL_NAMES[2]:
             yield Clip.CHANNEL_NAME_PATTERN.format(port=Clip.DEFAULT_OUTPUT,
                                                    channel=name)
 
@@ -100,6 +104,7 @@ class Song():
         self.height = height
         self.file_name = None
         self.is_record = False
+        self._outputs = {}
 
     def addClip(self, clip, x, y):
         if self.clips_matrix[x][y]:
@@ -142,21 +147,24 @@ class Song():
 
     @property
     def outputs(self):
-        seen = set()
-        seen_add = seen.add
-        return [c.output for c in self.clips if
-                not (c.output in seen or seen_add(c.output))]
+        self._outputs = dict(self.used_outputs, **self._outputs)
+        return self._outputs
+
+    @property
+    def used_outputs(self):
+        r = {}
+        for c in self.clips:
+            r[c.output] = max(self.channels(c), r.get(c.output, 0))
+        return r
 
     def channel_names(self, output):
-        number = max(self.channels(clip) for clip in self.clips if
-                     clip.output == output)
-        for i in range(number):
-            try:
-                name = Clip.CHANNEL_NAMES[i]
-            except IndexError:
-                name = i + 1
-            yield (Clip.CHANNEL_NAME_PATTERN.format(port=output,
-                                                    channel=name))
+        number = self.outputs.get(output, 2)
+        pattern = Clip.MONO_CHANNEL_NAME \
+            if number == 1 else Clip.CHANNEL_NAME_PATTERN
+        names = Clip.CHANNEL_NAMES[number] \
+            if number in Clip.CHANNEL_NAMES else range(number)
+        for name in names:
+            yield (pattern.format(port=output, channel=name))
 
     def clips_by_output(self, output):
         return (clip for clip in self.clips if clip.output == output)
@@ -229,7 +237,8 @@ class Song():
                                     'bpm': self.bpm,
                                     'beat_per_bar': self.beat_per_bar,
                                     'width': self.width,
-                                    'height': self.height}
+                                    'height': self.height,
+                                    'outputs': json.dumps(self.outputs)}
             for clip in self.clips:
                 clip_file = {'name': clip.name,
                              'volume': str(clip.volume),
@@ -275,6 +284,11 @@ def load_song_from_file(file):
             res.volume = parser['DEFAULT'].getfloat('volume')
             res.bpm = parser['DEFAULT'].getfloat('bpm')
             res.beat_per_bar = parser['DEFAULT'].getint('beat_per_bar')
+            try:
+                outputs = parser['DEFAULT'].get('outputs')
+                res._outputs = json.loads(outputs)
+            except:
+                pass
 
             # Loading wavs
             for member in zip.namelist():

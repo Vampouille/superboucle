@@ -109,7 +109,7 @@ class Cell(QWidget, Ui_Cell):
         self.start_stop.setEnabled(True)
         self.clip_position.setEnabled(True)
         self.gui.song.addClip(new_clip, self.pos_x, self.pos_y)
-        self.gui.updatePorts()
+        self.gui.updatePorts.emit()
         self.gui.update()
 
     def openClip(self):
@@ -174,6 +174,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     updateUi = pyqtSignal()
     readQueueIn = pyqtSignal()
+    updatePorts = pyqtSignal()
 
     def __init__(self, song, jack_client):
         QObject.__init__(self)
@@ -259,6 +260,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         self._jack_client.set_timebase_callback(self.timebase_callback)
 
+        self.updatePorts.connect(self.updatePortEvent)
         self.show()
 
     def initUI(self, song):
@@ -275,7 +277,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         self.ports_initialised.clear()
         self.song = song
-        self.updatePorts()
+        self.updatePorts.emit()
 
         self.frame_clip.setEnabled(False)
         self.master_volume.setValue(song.volume * 256)
@@ -294,7 +296,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         self.update()
 
-    def updatePorts(self):
+    def updatePortEvent(self):
 
         self.ports_initialised.clear()
         client = self._jack_client
@@ -377,7 +379,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.frame_offset.setValue(self.last_clip.frame_offset)
             self.beat_offset.setValue(self.last_clip.beat_offset)
             self.beat_diviser.setValue(self.last_clip.beat_diviser)
-            ro, op = self.last_clip.output, self.song.outputs
+            ro, op = self.last_clip.output, list(self.song.outputs.keys())
             self.output.clear()
             self.output.insertItems(1, op)
             self.output.setCurrentIndex(op.index(ro))
@@ -491,7 +493,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onOutputChange(self):
         self.last_clip.output = self.output.currentText()
-        self.updatePorts()
+        self.updatePorts.emit()
 
     def onMuteGroupChange(self):
         self.last_clip.mute_group = self.mute_group.value()
