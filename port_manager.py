@@ -18,10 +18,8 @@ class PortManager(QDialog, Ui_Dialog):
         self.loadPortlistBtn.clicked.connect(self.onLoadPortlist)
         self.savePortlistBtn.clicked.connect(self.onSavePortlist)
         self.portList.itemChanged.connect(self.onRename)
-        # self.portList.setDragDropMode(QAbstractItemView.InternalMove)
-        # self.portList.model().rowsMoved.connect(self.onMoveRows)
         self.autoconnectCBox.setChecked(self.gui.auto_connect)
-        # self.autoconnectCBox.stateChanged.connect(self.onCheckAutoconnect)
+        self.autoconnectCBox.stateChanged.connect(self.onCheckAutoconnect)
         self.finished.connect(self.onFinished)
         self.gui.updatePorts.connect(self.updateList)
         self.show()
@@ -94,6 +92,9 @@ class PortManager(QDialog, Ui_Dialog):
                     self.gui.song.clips_matrix],
                         "outputs": self.gui.song.outputs}
                 f.write(json.dumps(data))
+
+    def onCheckAutoconnect(self):
+        self.gui.auto_connect = self.autoconnectCBox.isChecked()
 
     def onFinished(self):
         pass

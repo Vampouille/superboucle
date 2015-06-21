@@ -91,7 +91,7 @@
    <item row="1" column="0">
     <widget class="QCheckBox" name="autoconnectCBox">
      <property name="text">
-      <string>autoconnect main ports</string>
+      <string>autoconnect main ports on program start</string>
      </property>
     </widget>
    </item>
