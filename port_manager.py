@@ -11,11 +11,13 @@ class PortManager(QDialog, Ui_Dialog):
         super(PortManager, self).__init__(parent)
         self.gui = parent
         self.setupUi(self)
+        self.backup_indixes = []
         self.updateList()
         self.removePortBtn.clicked.connect(self.onRemove)
         self.addPortBtn.clicked.connect(self.onAddPort)
         self.loadPortlistBtn.clicked.connect(self.onLoadPortlist)
         self.savePortlistBtn.clicked.connect(self.onSavePortlist)
+        self.portList.itemChanged.connect(self.onRename)
         # self.portList.setDragDropMode(QAbstractItemView.InternalMove)
         # self.portList.model().rowsMoved.connect(self.onMoveRows)
         self.autoconnectCBox.setChecked(self.gui.auto_connect)
@@ -26,11 +28,21 @@ class PortManager(QDialog, Ui_Dialog):
 
     def updateList(self):
         self.portList.clear()
-        for name in self.gui.song.outputs:
+        self.backup_indixes = list(self.gui.song.outputs.keys())
+        for name in self.backup_indixes:
             this_item = QListWidgetItem(name)
             this_item.setFlags(this_item.flags() | Qt.ItemIsEditable)
             self.portList.addItem(this_item)
-            # self.gui.updatePorts()
+
+    def onRename(self, item):
+        oldPort = self.backup_indixes[self.portList.row(item)]
+        self.reroute(oldPort, item.text())
+
+    def reroute(self, oldPort, newPort):
+        self.gui.song.outputs.pop(oldPort)
+        for c in self.gui.song.clips_by_output(oldPort):
+            c.output = newPort
+        self.gui.updatePorts.emit()
 
     def onAddPort(self):
         dialog = QInputDialog(self)
@@ -42,16 +54,13 @@ class PortManager(QDialog, Ui_Dialog):
         if not ok:
             return
         self.gui.song._outputs[text] = 2
-        self.updateList()
+        self.gui.updatePorts.emit()
 
     def onRemove(self):
         currentItem = self.portList.currentItem()
         if currentItem:
             currentOutput = currentItem.text()
-            self.gui.song.outputs.pop(currentOutput)
-            for c in self.gui.song.clips_by_output(currentOutput):
-                c.output = Clip.DEFAULT_OUTPUT
-            self.gui.updatePorts.emit()
+            self.reroute(currentOutput, Clip.DEFAULT_OUTPUT)
 
     def onLoadPortlist(self):
         file_name, a = self.gui.getOpenFileName('Open Portlist',
