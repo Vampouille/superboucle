@@ -420,7 +420,7 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onExportClip(self):
         if self.last_clip and self.last_clip.audio_file:
             audio_file = self.last_clip.audio_file
-            file_name, a = self.getOpenFileName(
+            file_name, a = self.getSaveFileName(
                 'Export Clip : %s' % self.last_clip.name, 'WAVE (*.wav)')
 
             if file_name:
