@@ -47,10 +47,12 @@ class PortManager(QDialog, Ui_Dialog):
     def onAddPort(self):
         dialog = QInputDialog(self)
         dialog.setInputMode(0)
+        dialog.setTextValue("Out_{}".format(len(self.gui.song.outputs)))
         dialog.setModal(False)
+        dialog.setLabelText("port name")
+        dialog.setWindowTitle("Add a port..")
         ok = dialog.exec_() == QDialog.Accepted
         text = dialog.textValue()
-        # text, ok = QInputDialog.getText(self, "Add a port..", "port name ", QLineEdit.Normal, default_name)
         if not ok:
             return
         self.gui.song._outputs[text] = 2
