@@ -155,7 +155,7 @@ color: black;</string>
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>280</y>
+            <y>290</y>
             <width>216</width>
             <height>411</height>
            </rect>
@@ -329,7 +329,7 @@ border-radius: 2px;</string>
             <rect>
              <x>10</x>
              <y>140</y>
-             <width>160</width>
+             <width>171</width>
              <height>71</height>
             </rect>
            </property>
@@ -349,11 +349,14 @@ border-radius: 2px;</string>
             </item>
             <item row="2" column="0">
              <widget class="QDoubleSpinBox" name="beat_offset">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
               <property name="maximum">
-               <double>20.000000000000000</double>
+               <double>99.000000000000000</double>
               </property>
               <property name="singleStep">
-               <double>0.500000000000000</double>
+               <double>0.010000000000000</double>
               </property>
              </widget>
             </item>
@@ -652,7 +655,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
             <x>10</x>
             <y>190</y>
             <width>214</width>
-            <height>113</height>
+            <height>101</height>
            </rect>
           </property>
           <layout class="QFormLayout" name="formLayout_2">
@@ -854,7 +857,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
      <x>0</x>
      <y>0</y>
      <width>1111</width>
-     <height>27</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
