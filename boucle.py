@@ -90,7 +90,7 @@ def my_callback(frames):
                 # is there enough audio data ?
                 if clip_offset < song.length(clip):
                     length = min(song.length(clip) - clip_offset, frames)
-                    for c in range(song.channels(clip)):
+                    for c in range(min(song.channels(clip), len(buffers))):
                         data = song.get_data(clip,
                                              c,
                                              clip_offset,
