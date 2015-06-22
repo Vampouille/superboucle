@@ -315,8 +315,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         # remove unwanted ports
         for port in [port for port in client.outports
-                     if port.shortname not in wanted_ports | set(
-                Clip.default_outports())]:
+                     if port.shortname not in wanted_ports]:
             port.unregister()
 
         print("Outputs after removing unused ports: ")

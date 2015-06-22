@@ -14,7 +14,7 @@ song = Song(8, 8)
 client = jack.Client("Super Boucle")
 midi_in = client.midi_inports.register("input")
 midi_out = client.midi_outports.register("output")
-main_outs = list(map(client.outports.register, Clip.default_outports()))
+main_outs = list(map(client.outports.register, Clip.get_outports()))
 
 inL = client.inports.register("input_L")
 inR = client.inports.register("input_R")

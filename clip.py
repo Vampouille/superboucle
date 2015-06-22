@@ -43,9 +43,9 @@ class Clip():
         1: ["MONO"],
         2: ["L", "R"]
     }
-    MONO_CHANNEL_NAME = "{port}_MONO"
+    MONO_CHANNEL_NAME = "{port}_Mono"
     CHANNEL_NAME_PATTERN = "{port}_{channel}"
-    DEFAULT_OUTPUT = "MAIN"
+    DEFAULT_OUTPUT = "Main"
 
     TRANSITION = {STOP: STARTING,
                   STARTING: STOP,
@@ -67,10 +67,12 @@ class Clip():
                          5: "RECORDING"}
 
     @staticmethod
-    def default_outports():
-        for name in Clip.CHANNEL_NAMES[2]:
-            yield Clip.CHANNEL_NAME_PATTERN.format(port=Clip.DEFAULT_OUTPUT,
-                                                   channel=name)
+    def get_outports(output=DEFAULT_OUTPUT, pattern=CHANNEL_NAME_PATTERN,
+                     channels=2):
+        names = Clip.CHANNEL_NAMES[channels] \
+            if channels in Clip.CHANNEL_NAMES else range(channels)
+        for name in names:
+            yield pattern.format(port=output, channel=name)
 
     def __init__(self, audio_file=None, name='',
                  volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1,
@@ -148,6 +150,7 @@ class Song():
     @property
     def outputs(self):
         self._outputs = dict(self.used_outputs, **self._outputs)
+        self._outputs.update({Clip.DEFAULT_OUTPUT: 2})
         return self._outputs
 
     @property
@@ -161,10 +164,7 @@ class Song():
         number = self.outputs.get(output, 2)
         pattern = Clip.MONO_CHANNEL_NAME \
             if number == 1 else Clip.CHANNEL_NAME_PATTERN
-        names = Clip.CHANNEL_NAMES[number] \
-            if number in Clip.CHANNEL_NAMES else range(number)
-        for name in names:
-            yield (pattern.format(port=output, channel=name))
+        return Clip.get_outports(output, pattern, number)
 
     def clips_by_output(self, output):
         return (clip for clip in self.clips if clip.output == output)
