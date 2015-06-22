@@ -126,7 +126,7 @@ class Song():
         self.clips_matrix[clip.x][clip.y] = None
         self.clips.remove(clip)
 
-    def toogle(self, x, y):
+    def toggle(self, x, y):
         clip = self.clips_matrix[x][y]
         if clip is None:
             return
