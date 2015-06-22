@@ -268,10 +268,6 @@ class Song():
         self.file_name = file
 
 
-def getDefaultOutputNames(number, pattern="Out_{group}"):
-    return [pattern.format(group=i) for i in range(number)]
-
-
 def load_song_from_file(file):
     with ZipFile(file) as zip:
         with zip.open('metadata.ini') as metadata_res:
