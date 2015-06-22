@@ -14,7 +14,7 @@ song = Song(8, 8)
 client = jack.Client("Super Boucle")
 midi_in = client.midi_inports.register("input")
 midi_out = client.midi_outports.register("output")
-main_outs = list(map(client.outports.register, Clip.default_outports()))
+main_outs = list(map(client.outports.register, Clip.get_outports()))
 
 inL = client.inports.register("input_L")
 inR = client.inports.register("input_R")
@@ -90,7 +90,7 @@ def my_callback(frames):
                 # is there enough audio data ?
                 if clip_offset < song.length(clip):
                     length = min(song.length(clip) - clip_offset, frames)
-                    for c in range(song.channels(clip)):
+                    for c in range(min(song.channels(clip), len(buffers))):
                         data = song.get_data(clip,
                                              c,
                                              clip_offset,

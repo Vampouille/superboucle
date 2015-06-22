@@ -251,7 +251,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         self.blktimer = QTimer()
         self.blktimer.state = False
-        self.blktimer.timeout.connect(self.toogleBlinkButton)
+        self.blktimer.timeout.connect(self.toggleBlinkButton)
         self.blktimer.start(self.BLINK_DURATION)
 
         self.disptimer = QTimer()
@@ -315,8 +315,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         # remove unwanted ports
         for port in [port for port in client.outports
-                     if port.shortname not in wanted_ports | set(
-                Clip.default_outports())]:
+                     if port.shortname not in wanted_ports]:
             port.unregister()
 
         print("Outputs after removing unused ports: ")
@@ -368,7 +367,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             clip.state = Clip.PREPARE_RECORD
             self.recordButton.setStyleSheet(self.RECORD_DEFAULT)
         else:
-            self.song.toogle(clip.x, clip.y)
+            self.song.toggle(clip.x, clip.y)
         self.update()
 
     def onEdit(self):
@@ -687,7 +686,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.btn_matrix[x][y].blink = blink
         self.btn_matrix[x][y].color = color
 
-    def toogleBlinkButton(self):
+    def toggleBlinkButton(self):
         for line in self.btn_matrix:
             for btn in line:
                 if btn.blink:
