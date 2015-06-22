@@ -1,14 +1,12 @@
-from PyQt5.QtWidgets import QDialog, QFileDialog
+from PyQt5.QtWidgets import QDialog
 from manage_ui import Ui_Dialog
 from learn import LearnDialog
 from device import Device
 from clip import verify_ext
 import json
-from os.path import expanduser
 
 
 class ManageDialog(QDialog, Ui_Dialog):
-
     def __init__(self, parent):
         super(ManageDialog, self).__init__(parent)
         self.gui = parent
@@ -37,11 +35,9 @@ class ManageDialog(QDialog, Ui_Dialog):
             self.list.takeItem(self.list.currentRow())
 
     def onImport(self):
-        file_name, a = (
-            QFileDialog.getOpenFileName(self,
-                                        'Open file',
-                                        expanduser('~'),
-                                        'Super Boucle Mapping (*.sbm)'))
+        file_name, a = self.gui.getOpenFileName('Open Device',
+                                                'Super Boucle Mapping (*.sbm)',
+                                                self)
         with open(file_name, 'r') as f:
             read_data = f.read()
         mapping = json.loads(read_data)
@@ -50,12 +46,9 @@ class ManageDialog(QDialog, Ui_Dialog):
 
     def onExport(self):
         device = self.gui.devices[self.list.currentRow() + 1]
-        file_name, a = (
-            QFileDialog.getSaveFileName(self,
-                                        'Save As',
-                                        expanduser('~'),
-                                        'Super Boucle Mapping (*.sbm)'))
-
+        file_name, a = self.gui.getSaveFileName('Save Device',
+                                                'Super Boucle Mapping (*.sbm)',
+                                                self)
         if file_name:
             file_name = verify_ext(file_name, 'sbm')
             with open(file_name, 'w') as f:
