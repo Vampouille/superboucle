@@ -1,5 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QLineEdit, QInputDialog, QListWidgetItem, \
-    QMessageBox, QInputDialog
+from PyQt5.QtWidgets import QDialog, QListWidgetItem, QInputDialog
 from PyQt5.QtCore import Qt
 from port_manager_ui import Ui_Dialog
 from clip import verify_ext, Clip
