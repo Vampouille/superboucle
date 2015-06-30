@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1111</width>
-    <height>929</height>
+    <height>947</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,7 +32,7 @@
      <enum>QLayout::SetFixedSize</enum>
     </property>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
+     <layout class="QVBoxLayout" name="verticalLayout" stretch="0">
       <property name="sizeConstraint">
        <enum>QLayout::SetMinimumSize</enum>
       </property>
@@ -47,7 +47,7 @@
         <property name="minimumSize">
          <size>
           <width>236</width>
-          <height>849</height>
+          <height>875</height>
          </size>
         </property>
         <property name="frameShape">
@@ -87,7 +87,7 @@
            <x>0</x>
            <y>90</y>
            <width>236</width>
-           <height>701</height>
+           <height>776</height>
           </rect>
          </property>
          <property name="styleSheet">
@@ -155,9 +155,9 @@ color: black;</string>
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>290</y>
+            <y>280</y>
             <width>216</width>
-            <height>411</height>
+            <height>486</height>
            </rect>
           </property>
           <property name="styleSheet">
@@ -224,7 +224,7 @@ color: black;</string>
            <property name="geometry">
             <rect>
              <x>90</x>
-             <y>30</y>
+             <y>35</y>
              <width>51</width>
              <height>51</height>
             </rect>
@@ -244,7 +244,7 @@ color: black;</string>
            <property name="geometry">
             <rect>
              <x>10</x>
-             <y>90</y>
+             <y>105</y>
              <width>111</width>
              <height>19</height>
             </rect>
@@ -265,7 +265,7 @@ color: black;</string>
            <property name="geometry">
             <rect>
              <x>130</x>
-             <y>80</y>
+             <y>95</y>
              <width>71</width>
              <height>41</height>
             </rect>
@@ -279,37 +279,13 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
             <number>1</number>
            </property>
           </widget>
-          <widget class="QLabel" name="label_3">
-           <property name="geometry">
-            <rect>
-             <x>10</x>
-             <y>120</y>
-             <width>101</width>
-             <height>19</height>
-            </rect>
-           </property>
-           <property name="font">
-            <font>
-             <family>Lato</family>
-             <pointsize>11</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Clip Offset</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-           </property>
-          </widget>
           <widget class="QLabel" name="clip_description">
            <property name="geometry">
             <rect>
              <x>10</x>
-             <y>280</y>
+             <y>370</y>
              <width>196</width>
-             <height>61</height>
+             <height>41</height>
             </rect>
            </property>
            <property name="styleSheet">
@@ -324,77 +300,11 @@ border-radius: 2px;</string>
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
            </property>
           </widget>
-          <widget class="QWidget" name="formLayoutWidget_2">
-           <property name="geometry">
-            <rect>
-             <x>10</x>
-             <y>140</y>
-             <width>171</width>
-             <height>71</height>
-            </rect>
-           </property>
-           <layout class="QFormLayout" name="formLayout_3">
-            <property name="verticalSpacing">
-             <number>0</number>
-            </property>
-            <item row="0" column="0">
-             <widget class="QSpinBox" name="frame_offset">
-              <property name="minimum">
-               <number>-4410000</number>
-              </property>
-              <property name="maximum">
-               <number>4410000</number>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QDoubleSpinBox" name="beat_offset">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="maximum">
-               <double>99.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.010000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QLabel" name="label">
-              <property name="font">
-               <font>
-                <family>Lato</family>
-                <pointsize>10</pointsize>
-                <italic>true</italic>
-               </font>
-              </property>
-              <property name="text">
-               <string>Beat</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLabel" name="label_2">
-              <property name="font">
-               <font>
-                <family>Lato</family>
-                <pointsize>10</pointsize>
-                <italic>true</italic>
-               </font>
-              </property>
-              <property name="text">
-               <string>Sample</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
           <widget class="QPushButton" name="deleteButton">
            <property name="geometry">
             <rect>
              <x>99</x>
-             <y>380</y>
+             <y>450</y>
              <width>101</width>
              <height>23</height>
             </rect>
@@ -407,7 +317,7 @@ border-radius: 2px;</string>
            <property name="geometry">
             <rect>
              <x>100</x>
-             <y>350</y>
+             <y>420</y>
              <width>101</width>
              <height>23</height>
             </rect>
@@ -420,7 +330,7 @@ border-radius: 2px;</string>
            <property name="geometry">
             <rect>
              <x>10</x>
-             <y>380</y>
+             <y>450</y>
              <width>80</width>
              <height>23</height>
             </rect>
@@ -433,7 +343,7 @@ border-radius: 2px;</string>
            <property name="geometry">
             <rect>
              <x>10</x>
-             <y>350</y>
+             <y>420</y>
              <width>81</width>
              <height>23</height>
             </rect>
@@ -442,70 +352,154 @@ border-radius: 2px;</string>
             <string>Revert</string>
            </property>
           </widget>
-          <widget class="QWidget" name="formLayoutWidget_3">
+          <widget class="QGroupBox" name="groupBox">
            <property name="geometry">
             <rect>
              <x>10</x>
-             <y>246</y>
-             <width>194</width>
-             <height>31</height>
+             <y>310</y>
+             <width>191</width>
+             <height>51</height>
             </rect>
            </property>
-           <layout class="QFormLayout" name="formLayout">
-            <property name="fieldGrowthPolicy">
-             <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+           <property name="font">
+            <font>
+             <family>Lato</family>
+             <pointsize>11</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="title">
+            <string>Mute Group</string>
+           </property>
+           <widget class="QSpinBox" name="mute_group">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>25</y>
+              <width>43</width>
+              <height>23</height>
+             </rect>
             </property>
-            <item row="0" column="0">
-             <widget class="QComboBox" name="output">
-              <property name="editable">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLabel" name="label_9">
-              <property name="font">
-               <font>
-                <family>Lato</family>
-                <pointsize>10</pointsize>
-                <italic>true</italic>
-               </font>
-              </property>
-              <property name="text">
-               <string>Output</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
+           </widget>
           </widget>
-          <widget class="QWidget" name="formLayoutWidget_4">
+          <widget class="QGroupBox" name="groupBox_2">
            <property name="geometry">
             <rect>
              <x>10</x>
-             <y>210</y>
-             <width>170</width>
-             <height>35</height>
+             <y>140</y>
+             <width>191</width>
+             <height>91</height>
             </rect>
            </property>
-           <layout class="QFormLayout" name="formLayout_4">
-            <item row="0" column="0">
-             <widget class="QSpinBox" name="mute_group"/>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLabel" name="label_15">
-              <property name="font">
-               <font>
-                <family>Lato</family>
-                <pointsize>10</pointsize>
-                <italic>true</italic>
-               </font>
-              </property>
-              <property name="text">
-               <string>Mute Group</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
+           <property name="font">
+            <font>
+             <family>Lato</family>
+             <pointsize>11</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="title">
+            <string>Clip Offset</string>
+           </property>
+           <widget class="QWidget" name="formLayoutWidget_4">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>30</y>
+              <width>161</width>
+              <height>51</height>
+             </rect>
+            </property>
+            <layout class="QFormLayout" name="formLayout_4">
+             <item row="0" column="0">
+              <widget class="QSpinBox" name="frame_offset">
+               <property name="minimum">
+                <number>-4410000</number>
+               </property>
+               <property name="maximum">
+                <number>4410000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="label_2">
+               <property name="font">
+                <font>
+                 <family>Lato</family>
+                 <pointsize>10</pointsize>
+                 <italic>true</italic>
+                </font>
+               </property>
+               <property name="text">
+                <string>Sample</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QDoubleSpinBox" name="beat_offset">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="maximum">
+                <double>99.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLabel" name="label">
+               <property name="font">
+                <font>
+                 <family>Lato</family>
+                 <pointsize>10</pointsize>
+                 <italic>true</italic>
+                </font>
+               </property>
+               <property name="text">
+                <string>Beat</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </widget>
+          <widget class="QGroupBox" name="groupBox_3">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>240</y>
+             <width>191</width>
+             <height>61</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <family>Lato</family>
+             <pointsize>11</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="title">
+            <string>Output</string>
+           </property>
+           <widget class="QComboBox" name="output">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>30</y>
+              <width>141</width>
+              <height>23</height>
+             </rect>
+            </property>
+            <property name="editable">
+             <bool>true</bool>
+            </property>
+           </widget>
           </widget>
          </widget>
          <widget class="QPushButton" name="playButton">
@@ -655,7 +649,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
             <x>10</x>
             <y>190</y>
             <width>214</width>
-            <height>101</height>
+            <height>91</height>
            </rect>
           </property>
           <layout class="QFormLayout" name="formLayout_2">
@@ -791,19 +785,6 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
         </widget>
        </widget>
       </item>
-      <item>
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>0</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
      </layout>
     </item>
     <item>
@@ -857,7 +838,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
      <x>0</x>
      <y>0</y>
      <width>1111</width>
-     <height>25</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
