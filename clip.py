@@ -32,20 +32,15 @@ class Communicate(QtCore.QObject):
 
 
 class Clip():
+
+    DEFAULT_OUTPUT = "Main"
+
     STOP = 0
     STARTING = 1
     START = 2
     STOPPING = 3
     PREPARE_RECORD = 4
     RECORDING = 5
-
-    CHANNEL_NAMES = {
-        1: ["MONO"],
-        2: ["L", "R"]
-    }
-    MONO_CHANNEL_NAME = "{port}_Mono"
-    CHANNEL_NAME_PATTERN = "{port}_{channel}"
-    DEFAULT_OUTPUT = "Main"
 
     TRANSITION = {STOP: STARTING,
                   STARTING: STOP,
@@ -65,14 +60,6 @@ class Clip():
                          3: "STOPPING",
                          4: "PREPARE_RECORD",
                          5: "RECORDING"}
-
-    @staticmethod
-    def get_outports(output=DEFAULT_OUTPUT, pattern=CHANNEL_NAME_PATTERN,
-                     channels=2):
-        names = Clip.CHANNEL_NAMES[channels] \
-            if channels in Clip.CHANNEL_NAMES else range(channels)
-        for name in names:
-            yield pattern.format(port=output, channel=name)
 
     def __init__(self, audio_file=None, name='',
                  volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1,
@@ -94,6 +81,10 @@ class Clip():
 
 
 class Song():
+
+    CHANNEL_NAMES = ["L", "R"]
+    CHANNEL_NAME_PATTERN = "{port}_{channel}"
+
     def __init__(self, width, height):
         self.clips_matrix = [[None for y in range(height)]
                              for x in range(width)]
@@ -106,13 +97,15 @@ class Song():
         self.height = height
         self.file_name = None
         self.is_record = False
-        self._outputs = {}
+        self.outputsPorts = set()
+        self.outputsPorts.add(Clip.DEFAULT_OUTPUT)
 
     def addClip(self, clip, x, y):
         if self.clips_matrix[x][y]:
             self.clips.remove(self.clips_matrix[x][y])
         self.clips_matrix[x][y] = clip
         self.clips.append(clip)
+        self.outputsPorts.add(clip.output)
         clip.x = x
         clip.y = y
 
@@ -142,32 +135,11 @@ class Song():
                             else c.state
 
     def channels(self, clip):
+        '''Return channel count for specified clip'''
         if clip.audio_file is None:
             return 0
         else:
             return self.data[clip.audio_file].shape[1]
-
-    @property
-    def outputs(self):
-        self._outputs = dict(self.used_outputs, **self._outputs)
-        self._outputs.update({Clip.DEFAULT_OUTPUT: 2})
-        return self._outputs
-
-    @property
-    def used_outputs(self):
-        r = {}
-        for c in self.clips:
-            r[c.output] = max(self.channels(c), r.get(c.output, 0))
-        return r
-
-    def channel_names(self, output):
-        number = self.outputs.get(output, 2)
-        pattern = Clip.MONO_CHANNEL_NAME \
-            if number == 1 else Clip.CHANNEL_NAME_PATTERN
-        return Clip.get_outports(output, pattern, number)
-
-    def clips_by_output(self, output):
-        return (clip for clip in self.clips if clip.output == output)
 
     def length(self, clip):
         if clip.audio_file is None:
@@ -200,7 +172,7 @@ class Song():
                             % (offset, data.shape[0], self.length(clip)))
 
         self.data[clip.audio_file][offset:offset + data.shape[0],
-        channel] = data
+                                   channel] = data
         # print("Write %s bytes at offset %s to channel %s" % (data.shape[0],
         # offset,
         # channel))
@@ -233,12 +205,13 @@ class Song():
     def saveTo(self, file):
         with ZipFile(file, 'w') as zip:
             song_file = configparser.ConfigParser()
+            port_list = list(self.outputsPorts)
             song_file['DEFAULT'] = {'volume': self.volume,
                                     'bpm': self.bpm,
                                     'beat_per_bar': self.beat_per_bar,
                                     'width': self.width,
                                     'height': self.height,
-                                    'outputs': json.dumps(self.outputs)}
+                                    'outputs': json.dumps(port_list)}
             for clip in self.clips:
                 clip_file = {'name': clip.name,
                              'volume': str(clip.volume),
@@ -277,14 +250,12 @@ def load_song_from_file(file):
             res = Song(parser['DEFAULT'].getint('width'),
                        parser['DEFAULT'].getint('height'))
             res.file_name = file
-            res.volume = parser['DEFAULT'].getfloat('volume')
-            res.bpm = parser['DEFAULT'].getfloat('bpm')
-            res.beat_per_bar = parser['DEFAULT'].getint('beat_per_bar')
-            try:
-                outputs = parser['DEFAULT'].get('outputs')
-                res._outputs = json.loads(outputs)
-            except:
-                pass
+            res.volume = parser['DEFAULT'].getfloat('volume', 1.0)
+            res.bpm = parser['DEFAULT'].getfloat('bpm', 120.0)
+            res.beat_per_bar = parser['DEFAULT'].getint('beat_per_bar', 4)
+            outputs = parser['DEFAULT'].get('outputs', '["%s"]'
+                                            % Clip.DEFAULT_OUTPUT)
+            res.outputsPorts = set(json.loads(outputs))
 
             # Loading wavs
             for member in zip.namelist():
@@ -318,4 +289,5 @@ def load_song_from_file(file):
                             parser[section].getint('mute_group', 0))
                 res.addClip(clip, x, y)
 
+    print("Ports: %s" % res.outputsPorts)
     return res

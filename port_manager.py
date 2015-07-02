@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QDialog, QListWidgetItem, QInputDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog, QListWidgetItem
 from port_manager_ui import Ui_Dialog
+from add_port import AddPortDialog
 from clip import verify_ext, Clip
 import json
 
@@ -16,7 +16,6 @@ class PortManager(QDialog, Ui_Dialog):
         self.addPortBtn.clicked.connect(self.onAddPort)
         self.loadPortlistBtn.clicked.connect(self.onLoadPortlist)
         self.savePortlistBtn.clicked.connect(self.onSavePortlist)
-        self.portList.itemChanged.connect(self.onRename)
         self.autoconnectCBox.setChecked(self.gui.auto_connect)
         self.autoconnectCBox.stateChanged.connect(self.onCheckAutoconnect)
         self.finished.connect(self.onFinished)
@@ -25,46 +24,27 @@ class PortManager(QDialog, Ui_Dialog):
 
     def updateList(self):
         self.portList.clear()
-        self.backup_indixes = list(self.gui.song.outputs.keys())
+        self.backup_indixes = list(self.gui.song.outputsPorts)
         for name in self.backup_indixes:
             this_item = QListWidgetItem(name)
-            this_item.setFlags(this_item.flags() | Qt.ItemIsEditable)
+            this_item.setFlags(this_item.flags())
             self.portList.addItem(this_item)
 
-    def onRename(self, item):
-        oldPort = self.backup_indixes[self.portList.row(item)]
-        self.reroute(oldPort, item.text())
-
-    def reroute(self, oldPort, newPort):
-        self.gui.song.outputs.pop(oldPort)
-        for c in self.gui.song.clips_by_output(oldPort):
-            c.output = newPort
-        self.gui.updatePorts.emit()
-
     def onAddPort(self):
-        dialog = QInputDialog(self)
-        dialog.setInputMode(0)
-        dialog.setTextValue("Out_{}".format(len(self.gui.song.outputs)))
-        dialog.setModal(False)
-        dialog.setLabelText("port name")
-        dialog.setWindowTitle("Add a port..")
-        ok = dialog.exec_() == QDialog.Accepted
-        text = dialog.textValue()
-        if not ok:
-            return
-        self.gui.song._outputs[text] = 2
-        self.gui.updatePorts.emit()
+        AddPortDialog(self.gui, callback=self.updateList)
 
     def onRemove(self):
         currentItem = self.portList.currentItem()
         if currentItem:
-            currentOutput = currentItem.text()
-            self.reroute(currentOutput, Clip.DEFAULT_OUTPUT)
+            port_name = currentItem.text()
+            self.gui.removePort(port_name)
+            self.updateList()
 
     def onLoadPortlist(self):
-        file_name, a = self.gui.getOpenFileName('Open Portlist',
-                                                'Super Boucle Portlist (*.sbl)',
-                                                self)
+        file_name, a = (
+            self.gui.getOpenFileName('Open Portlist',
+                                     'Super Boucle Portlist (*.sbl)',
+                                     self))
         if not file_name:
             return
         with open(file_name, 'r') as f:
@@ -78,9 +58,10 @@ class PortManager(QDialog, Ui_Dialog):
         self.gui.updatePorts.emit()
 
     def onSavePortlist(self):
-        file_name, a = self.gui.getSaveFileName('Save Portlist',
-                                                'Super Boucle Portlist (*.sbl)',
-                                                self)
+        file_name, a = (
+            self.gui.getSaveFileName('Save Portlist',
+                                     'Super Boucle Portlist (*.sbl)',
+                                     self))
 
         if file_name:
             file_name = verify_ext(file_name, 'sbl')

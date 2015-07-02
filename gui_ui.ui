@@ -496,9 +496,6 @@ border-radius: 2px;</string>
               <height>23</height>
              </rect>
             </property>
-            <property name="editable">
-             <bool>true</bool>
-            </property>
            </widget>
           </widget>
          </widget>
