@@ -1,5 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QLineEdit, QInputDialog, QListWidgetItem, \
-    QMessageBox, QInputDialog
+from PyQt5.QtWidgets import QDialog, QListWidgetItem, QInputDialog
 from PyQt5.QtCore import Qt
 from port_manager_ui import Ui_Dialog
 from clip import verify_ext, Clip
@@ -18,10 +17,8 @@ class PortManager(QDialog, Ui_Dialog):
         self.loadPortlistBtn.clicked.connect(self.onLoadPortlist)
         self.savePortlistBtn.clicked.connect(self.onSavePortlist)
         self.portList.itemChanged.connect(self.onRename)
-        # self.portList.setDragDropMode(QAbstractItemView.InternalMove)
-        # self.portList.model().rowsMoved.connect(self.onMoveRows)
         self.autoconnectCBox.setChecked(self.gui.auto_connect)
-        # self.autoconnectCBox.stateChanged.connect(self.onCheckAutoconnect)
+        self.autoconnectCBox.stateChanged.connect(self.onCheckAutoconnect)
         self.finished.connect(self.onFinished)
         self.gui.updatePorts.connect(self.updateList)
         self.show()
@@ -47,10 +44,12 @@ class PortManager(QDialog, Ui_Dialog):
     def onAddPort(self):
         dialog = QInputDialog(self)
         dialog.setInputMode(0)
+        dialog.setTextValue("Out_{}".format(len(self.gui.song.outputs)))
         dialog.setModal(False)
+        dialog.setLabelText("port name")
+        dialog.setWindowTitle("Add a port..")
         ok = dialog.exec_() == QDialog.Accepted
         text = dialog.textValue()
-        # text, ok = QInputDialog.getText(self, "Add a port..", "port name ", QLineEdit.Normal, default_name)
         if not ok:
             return
         self.gui.song._outputs[text] = 2
@@ -92,6 +91,9 @@ class PortManager(QDialog, Ui_Dialog):
                     self.gui.song.clips_matrix],
                         "outputs": self.gui.song.outputs}
                 f.write(json.dumps(data))
+
+    def onCheckAutoconnect(self):
+        self.gui.auto_connect = self.autoconnectCBox.isChecked()
 
     def onFinished(self):
         pass

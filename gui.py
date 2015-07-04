@@ -89,6 +89,7 @@ class Cell(QWidget, Ui_Cell):
         self.blink, self.color = False, None
         self.setupUi(self)
         self.setStyleSheet(Gui.DEFAULT)
+        self.setAcceptDrops(True)
         if clip:
             self.clip_name.setText(clip.name)
             self.start_stop.clicked.connect(parent.onStartStopClicked)
@@ -99,6 +100,18 @@ class Cell(QWidget, Ui_Cell):
             self.edit.setText("Add Clip...")
             self.edit.clicked.connect(parent.onAddClipClicked)
 
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        urls = event.mimeData().urls()
+        if len(urls):
+            path = urls[0].path()
+            self.setClip(self.getClip(path))
+
     def setClip(self, new_clip):
         self.clip = new_clip
         self.clip_name.setText(new_clip.name)
@@ -108,6 +121,7 @@ class Cell(QWidget, Ui_Cell):
         self.edit.clicked.connect(self.gui.onEdit)
         self.start_stop.setEnabled(True)
         self.clip_position.setEnabled(True)
+        self.setAcceptDrops(False)
         self.gui.song.addClip(new_clip, self.pos_x, self.pos_y)
         self.gui.updatePorts.emit()
         self.gui.update()
@@ -116,18 +130,21 @@ class Cell(QWidget, Ui_Cell):
         audio_file, a = self.gui.getOpenFileName('Open Clip',
                                                  'All files (*.*)', self)
         if audio_file and a:
-            wav_id = basename(audio_file)
-            if wav_id in self.gui.song.data:
-                i = 0
-                while "%s-%02d" % (wav_id, i) in self.gui.song.data:
-                    i += 1
-                wav_id = "%s-%02d" % (wav_id, i)
+            return self.getClip(audio_file)
 
-            data, samplerate = sf.read(audio_file, dtype=np.float32)
-            self.gui.song.data[wav_id] = data
-            self.gui.song.samplerate[wav_id] = samplerate
+    def getClip(self, audio_file):
+        wav_id = basename(audio_file)
+        if wav_id in self.gui.song.data:
+            i = 0
+            while "%s-%02d" % (wav_id, i) in self.gui.song.data:
+                i += 1
+            wav_id = "%s-%02d" % (wav_id, i)
 
-            return Clip(basename(wav_id))
+        data, samplerate = sf.read(audio_file, dtype=np.float32)
+        self.gui.song.data[wav_id] = data
+        self.gui.song.samplerate[wav_id] = samplerate
+
+        return Clip(basename(wav_id))
 
 
 class Gui(QMainWindow, Ui_MainWindow):
@@ -251,7 +268,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         self.blktimer = QTimer()
         self.blktimer.state = False
-        self.blktimer.timeout.connect(self.toogleBlinkButton)
+        self.blktimer.timeout.connect(self.toggleBlinkButton)
         self.blktimer.start(self.BLINK_DURATION)
 
         self.disptimer = QTimer()
@@ -315,8 +332,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         # remove unwanted ports
         for port in [port for port in client.outports
-                     if port.shortname not in wanted_ports | set(
-                Clip.default_outports())]:
+                     if port.shortname not in wanted_ports]:
             port.unregister()
 
         print("Outputs after removing unused ports: ")
@@ -368,7 +384,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             clip.state = Clip.PREPARE_RECORD
             self.recordButton.setStyleSheet(self.RECORD_DEFAULT)
         else:
-            self.song.toogle(clip.x, clip.y)
+            self.song.toggle(clip.x, clip.y)
         self.update()
 
     def onEdit(self):
@@ -420,7 +436,7 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onExportClip(self):
         if self.last_clip and self.last_clip.audio_file:
             audio_file = self.last_clip.audio_file
-            file_name, a = self.getOpenFileName(
+            file_name, a = self.getSaveFileName(
                 'Export Clip : %s' % self.last_clip.name, 'WAVE (*.wav)')
 
             if file_name:
@@ -670,7 +686,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.btn_matrix[x][y].blink = blink
         self.btn_matrix[x][y].color = color
 
-    def toogleBlinkButton(self):
+    def toggleBlinkButton(self):
         for line in self.btn_matrix:
             for btn in line:
                 if btn.blink:
