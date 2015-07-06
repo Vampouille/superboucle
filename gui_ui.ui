@@ -416,7 +416,7 @@ border-radius: 2px;</string>
             </rect>
            </property>
            <property name="text">
-            <string>Export Sample</string>
+            <string>Export Loop</string>
            </property>
           </widget>
           <widget class="QPushButton" name="normalizeButton">
@@ -657,7 +657,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
            <rect>
             <x>10</x>
             <y>190</y>
-            <width>214</width>
+            <width>219</width>
             <height>101</height>
            </rect>
           </property>
@@ -744,7 +744,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
               <string notr="true">color: rgb(160, 6, 89);</string>
              </property>
              <property name="text">
-              <string>Goto Position</string>
+              <string>Go to Position</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>
