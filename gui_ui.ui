@@ -442,7 +442,7 @@ border-radius: 2px;</string>
             </rect>
            </property>
            <property name="text">
-            <string>Revert</string>
+            <string>Reverse</string>
            </property>
           </widget>
           <widget class="QWidget" name="formLayoutWidget_3">
