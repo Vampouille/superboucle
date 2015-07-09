@@ -96,16 +96,16 @@ class Gui(QMainWindow, Ui_MainWindow):
         # Load devices
         self.deviceGroup = QActionGroup(self.menuDevice)
         self.devices = []
-        settings = QSettings('superboucle', 'devices')
-        if settings.contains('devices') and settings.value('devices'):
-            for raw_device in settings.value('devices'):
+        device_settings = QSettings('superboucle', 'devices')
+        if ((device_settings.contains('devices')
+             and device_settings.value('devices'))):
+            for raw_device in device_settings.value('devices'):
                 self.devices.append(Device(pickle.loads(raw_device)))
         else:
             self.devices.append(Device({'name': 'No Device', }))
         self.updateDevices()
         self.deviceGroup.triggered.connect(self.onDeviceSelect)
 
-        # TODO: find a nicer way to store settings - discussion desirable.
         # Load playlist
         self.settings = QSettings('superboucle', 'session')
         # Qsetting appear to serialize empty lists as @QInvalid
@@ -200,9 +200,10 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.update()
 
     def closeEvent(self, event):
-        settings = QSettings('superboucle', 'devices')
-        settings.setValue('devices',
-                          [pickle.dumps(x.mapping) for x in self.devices])
+        device_settings = QSettings('superboucle', 'devices')
+        device_settings.setValue('devices',
+                                 [pickle.dumps(x.mapping)
+                                  for x in self.devices])
         self.settings.setValue('playlist',
                                [song.file_name for song in self.playlist])
         self.settings.setValue('paths_used', self.paths_used)
