@@ -29,7 +29,6 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         self.playlistList.itemDoubleClicked.connect(self.onSongDoubleClick)
         self.playlistList.setDragDropMode(QAbstractItemView.InternalMove)
         self.playlistList.model().rowsMoved.connect(self.onMoveRows)
-        self.finished.connect(self.onFinished)
         self.show()
 
     def updateList(self):
@@ -61,7 +60,8 @@ class PlaylistDialog(QDialog, Ui_Dialog):
 
     def onLoadPlaylist(self):
         file_name, a = self.gui.getOpenFileName('Open Playlist',
-                                                'Super Boucle Playlist (*.sbp)',
+                                                ('Super Boucle '
+                                                 'Playlist (*.sbp)'),
                                                 self)
         if not file_name:
             return
@@ -72,7 +72,8 @@ class PlaylistDialog(QDialog, Ui_Dialog):
 
     def onSavePlaylist(self):
         file_name, a = self.gui.getSaveFileName('Save Playlist',
-                                                'Super Boucle Playlist (*.sbp)',
+                                                ('Super Boucle '
+                                                 'Playlist (*.sbp)'),
                                                 self)
 
         if file_name:
@@ -91,10 +92,4 @@ class PlaylistDialog(QDialog, Ui_Dialog):
 
     def loadSong(self, id):
         if id != -1:
-            print(id)
-            song = self.gui.playlist[id]
-            self.gui.initUI(song)
-
-    def onFinished(self):
-        pass
-        # self.gui.updateDevices()
+            self.gui.initUI(self.gui.playlist[id])

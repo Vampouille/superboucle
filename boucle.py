@@ -50,7 +50,9 @@ def my_callback(frames):
         gui.readQueueIn.emit()
     midi_out.clear_buffer()
 
-    if state == 1 and 'beats_per_minute' in position:
+    if ((state == 1
+         and 'beats_per_minute' in position
+         and position['frame_rate'] != 0)):
         frame = position['frame']
         fps = position['frame_rate']
         fpm = fps * 60

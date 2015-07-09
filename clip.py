@@ -289,5 +289,4 @@ def load_song_from_file(file):
                             parser[section].getint('mute_group', 0))
                 res.addClip(clip, x, y)
 
-    print("Ports: %s" % res.outputsPorts)
     return res

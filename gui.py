@@ -382,13 +382,9 @@ class Gui(QMainWindow, Ui_MainWindow):
         '''Update jack port based on clip output settings
         update dict containing ports with shortname as key'''
 
-        print("---------- Port update -------------------")
-
         current_ports = set()
-        print("Outputs ports : ")
         for port in self._jack_client.outports:
             current_ports.add(port.shortname)
-            print("\t%s" % port.shortname)
 
         wanted_ports = set()
         for port_basename in song.outputsPorts:
@@ -396,16 +392,12 @@ class Gui(QMainWindow, Ui_MainWindow):
                 port = Song.CHANNEL_NAME_PATTERN.format(port=port_basename,
                                                         channel=ch)
                 wanted_ports.add(port)
-        print("Wanted ports : ")
-        for port in wanted_ports:
-            print("\t%s" % port)
 
         # remove unwanted ports
         if remove_ports:
             port_to_remove = []
             for port in self._jack_client.outports:
                 if port.shortname not in wanted_ports:
-                    print("***** removing : %s *****" % port.shortname)
                     current_ports.remove(port.shortname)
                     port_to_remove.append(port)
             for port in port_to_remove:
@@ -413,14 +405,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         # create new ports
         for new_port_name in wanted_ports - current_ports:
-            print("***** Adding : %s *****" % new_port_name)
             self._jack_client.outports.register(new_port_name)
-
-        print("Outputs ports after update : ")
-        for port in self._jack_client.outports:
-            print("\t%s" % port.shortname)
-
-        print("------------------------------------------")
 
         self.port_by_name = {port.shortname: port
                              for port in self._jack_client.outports}
@@ -672,6 +657,8 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.redraw()
 
     def timebase_callback(self, state, nframes, pos, new_pos):
+        if pos.frame_rate == 0:
+            return None
         pos.valid = 0x10
         pos.bar_start_tick = BAR_START_TICK
         pos.beats_per_bar = self.beat_per_bar.value()
@@ -686,4 +673,3 @@ class Gui(QMainWindow, Ui_MainWindow):
         (bar, beat) = divmod(beats, int(round(pos.beats_per_bar, 0)))
         (pos.bar, pos.beat) = (bar + 1, beat + 1)
         return None
-
