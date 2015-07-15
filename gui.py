@@ -12,7 +12,7 @@ from clip import Clip, load_song_from_file, verify_ext, Song
 from gui_ui import Ui_MainWindow
 from cell import Cell
 from learn import LearnDialog
-from manage import ManageDialog
+from device_manager import ManageDialog
 from playlist import PlaylistDialog, getSongs
 from port_manager import PortManager
 from new_song import NewSongDialog

@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QDialog
-from manage_ui import Ui_Dialog
+from device_manager_ui import Ui_Dialog
 from learn import LearnDialog
 from device import Device
 from clip import verify_ext
