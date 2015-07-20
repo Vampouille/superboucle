@@ -204,6 +204,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("Super Boucle - {}"
                             .format(song.file_name or "Empty Song"))
 
+        if self.song.initial_scene in self.song.scenes:
+            self.song.loadScene(self.song.initial_scene)
         self.update()
 
     def closeEvent(self, event):

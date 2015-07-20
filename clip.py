@@ -32,7 +32,6 @@ class Communicate(QtCore.QObject):
 
 
 class Clip():
-
     DEFAULT_OUTPUT = "Main"
 
     STOP = 0
@@ -91,7 +90,6 @@ class Clip():
 
 
 class Song():
-
     CHANNEL_NAMES = ["L", "R"]
     CHANNEL_NAME_PATTERN = "{port}_{channel}"
 
@@ -110,6 +108,7 @@ class Song():
         self.outputsPorts = set()
         self.outputsPorts.add(Clip.DEFAULT_OUTPUT)
         self.scenes = {}
+        self.initial_scene = None
 
     def addScene(self, name):
         clip_ids = [i for i, c in enumerate(self.clips) if
@@ -198,7 +197,7 @@ class Song():
             #                % (offset, data.shape[0], self.length(clip)))
 
         self.data[clip.audio_file][offset:offset + data.shape[0],
-                                   channel] = data
+        channel] = data
         # print("Write %s bytes at offset %s to channel %s" % (data.shape[0],
         # offset,
         # channel))
@@ -238,7 +237,8 @@ class Song():
                                     'width': self.width,
                                     'height': self.height,
                                     'outputs': json.dumps(port_list),
-                                    'scenes': json.dumps(self.scenes)}
+                                    'scenes': json.dumps(self.scenes),
+                                    'initial_scene': self.initial_scene}
             for clip in self.clips:
                 clip_file = {'name': clip.name,
                              'volume': str(clip.volume),
@@ -286,6 +286,7 @@ def load_song_from_file(file):
 
             scenes = parser['DEFAULT'].get('scenes', '{}')
             res.scenes = json.loads(scenes)
+            res.initial_scene = parser['DEFAULT'].get('initial_scene', None)
 
             # Loading wavs
             for member in zip.namelist():

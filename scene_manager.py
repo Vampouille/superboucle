@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QDialog, QFileDialog, QAbstractItemView
+from PyQt5.QtWidgets import QDialog, QAbstractItemView, QListWidgetItem
+from PyQt5.QtGui import QColor
 from scene_manager_ui import Ui_Dialog
 from add_scene import AddSceneDialog
 from clip import load_song_from_file
@@ -26,11 +27,15 @@ class SceneManager(QDialog, Ui_Dialog):
         self.scenelistList.itemDoubleClicked.connect(self.onSceneDoubleClick)
         self.scenelistList.setDragDropMode(QAbstractItemView.InternalMove)
         self.scenelistList.model().rowsMoved.connect(self.onMoveRows)
+        self.setInitialSceneBtn.clicked.connect(self.onSetInitial)
         self.show()
 
     def updateList(self):
         self.scenelistList.clear()
         for scene in self.gui.song.scenes:
+            if self.gui.song.initial_scene == scene:
+                scene = QListWidgetItem(scene)
+                scene.setBackground(QColor('red'))
             self.scenelistList.addItem(scene)
         anyScenes = bool(self.gui.song.scenes)
         self.loadScenesBtn.setEnabled(anyScenes)
@@ -50,6 +55,13 @@ class SceneManager(QDialog, Ui_Dialog):
 
     def onAddScene(self):
         AddSceneDialog(self.gui, callback=self.updateList)
+
+    def onSetInitial(self):
+        item = self.scenelistList.currentItem()
+        if item:
+            self.gui.song.initial_scene = item.text()
+            self.updateList()
+
 
     def onLoadScene(self):
         item = self.scenelistList.currentItem()
