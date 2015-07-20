@@ -32,11 +32,15 @@ class SceneManager(QDialog, Ui_Dialog):
         self.scenelistList.clear()
         for scene in self.gui.song.scenes:
             self.scenelistList.addItem(scene)
+        anyScenes = bool(self.gui.song.scenes)
+        self.loadScenesBtn.setEnabled(anyScenes)
+        self.removeScenesBtn.setEnabled(anyScenes)
 
     def onRemove(self):
         item = self.scenelistList.currentItem()
-        self.gui.song.removeScene(item.text())
-        self.updateList()
+        if item:
+            self.gui.song.removeScene(item.text())
+            self.updateList()
 
     def onMoveRows(self, sourceParent, sourceStart, sourceEnd,
                    destinationParent, destinationRow):
@@ -49,8 +53,9 @@ class SceneManager(QDialog, Ui_Dialog):
 
     def onLoadScene(self):
         item = self.scenelistList.currentItem()
-        self.loadScene(item.text())
-        self.gui.update()
+        if item:
+            self.loadScene(item.text())
+            self.gui.update()
 
     def onSceneDoubleClick(self, item):
         self.loadScene(item.text())
