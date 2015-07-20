@@ -310,10 +310,6 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onBeatPerBarChange(self):
         self.song.beat_per_bar = self.beat_per_bar.value()
 
-    def onStartClicked(self):
-        pass
-        self._jack_client.transport_start
-
     def onGotoClicked(self):
         state, position = self._jack_client.transport_query()
         new_position = (position['beats_per_bar']
