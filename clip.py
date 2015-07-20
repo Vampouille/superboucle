@@ -79,6 +79,16 @@ class Clip():
         self.output = output
         self.mute_group = mute_group
 
+    def stop(self):
+        self.state = Clip.STOPPING if self.state == Clip.START \
+            else Clip.STOP if self.state == Clip.STARTING \
+            else self.state
+
+    def start(self):
+        self.state = Clip.STARTING if self.state == Clip.STOP \
+            else Clip.START if self.state == Clip.STOPPING \
+            else self.state
+
 
 class Song():
 
@@ -99,6 +109,23 @@ class Song():
         self.is_record = False
         self.outputsPorts = set()
         self.outputsPorts.add(Clip.DEFAULT_OUTPUT)
+        self.scenes = {}
+
+    def addScene(self, name):
+        clip_ids = [i for i, c in enumerate(self.clips) if
+                    c.state == Clip.START]
+        self.scenes[name] = clip_ids
+
+    def removeScene(self, name):
+        del self.scenes[name]
+
+    def loadScene(self, name):
+        clip_ids = self.scenes[name]
+        for i, c in enumerate(self.clips):
+            if i in clip_ids:
+                c.start()
+            else:
+                c.stop()
 
     def addClip(self, clip, x, y):
         if self.clips_matrix[x][y]:
@@ -130,9 +157,7 @@ class Song():
             if clip.mute_group:
                 for c in self.clips:
                     if c and c.mute_group == clip.mute_group and c != clip:
-                        c.state = Clip.STOPPING if c.state == Clip.START \
-                            else Clip.STOP if c.state == Clip.STARTING \
-                            else c.state
+                        c.stop()
 
     def channels(self, clip):
         '''Return channel count for specified clip'''
@@ -212,7 +237,8 @@ class Song():
                                     'beat_per_bar': self.beat_per_bar,
                                     'width': self.width,
                                     'height': self.height,
-                                    'outputs': json.dumps(port_list)}
+                                    'outputs': json.dumps(port_list),
+                                    'scenes': json.dumps(self.scenes)}
             for clip in self.clips:
                 clip_file = {'name': clip.name,
                              'volume': str(clip.volume),
@@ -257,6 +283,9 @@ def load_song_from_file(file):
             outputs = parser['DEFAULT'].get('outputs', '["%s"]'
                                             % Clip.DEFAULT_OUTPUT)
             res.outputsPorts = set(json.loads(outputs))
+
+            scenes = parser['DEFAULT'].get('scenes', '{}')
+            res.scenes = json.loads(scenes)
 
             # Loading wavs
             for member in zip.namelist():
