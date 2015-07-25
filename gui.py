@@ -12,7 +12,7 @@ from gui_ui import Ui_MainWindow
 from cell import Cell
 from learn import LearnDialog
 from device_manager import ManageDialog
-from playlist import PlaylistDialog, getSongs
+from playlist import PlaylistDialog
 from scene_manager import SceneManager
 from port_manager import PortManager
 from new_song import NewSongDialog
@@ -112,7 +112,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         # which is then read as None :(
 
         # Load playlist
-        self.playlist = getSongs(self.settings.value('playlist', []) or [])
+        self.playlist = self.settings.value('playlist', []) or []
         # Load paths
         self.paths_used = self.settings.value('paths_used', {})
 
@@ -208,6 +208,19 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.song.loadScene(self.song.initial_scene)
         self.update()
         self.songLoad.emit()
+
+    def openSongFromDisk(self, file_name):
+        self._jack_client.transport_stop()
+        self._jack_client.transport_locate(0)
+
+        self.setEnabled(False)
+        message = QMessageBox(self)
+        message.setWindowTitle("Loading ....")
+        message.setText("Reading Files, please wait ...")
+        message.show()
+        self.initUI(load_song_from_file(file_name))
+        message.close()
+        self.setEnabled(True)
 
     def closeEvent(self, event):
         device_settings = QSettings('superboucle', 'devices')
@@ -448,14 +461,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         file_name, a = self.getOpenFileName('Open Song',
                                             'Super Boucle Song (*.sbs)')
         if a and file_name:
-            self.setEnabled(False)
-            message = QMessageBox(self)
-            message.setWindowTitle("Loading ....")
-            message.setText("Reading Files, please wait ...")
-            message.show()
-            self.initUI(load_song_from_file(file_name))
-            message.close()
-            self.setEnabled(True)
+            self.openSongFromDisk(file_name)
 
     def onActionSave(self):
         if self.song.file_name:
