@@ -227,8 +227,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         device_settings.setValue('devices',
                                  [pickle.dumps(x.mapping)
                                   for x in self.devices])
-        self.settings.setValue('playlist',
-                               [song.file_name for song in self.playlist])
+        self.settings.setValue('playlist', self.playlist)
         self.settings.setValue('paths_used', self.paths_used)
         self.settings.setValue('auto_connect', self.auto_connect)
 
