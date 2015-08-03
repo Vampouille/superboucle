@@ -1,230 +1,163 @@
 from clip import Clip
+from inspect import getmembers
+from midi_actions import MidiAction
+import struct
+import json
+
+
+class DeviceOutput:
+    def __init__(self, method, name=None):
+        self.method = method
+        self.name = name or method.__name__
+        self.__doc__ = method.__doc__
+
+    def __get__(self, inst, cls=None):
+        mapping = inst.output_mapping
+        if self.name not in mapping:
+            mapping[self.name] = self.method(inst)
+        return mapping[self.name]
+
+    def __set__(self, inst, value):
+        mapping = inst.output_mapping
+        mapping[self.name] = value
+        inst.update_lookup()
+
+    def __delete__(self, inst):
+        mapping = inst.output_mapping
+        del mapping[self.name]
+        inst.update_lookup()
+
+
+# def device_input(f):
+#    return DeviceOutput(f, 'input_mapping')
+
 
 
 class Device():
-    NOTEON = 0x90
-    NOTEOFF = 0x80
+    COLOR_DICT = {
+        None: 'none_vel',
+        Clip.STOP: 'stop_vel',
+        Clip.STARTING: 'starting_vel',
+        Clip.START: 'start_vel',
+        Clip.STOPPING: 'stopping_vel',
+        Clip.PREPARE_RECORD: 'prepare_record_vel',
+        Clip.RECORDING: 'recording_vel'
+    }
 
-    def __init__(self, mapping=None):
-        if mapping is None:
-            self.updateMapping({})
+    def __init__(self, name=''):
+        self.input_mapping = {}
+        self.output_mapping = {}
+        self.name = name
+        # initializes all fields with defaults
+        self._lookup_note = {}
+        getmembers(self)
+        self.update_lookup()
+
+    def update_lookup(self):
+        try:
+            self._lookup_note = {tuple(m): n
+                                 for n in MidiAction.ALL_INSTANCES
+                                 for m in
+                                 MidiAction.get(n, self).get_midi_keys()}
+        except Exception as e:
+            print(e)
+
+    def get_action(self, midi_message):
+        midi_key = MidiAction.make_midi_key(midi_message)
+        midi_action_name = self._lookup_note[midi_key]
+        return MidiAction.get(midi_action_name, self)
+
+    def update(self, other_device):
+        self.name = other_device.name
+        self.input_mapping = other_device.input_mapping.copy()
+        self.output_mapping = other_device.output_mapping.copy()
+        self.update_lookup()
+
+    def learn(self, midi_message):
+        midi_action = MidiAction.get(MidiAction.LISTENING, self)
+        if midi_action.ignore_message(midi_message):
+            return
+        midi_key = MidiAction.make_midi_key(midi_message)
+        midi_action.teach(midi_key)
+        self.update_lookup()
+
+    @staticmethod
+    def decode_midi(data):
+        if len(data) == 3:
+            status, pitch, vel = struct.unpack('3B', data)
+            channel = status & 0xF
+            msg_type = status >> 4
+            return msg_type, channel, pitch, vel
         else:
-            self.updateMapping(mapping)
+            raise Exception('Invalid Midi message length')
 
-    def updateMapping(self, new_mapping):
-        self.note_to_coord = {}
-        self.mapping = new_mapping
-        for y in range(len(self.start_stop)):
-            line = self.start_stop[y]
-            for x in range(len(line)):
-                self.note_to_coord[line[x]] = (x, y)
+    def generate_feedback_note(self, action, state, *args):
+        midi_action = MidiAction.get(action, self)
+        midi_key = midi_action.args_to_midi(*args)
+        return self.encode_feedback_note(midi_key, self.get_color(state))
 
-    def generateNote(self, x, y, state):
-        (msg_type, channel, pitch, velocity) = self.start_stop[y][x]
-        return (self.NOTEON + channel, pitch, self.get_color(state))
+    def generate_feedback_notes(self, action, color):
+        midi_action = MidiAction.get(action, self)
+        midi_keys = midi_action.get_midi_keys()
+        return [self.encode_feedback_note(key, color) for key in midi_keys]
 
-    #    def __str__(self):
-    #        return str(self.mapping)
+    def encode_feedback_note(self, midi_key, velocity):
+        msg_type, channel, pitch = midi_key
+        return MidiAction.NOTEON << 4 | channel, pitch, velocity
 
     def get_color(self, state):
-        if state is None:
-            return self.black_vel
-        elif state == Clip.STOP:
-            return self.red_vel
-        elif state == Clip.STARTING:
-            return self.blink_green_vel
-        elif state == Clip.START:
-            return self.green_vel
-        elif state == Clip.STOPPING:
-            return self.blink_red_vel
-        elif state == Clip.PREPARE_RECORD:
-            return self.blink_amber_vel
-        elif state == Clip.RECORDING:
-            return self.amber_vel
+        if state in Device.COLOR_DICT:
+            color_key = Device.COLOR_DICT[state]
+            return self.output_mapping[color_key]
         else:
             raise Exception("Invalid state")
 
-    def getXY(self, note):
-        return self.note_to_coord[note]
+    def toJson(self):
+        return json.dumps({
+            'name': self.name,
+            'input_mapping': self.input_mapping,
+            'output_mapping': self.output_mapping
+        })
 
-    @property
-    def name(self):
-        if 'name' in self.mapping:
-            return self.mapping['name']
-        else:
-            return ""
+    @staticmethod
+    def fromJson(json_data):
+        data = json.loads(json_data)
+        d = Device(data['name'])
+        d.input_mapping = data['input_mapping']
+        d.output_mapping = data['output_mapping']
+        d.update_lookup()
+        return d
 
-    @name.setter
-    def name(self, name):
-        self.mapping['name'] = name
-
-    @property
-    def ctrls(self):
-        if 'ctrls' not in self.mapping:
-            self.mapping['ctrls'] = []
-        return self.mapping['ctrls']
-
-    @property
-    def start_stop(self):
-        if 'start_stop' not in self.mapping:
-            self.mapping['start_stop'] = []
-        return self.mapping['start_stop']
-
-    @property
+    # outputs
+    @DeviceOutput
     def init_command(self):
-        if 'init_command' not in self.mapping:
-            self.mapping['init_command'] = []
-        return self.mapping['init_command']
+        return []
 
-    @property
-    def block_buttons(self):
-        if 'block_buttons' not in self.mapping:
-            self.mapping['block_buttons'] = []
-        return self.mapping['block_buttons']
+    # velocity feedback
+    @DeviceOutput
+    def none_vel(self):
+        return 0
 
-    @property
-    def master_volume_ctrl(self):
-        if 'master_volume_ctrl' in self.mapping:
-            return self.mapping['master_volume_ctrl']
-        else:
-            return False
+    @DeviceOutput
+    def start_vel(self):
+        return 0
 
-    @master_volume_ctrl.setter
-    def master_volume_ctrl(self, ctrl_key):
-        self.mapping['master_volume_ctrl'] = ctrl_key
+    @DeviceOutput
+    def starting_vel(self):
+        return 0
 
-    @property
-    def play_btn(self):
-        if 'play_btn' in self.mapping:
-            return self.mapping['play_btn']
-        else:
-            return False
+    @DeviceOutput
+    def stop_vel(self):
+        return 0
 
-    @play_btn.setter
-    def play_btn(self, btn):
-        self.mapping['play_btn'] = btn
+    @DeviceOutput
+    def stopping_vel(self):
+        return 0
 
-    @property
-    def pause_btn(self):
-        if 'pause_btn' in self.mapping:
-            return self.mapping['pause_btn']
-        else:
-            return False
+    @DeviceOutput
+    def recording_vel(self):
+        return 0
 
-    @pause_btn.setter
-    def pause_btn(self, btn):
-        self.mapping['pause_btn'] = btn
-
-    @property
-    def rewind_btn(self):
-        if 'rewind_btn' in self.mapping:
-            return self.mapping['rewind_btn']
-        else:
-            return False
-
-    @rewind_btn.setter
-    def rewind_btn(self, btn):
-        self.mapping['rewind_btn'] = btn
-
-    @property
-    def goto_btn(self):
-        if 'goto_btn' in self.mapping:
-            return self.mapping['goto_btn']
-        else:
-            return False
-
-    @goto_btn.setter
-    def goto_btn(self, btn):
-        self.mapping['goto_btn'] = btn
-
-    @property
-    def record_btn(self):
-        if 'record_btn' in self.mapping:
-            return self.mapping['record_btn']
-        else:
-            return False
-
-    @record_btn.setter
-    def record_btn(self, btn):
-        self.mapping['record_btn'] = btn
-
-    @master_volume_ctrl.setter
-    def master_volume_ctrl(self, ctrl_key):
-        self.mapping['master_volume_ctrl'] = ctrl_key
-
-    @property
-    def black_vel(self):
-        if 'black_vel' in self.mapping:
-            return self.mapping['black_vel']
-        else:
-            return 0
-
-    @property
-    def green_vel(self):
-        if 'green_vel' in self.mapping:
-            return self.mapping['green_vel']
-        else:
-            return 0
-
-    @property
-    def blink_green_vel(self):
-        if 'blink_green_vel' in self.mapping:
-            return self.mapping['blink_green_vel']
-        else:
-            return 0
-
-    @property
-    def red_vel(self):
-        if 'red_vel' in self.mapping:
-            return self.mapping['red_vel']
-        else:
-            return 0
-
-    @property
-    def blink_red_vel(self):
-        if 'blink_red_vel' in self.mapping:
-            return self.mapping['blink_red_vel']
-        else:
-            return 0
-
-    @property
-    def amber_vel(self):
-        if 'amber_vel' in self.mapping:
-            return self.mapping['amber_vel']
-        else:
-            return 0
-
-    @property
-    def blink_amber_vel(self):
-        if 'blink_amber_vel' in self.mapping:
-            return self.mapping['blink_amber_vel']
-        else:
-            return 0
-
-    @black_vel.setter
-    def black_vel(self, vel):
-        self.mapping['black_vel'] = vel
-
-    @green_vel.setter
-    def green_vel(self, vel):
-        self.mapping['green_vel'] = vel
-
-    @blink_green_vel.setter
-    def blink_green_vel(self, vel):
-        self.mapping['blink_green_vel'] = vel
-
-    @red_vel.setter
-    def red_vel(self, vel):
-        self.mapping['red_vel'] = vel
-
-    @blink_red_vel.setter
-    def blink_red_vel(self, vel):
-        self.mapping['blink_red_vel'] = vel
-
-    @amber_vel.setter
-    def amber_vel(self, vel):
-        self.mapping['amber_vel'] = vel
-
-    @blink_amber_vel.setter
-    def blink_amber_vel(self, vel):
-        self.mapping['blink_amber_vel'] = vel
+    @DeviceOutput
+    def prepare_record_vel(self):
+        return 0

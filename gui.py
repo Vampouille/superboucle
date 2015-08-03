@@ -19,9 +19,9 @@ from new_song import NewSongDialog
 from add_clip import AddClipDialog
 from add_port import AddPortDialog
 from device import Device
-import struct
+from midi_actions import MidiAction, MidiRowAction, MidiGridAction
 from queue import Queue, Empty
-import pickle
+import json
 from os.path import expanduser, dirname
 import numpy as np
 import soundfile as sf
@@ -99,10 +99,10 @@ class Gui(QMainWindow, Ui_MainWindow):
         device_settings = QSettings('superboucle', 'devices')
         if ((device_settings.contains('devices')
              and device_settings.value('devices'))):
-            for raw_device in device_settings.value('devices'):
-                self.devices.append(Device(pickle.loads(raw_device)))
+            device_strings = json.loads(device_settings.value('devices'))
+            self.devices = list(map(Device.fromJson, device_strings))
         else:
-            self.devices.append(Device({'name': 'No Device', }))
+            self.devices.append(Device('No Device'))
         self.updateDevices()
         self.deviceGroup.triggered.connect(self.onDeviceSelect)
 
@@ -129,14 +129,17 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionPlaylist_Editor.triggered.connect(self.onPlaylistEditor)
         self.actionPort_Manager.triggered.connect(self.onPortManager)
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
-        self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
         self.bpm.valueChanged.connect(self.onBpmChange)
         self.beat_per_bar.valueChanged.connect(self.onBeatPerBarChange)
-        self.rewindButton.clicked.connect(self.onRewindClicked)
-        self.playButton.clicked.connect(self._jack_client.transport_start)
+
+        # single midi actions
+        self.master_volume.valueChanged.connect(self.on_master_volume_ctrl)
+        self.playButton.clicked.connect(self.on_play_btn)
         self.pauseButton.clicked.connect(self._jack_client.transport_stop)
-        self.gotoButton.clicked.connect(self.onGotoClicked)
-        self.recordButton.clicked.connect(self.onRecord)
+        self.rewindButton.clicked.connect(self.on_rewind_btn)
+        self.gotoButton.clicked.connect(self.on_goto_btn)
+        self.recordButton.clicked.connect(self.on_record_btn)
+
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
@@ -201,38 +204,12 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def closeEvent(self, event):
         device_settings = QSettings('superboucle', 'devices')
-        device_settings.setValue('devices',
-                                 [pickle.dumps(x.mapping)
-                                  for x in self.devices])
+        device_settings.setValue('devices', json.dumps(
+            list(map(Device.toJson, self.devices))))
         self.settings.setValue('playlist',
                                [song.file_name for song in self.playlist])
         self.settings.setValue('paths_used', self.paths_used)
         self.settings.setValue('auto_connect', self.auto_connect)
-
-    def onStartStopClicked(self):
-        clip = self.sender().parent().parent().clip
-        self.startStop(clip.x, clip.y)
-
-    def startStop(self, x, y):
-        clip = self.btn_matrix[x][y].clip
-        if clip is None:
-            return
-        if self.song.is_record:
-            self.song.is_record = False
-            self.updateRecordBtn()
-            # calculate buffer size
-            state, position = self._jack_client.transport_query()
-            bps = position['beats_per_minute'] / 60
-            fps = position['frame_rate']
-            size = (1 / bps) * clip.beat_diviser * fps
-            self.song.init_record_buffer(clip, 2, size, fps)
-            # set frame offset based on jack block size
-            clip.frame_offset = self._jack_client.blocksize
-            clip.state = Clip.PREPARE_RECORD
-            self.recordButton.setStyleSheet(self.RECORD_DEFAULT)
-        else:
-            self.song.toggle(clip.x, clip.y)
-        self.update()
 
     def onEdit(self):
         self.last_clip = self.sender().parent().parent().clip
@@ -301,8 +278,51 @@ class Gui(QMainWindow, Ui_MainWindow):
                 self.song.removeClip(self.last_clip)
                 self.initUI(self.song)
 
-    def onMasterVolumeChange(self):
-        self.song.volume = (self.master_volume.value() / 256)
+    def onStartStopClicked(self):
+        clip = self.sender().parent().parent().clip
+        self.on_start_stop(clip.x, clip.y)
+
+    @MidiGridAction
+    def on_start_stop(self, x, y):
+        clip = self.btn_matrix[x][y].clip
+        if clip is None:
+            return
+        if self.song.is_record:
+            self.song.is_record = False
+            self.updateRecordBtn()
+            # calculate buffer size
+            state, position = self._jack_client.transport_query()
+            bps = position['beats_per_minute'] / 60
+            fps = position['frame_rate']
+            size = (1 / bps) * clip.beat_diviser * fps
+            self.song.init_record_buffer(clip, 2, size, fps)
+            # set frame offset based on jack block size
+            clip.frame_offset = self._jack_client.blocksize
+            clip.state = Clip.PREPARE_RECORD
+            self.recordButton.setStyleSheet(self.RECORD_DEFAULT)
+        else:
+            self.song.toggle(clip.x, clip.y)
+        self.update()
+
+    @MidiAction.continuous
+    def on_master_volume_ctrl(self, volume=None):
+        if volume is None: volume = self.master_volume.value()
+        self.song.volume = volume / 127
+        self.master_volume.setValue(self.song.volume * 127)
+        print("volume: {}".format(self.song.volume))
+
+    def onClipVolumeChange(self):
+        self.last_clip.volume = (self.clip_volume.value() / 127)
+
+    @MidiRowAction.continuous
+    def on_ctrls(self, ctrl_index, volume):
+        clip = (self.song.clips_matrix
+                [ctrl_index]
+                [self.current_vol_block])
+        if clip:
+            clip.volume = volume / 127
+            if self.last_clip == clip:
+                self.clip_volume.setValue(self.last_clip.volume * 127)
 
     def onBpmChange(self):
         self.song.bpm = self.bpm.value()
@@ -310,11 +330,16 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onBeatPerBarChange(self):
         self.song.beat_per_bar = self.beat_per_bar.value()
 
-    def onStartClicked(self):
-        pass
-        self._jack_client.transport_start
+    @MidiAction
+    def on_play_btn(self):
+        self._jack_client.transport_start()
 
-    def onGotoClicked(self):
+    @MidiAction
+    def on_pause_btn(self):
+        self._jack_client.transport_stop()
+
+    @MidiAction
+    def on_goto_btn(self):
         state, position = self._jack_client.transport_query()
         new_position = (position['beats_per_bar']
                         * (self.gotoTarget.value() - 1)
@@ -322,31 +347,43 @@ class Gui(QMainWindow, Ui_MainWindow):
                         * (60 / position['beats_per_minute']))
         self._jack_client.transport_locate(int(round(new_position, 0)))
 
-    def onRecord(self):
+    @MidiAction
+    def on_record_btn(self):
         self.song.is_record = not self.song.is_record
         self.updateRecordBtn()
 
     def updateRecordBtn(self):
         if not self.song.is_record:
             self.recordButton.setStyleSheet(self.RECORD_DEFAULT)
-        if self.device.record_btn:
-            (msg_type, channel, pitch, velocity) = self.device.record_btn
+        midi_msg = self.device.input_mapping.get('record_btn')
+        if midi_msg:
+            msg_type, channel, pitch = midi_msg
             if self.song.is_record:
-                color = self.device.blink_amber_vel
+                color = self.device.recording_vel
             else:
-                color = self.device.black_vel
+                color = self.device.stop_vel
             self.queue_out.put(((msg_type << 4) + channel, pitch, color))
 
-    def onRewindClicked(self):
+    @MidiAction
+    def on_rewind_btn(self):
         self._jack_client.transport_locate(0)
+
+    @MidiRowAction
+    def on_block_buttons(self, id):
+        self.current_vol_block = id
+        keys = self.device.input_mapping['block_buttons']
+        for i, midi_key in enumerate(keys):
+            channel, pitch = midi_key
+            if i == self.current_vol_block:
+                color = self.device.stop_vel
+            else:
+                color = self.device.none_vel
+            self.queue_out.put(((self.NOTEON << 4) | channel, pitch, color))
 
     def onClipNameChange(self):
         self.last_clip.name = self.clip_name.text()
         cell = self.btn_matrix[self.last_clip.x][self.last_clip.y]
         cell.clip_name.setText(self.last_clip.name)
-
-    def onClipVolumeChange(self):
-        self.last_clip.volume = (self.clip_volume.value() / 256)
 
     def onBeatDiviserChange(self):
         self.last_clip.beat_diviser = self.beat_diviser.value()
@@ -401,7 +438,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                     current_ports.remove(port.shortname)
                     port_to_remove.append(port)
             for port in port_to_remove:
-                    port.unregister()
+                port.unregister()
 
         # create new ports
         for new_port_name in wanted_ports - current_ports:
@@ -489,23 +526,26 @@ class Gui(QMainWindow, Ui_MainWindow):
         for x in range(len(self.song.clips_matrix)):
             line = self.song.clips_matrix[x]
             for y in range(len(line)):
-                clp = line[y]
-                if clp is None:
-                    state = None
-                else:
-                    state = clp.state
-                if state != self.state_matrix[x][y]:
-                    if clp:
-                        self.btn_matrix[x][y].setColor(state)
-                    try:
-                        self.queue_out.put(self.device.generateNote(x,
-                                                                    y,
-                                                                    state))
-                    except IndexError:
-                        # print("No cell associated to %s x %s"
-                        # % (clp.x, clp.y))
-                        pass
-                self.state_matrix[x][y] = state
+                self.update_clip(x, y)
+
+    def update_clip(self, x, y):
+        clp = self.song.clips_matrix[x][y]
+        if clp is None:
+            state = None
+        else:
+            state = clp.state
+        if state != self.state_matrix[x][y]:
+            if clp:
+                self.btn_matrix[x][y].setColor(state)
+            try:
+                note = self.device.generate_feedback_note(
+                    'start_stop', state, x, y)
+                self.queue_out.put(note)
+            except IndexError:
+                # print("No cell associated to %s x %s"
+                # % (clp.x, clp.y))
+                pass
+        self.state_matrix[x][y] = state
 
     def redraw(self):
         self.state_matrix = [[-1 for x in range(self.song.height)]
@@ -516,13 +556,14 @@ class Gui(QMainWindow, Ui_MainWindow):
         try:
             while True:
                 note = self.queue_in.get(block=False)
-                if len(note) == 3:
-                    status, pitch, vel = struct.unpack('3B', note)
-                    channel = status & 0xF
-                    msg_type = status >> 4
-                    self.processNote(msg_type, channel, pitch, vel)
-                # else:
-                # print("Invalid message length")
+                midi_message = Device.decode_midi(note)
+                try:
+                    midi_action = self.device.get_action(midi_message)
+                    if midi_action.ignore_message(midi_message):
+                        continue
+                    midi_action.trigger(midi_message)
+                except Exception as e:
+                    print(e)
         except Empty:
             pass
 
@@ -535,7 +576,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         btn_id_vel = (msg_type, channel, pitch, -1)
         ctrl_key = (msg_type, channel, pitch)
 
-        # master volume
         if ctrl_key == self.device.master_volume_ctrl:
             self.song.master_volume = vel / 127
             (self.master_volume
@@ -545,11 +585,11 @@ class Gui(QMainWindow, Ui_MainWindow):
         elif self.device.pause_btn in [btn_id, btn_id_vel]:
             self._jack_client.transport_stop()
         elif self.device.rewind_btn in [btn_id, btn_id_vel]:
-            self.onRewindClicked()
+            self.on_rewind_btn()
         elif self.device.goto_btn in [btn_id, btn_id_vel]:
-            self.onGotoClicked()
+            self.on_goto_btn()
         elif self.device.record_btn in [btn_id, btn_id_vel]:
-            self.onRecord()
+            self.on_record_btn()
         elif ctrl_key in self.device.ctrls:
             try:
                 ctrl_index = self.device.ctrls.index(ctrl_key)
@@ -592,7 +632,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                     pass
 
             if (x >= 0 and y >= 0):
-                self.startStop(x, y)
+                self.on_start_stop(x, y)
 
     def toggleBlinkButton(self):
         for line in self.btn_matrix:

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1111</width>
-    <height>947</height>
+    <height>948</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -120,7 +120,7 @@ background-color: rgb(175, 178, 178);}</string>
 color: black;</string>
           </property>
           <property name="maximum">
-           <number>256</number>
+           <number>127</number>
           </property>
          </widget>
          <widget class="QLabel" name="label_6">
@@ -234,7 +234,7 @@ color: black;</string>
 color: black;</string>
            </property>
            <property name="maximum">
-            <number>256</number>
+            <number>127</number>
            </property>
            <property name="singleStep">
             <number>1</number>
@@ -409,7 +409,7 @@ border-radius: 2px;</string>
               <x>10</x>
               <y>30</y>
               <width>161</width>
-              <height>51</height>
+              <height>74</height>
              </rect>
             </property>
             <layout class="QFormLayout" name="formLayout_4">
@@ -646,7 +646,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
             <x>10</x>
             <y>190</y>
             <width>214</width>
-            <height>91</height>
+            <height>113</height>
            </rect>
           </property>
           <layout class="QFormLayout" name="formLayout_2">
@@ -835,7 +835,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
      <x>0</x>
      <y>0</y>
      <width>1111</width>
-     <height>20</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
