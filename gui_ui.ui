@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1111</width>
-    <height>948</height>
+    <height>947</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -409,7 +409,7 @@ border-radius: 2px;</string>
               <x>10</x>
               <y>30</y>
               <width>161</width>
-              <height>74</height>
+              <height>51</height>
              </rect>
             </property>
             <layout class="QFormLayout" name="formLayout_4">
@@ -646,7 +646,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
             <x>10</x>
             <y>190</y>
             <width>214</width>
-            <height>113</height>
+            <height>91</height>
            </rect>
           </property>
           <layout class="QFormLayout" name="formLayout_2">
@@ -835,7 +835,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
      <x>0</x>
      <y>0</y>
      <width>1111</width>
-     <height>27</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

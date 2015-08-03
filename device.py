@@ -28,11 +28,6 @@ class DeviceOutput:
         inst.update_lookup()
 
 
-# def device_input(f):
-#    return DeviceOutput(f, 'input_mapping')
-
-
-
 class Device():
     COLOR_DICT = {
         None: 'none_vel',
