@@ -556,8 +556,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         try:
             while True:
                 note = self.queue_in.get(block=False)
-                midi_message = Device.decode_midi(note)
                 try:
+                    midi_message = Device.decode_midi(note)
                     midi_action = self.device.get_action(midi_message)
                     if midi_action.ignore_message(midi_message):
                         continue
