@@ -58,7 +58,7 @@
         <x>10</x>
         <y>10</y>
         <width>351</width>
-        <height>31</height>
+        <height>43</height>
        </rect>
       </property>
       <layout class="QFormLayout" name="formLayout">
@@ -82,24 +82,11 @@
        </item>
       </layout>
      </widget>
-     <widget class="QPushButton" name="firstLine">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>100</y>
-        <width>281</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Learn First line</string>
-      </property>
-     </widget>
      <widget class="QLabel" name="label_8">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>80</y>
+        <x>0</x>
+        <y>60</y>
         <width>149</width>
         <height>18</height>
        </rect>
@@ -132,25 +119,6 @@
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="stop3">
-      <property name="geometry">
-       <rect>
-        <x>300</x>
-        <y>100</y>
-        <width>59</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>10</width>
-        <height>0</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Stop</string>
-      </property>
-     </widget>
      <widget class="QGroupBox" name="groupBox_9">
       <property name="geometry">
        <rect>
@@ -168,7 +136,7 @@
       <property name="title">
        <string>Transport</string>
       </property>
-      <widget class="QPushButton" name="playButton">
+      <widget class="QPushButton" name="play_btn_learn">
        <property name="geometry">
         <rect>
          <x>10</x>
@@ -191,7 +159,7 @@
         </size>
        </property>
       </widget>
-      <widget class="QPushButton" name="gotoButton">
+      <widget class="QPushButton" name="goto_btn_learn">
        <property name="geometry">
         <rect>
          <x>230</x>
@@ -214,7 +182,7 @@
         </size>
        </property>
       </widget>
-      <widget class="QPushButton" name="rewindButton">
+      <widget class="QPushButton" name="rewind_btn_learn">
        <property name="geometry">
         <rect>
          <x>10</x>
@@ -237,7 +205,7 @@
         </size>
        </property>
       </widget>
-      <widget class="QPushButton" name="pauseButton">
+      <widget class="QPushButton" name="pause_btn_learn">
        <property name="geometry">
         <rect>
          <x>230</x>
@@ -260,7 +228,7 @@
         </size>
        </property>
       </widget>
-      <widget class="QLabel" name="playLabel">
+      <widget class="QLabel" name="play_btn_label">
        <property name="geometry">
         <rect>
          <x>50</x>
@@ -273,7 +241,7 @@
         <string/>
        </property>
       </widget>
-      <widget class="QLabel" name="rewindLabel">
+      <widget class="QLabel" name="rewind_btn_label">
        <property name="geometry">
         <rect>
          <x>50</x>
@@ -286,7 +254,7 @@
         <string/>
        </property>
       </widget>
-      <widget class="QLabel" name="pauseLabel">
+      <widget class="QLabel" name="pause_btn_label">
        <property name="geometry">
         <rect>
          <x>270</x>
@@ -299,7 +267,7 @@
         <string/>
        </property>
       </widget>
-      <widget class="QLabel" name="gotoLabel">
+      <widget class="QLabel" name="goto_btn_label">
        <property name="geometry">
         <rect>
          <x>270</x>
@@ -312,7 +280,7 @@
         <string/>
        </property>
       </widget>
-      <widget class="QPushButton" name="recordButton">
+      <widget class="QPushButton" name="record_btn_learn">
        <property name="geometry">
         <rect>
          <x>450</x>
@@ -335,7 +303,7 @@
         </size>
        </property>
       </widget>
-      <widget class="QLabel" name="recordLabel">
+      <widget class="QLabel" name="record_btn_label">
        <property name="geometry">
         <rect>
          <x>490</x>
@@ -349,6 +317,51 @@
        </property>
       </widget>
      </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget_3">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>90</y>
+        <width>381</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QPushButton" name="start_stop_learn">
+         <property name="text">
+          <string>Learn First line</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="stop3">
+         <property name="minimumSize">
+          <size>
+           <width>10</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Stop</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="start_stop_clear">
+         <property name="minimumSize">
+          <size>
+           <width>10</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Clear</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
@@ -357,7 +370,7 @@
       <enum>QLayout::SetMinimumSize</enum>
      </property>
      <item>
-      <layout class="QGridLayout" name="gridLayout">
+      <layout class="QGridLayout" name="start_stop_layout">
        <property name="sizeConstraint">
         <enum>QLayout::SetMinAndMaxSize</enum>
        </property>
@@ -421,7 +434,7 @@
          <x>10</x>
          <y>30</y>
          <width>351</width>
-         <height>31</height>
+         <height>33</height>
         </rect>
        </property>
        <layout class="QFormLayout" name="formLayout_2">
@@ -429,14 +442,14 @@
          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
         </property>
         <item row="0" column="0">
-         <widget class="QPushButton" name="learn_master_volume_ctrl">
+         <widget class="QPushButton" name="master_volume_ctrl_learn">
           <property name="text">
            <string>Master Volume Controller</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QLabel" name="label_master_volume_ctrl">
+         <widget class="QLabel" name="master_volume_ctrl_label">
           <property name="text">
            <string/>
           </property>
@@ -473,8 +486,8 @@
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>261</width>
-         <height>31</height>
+         <width>351</width>
+         <height>33</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_6">
@@ -482,7 +495,7 @@
          <enum>QLayout::SetMinimumSize</enum>
         </property>
         <item row="0" column="0">
-         <widget class="QPushButton" name="learn_ctrls">
+         <widget class="QPushButton" name="ctrls_learn">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
             <horstretch>0</horstretch>
@@ -513,6 +526,13 @@
           </property>
          </widget>
         </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="ctrls_clear">
+          <property name="text">
+           <string>Clear</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="horizontalLayoutWidget">
@@ -524,7 +544,7 @@
          <height>52</height>
         </rect>
        </property>
-       <layout class="QHBoxLayout" name="ctrlsHorizontalLayout">
+       <layout class="QHBoxLayout" name="ctrls_layout">
         <property name="sizeConstraint">
          <enum>QLayout::SetMinAndMaxSize</enum>
         </property>
@@ -535,8 +555,8 @@
         <rect>
          <x>10</x>
          <y>120</y>
-         <width>261</width>
-         <height>31</height>
+         <width>351</width>
+         <height>33</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_7">
@@ -544,7 +564,7 @@
          <enum>QLayout::SetMinimumSize</enum>
         </property>
         <item row="0" column="0">
-         <widget class="QPushButton" name="learn_block_bts">
+         <widget class="QPushButton" name="block_buttons_learn">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
             <horstretch>0</horstretch>
@@ -575,6 +595,13 @@
           </property>
          </widget>
         </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="block_buttons_clear">
+          <property name="text">
+           <string>Clear</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="horizontalLayoutWidget_2">
@@ -586,7 +613,7 @@
          <height>51</height>
         </rect>
        </property>
-       <layout class="QHBoxLayout" name="btsHorizontalLayout">
+       <layout class="QHBoxLayout" name="block_buttons_layout">
         <property name="sizeConstraint">
          <enum>QLayout::SetMinAndMaxSize</enum>
         </property>
@@ -608,27 +635,27 @@
        </font>
       </property>
       <property name="title">
-       <string>Green Color</string>
+       <string>Playing</string>
       </property>
       <widget class="QWidget" name="gridLayoutWidget">
        <property name="geometry">
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>141</width>
-         <height>31</height>
+         <width>154</width>
+         <height>35</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="2">
-         <widget class="QPushButton" name="learn_green">
+         <widget class="QPushButton" name="test_start_vel">
           <property name="text">
            <string>Test</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QSpinBox" name="green_vel">
+         <widget class="QSpinBox" name="start_vel">
           <property name="maximum">
            <number>127</number>
           </property>
@@ -652,27 +679,27 @@
        </font>
       </property>
       <property name="title">
-       <string>Blink Green Color</string>
+       <string>Starting</string>
       </property>
       <widget class="QWidget" name="gridLayoutWidget_5">
        <property name="geometry">
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>141</width>
-         <height>31</height>
+         <width>154</width>
+         <height>35</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_8">
         <item row="0" column="0">
-         <widget class="QSpinBox" name="blink_green_vel">
+         <widget class="QSpinBox" name="starting_vel">
           <property name="maximum">
            <number>127</number>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QPushButton" name="learn_blink_green">
+         <widget class="QPushButton" name="test_starting_vel">
           <property name="text">
            <string>Test</string>
           </property>
@@ -696,27 +723,27 @@
        </font>
       </property>
       <property name="title">
-       <string>Red Color</string>
+       <string>Stopped</string>
       </property>
       <widget class="QWidget" name="gridLayoutWidget_2">
        <property name="geometry">
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>141</width>
-         <height>31</height>
+         <width>154</width>
+         <height>35</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="0" column="0">
-         <widget class="QSpinBox" name="red_vel">
+         <widget class="QSpinBox" name="stop_vel">
           <property name="maximum">
            <number>127</number>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QPushButton" name="learn_red">
+         <widget class="QPushButton" name="test_stop_vel">
           <property name="text">
            <string>Test</string>
           </property>
@@ -740,27 +767,27 @@
        </font>
       </property>
       <property name="title">
-       <string>Blink Red Color</string>
+       <string>Stopping</string>
       </property>
       <widget class="QWidget" name="gridLayoutWidget_3">
        <property name="geometry">
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>141</width>
-         <height>31</height>
+         <width>154</width>
+         <height>35</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="0" column="0">
-         <widget class="QSpinBox" name="blink_red_vel">
+         <widget class="QSpinBox" name="stopping_vel">
           <property name="maximum">
            <number>127</number>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QPushButton" name="learn_blink_red">
+         <widget class="QPushButton" name="test_stopping_vel">
           <property name="text">
            <string>Test</string>
           </property>
@@ -847,27 +874,27 @@ example:
        </font>
       </property>
       <property name="title">
-       <string>Black Color (light off)</string>
+       <string>No Clip</string>
       </property>
       <widget class="QWidget" name="gridLayoutWidget_4">
        <property name="geometry">
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>141</width>
-         <height>31</height>
+         <width>154</width>
+         <height>35</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_5">
         <item row="0" column="0">
-         <widget class="QSpinBox" name="black_vel">
+         <widget class="QSpinBox" name="none_vel">
           <property name="maximum">
            <number>127</number>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QPushButton" name="learn_black">
+         <widget class="QPushButton" name="test_none_vel">
           <property name="text">
            <string>Test</string>
           </property>
@@ -891,27 +918,27 @@ example:
        </font>
       </property>
       <property name="title">
-       <string>Amber Color</string>
+       <string>Recording</string>
       </property>
       <widget class="QWidget" name="gridLayoutWidget_10">
        <property name="geometry">
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>141</width>
-         <height>31</height>
+         <width>154</width>
+         <height>35</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_11">
         <item row="0" column="0">
-         <widget class="QSpinBox" name="amber_vel">
+         <widget class="QSpinBox" name="recording_vel">
           <property name="maximum">
            <number>127</number>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QPushButton" name="learn_amber">
+         <widget class="QPushButton" name="test_recording_vel">
           <property name="text">
            <string>Test</string>
           </property>
@@ -935,27 +962,27 @@ example:
        </font>
       </property>
       <property name="title">
-       <string>Blink Amber Color</string>
+       <string>Preparing to Record</string>
       </property>
       <widget class="QWidget" name="gridLayoutWidget_11">
        <property name="geometry">
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>141</width>
-         <height>31</height>
+         <width>154</width>
+         <height>35</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_12">
         <item row="0" column="0">
-         <widget class="QSpinBox" name="blink_amber_vel">
+         <widget class="QSpinBox" name="prepare_record_vel">
           <property name="maximum">
            <number>127</number>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QPushButton" name="learn_blink_amber">
+         <widget class="QPushButton" name="test_prepare_record_vel">
           <property name="text">
            <string>Test</string>
           </property>

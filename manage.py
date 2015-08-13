@@ -36,23 +36,23 @@ class ManageDialog(QDialog, Ui_Dialog):
 
     def onImport(self):
         file_name, a = self.gui.getOpenFileName('Open Device',
-                                                'Super Boucle Mapping (*.sbm)',
+                                                'Super Boucle Device (*.sbd)',
                                                 self)
         with open(file_name, 'r') as f:
             read_data = f.read()
-        mapping = json.loads(read_data)
-        self.list.addItem(mapping['name'])
-        self.gui.devices.append(Device(mapping))
+        device = Device.fromJson(read_data)
+        self.list.addItem(device.name)
+        self.gui.devices.append(device)
 
     def onExport(self):
         device = self.gui.devices[self.list.currentRow() + 1]
         file_name, a = self.gui.getSaveFileName('Save Device',
-                                                'Super Boucle Mapping (*.sbm)',
+                                                'Super Boucle Device (*.sbd)',
                                                 self)
         if file_name:
-            file_name = verify_ext(file_name, 'sbm')
+            file_name = verify_ext(file_name, 'sbd')
             with open(file_name, 'w') as f:
-                f.write(json.dumps(device.mapping))
+                f.write(device.toJson())
 
     def onFinished(self):
         self.gui.updateDevices()

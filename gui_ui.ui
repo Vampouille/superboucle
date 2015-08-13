@@ -120,7 +120,7 @@ background-color: rgb(175, 178, 178);}</string>
 color: black;</string>
           </property>
           <property name="maximum">
-           <number>256</number>
+           <number>127</number>
           </property>
          </widget>
          <widget class="QLabel" name="label_6">
@@ -234,7 +234,7 @@ color: black;</string>
 color: black;</string>
            </property>
            <property name="maximum">
-            <number>256</number>
+            <number>127</number>
            </property>
            <property name="singleStep">
             <number>1</number>
