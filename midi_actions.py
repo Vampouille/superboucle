@@ -58,6 +58,18 @@ class MidiAction(FunctionWrapper):
     def make_midi_key(midi_message):
         return midi_message[:-1]  # velocity is cut off
 
+    @staticmethod
+    def encode_feedback_note(midi_key, **kwargs):
+        midi_msg = {
+            'msg_type': midi_key[0],
+            'channel': midi_key[1],
+            'pitch': midi_key[2],
+            'velocity': 0
+        }
+        midi_msg.update(kwargs)
+        status = midi_msg['msg_type'] << 4 | midi_msg['channel']
+        return status, midi_msg['pitch'], midi_msg['velocity']
+
     """
     A Decorator for methods.
 
@@ -121,7 +133,18 @@ class MidiAction(FunctionWrapper):
         return self.wrapper(function, instance, args, {})
 
     def midi_to_args(self, midi_message):
-        return midi_message[-1:]
+        return midi_message[-1:],
+
+    def feedback(self, args_to_kwargs, velocity=0):
+        if isinstance(args_to_kwargs, dict):
+            args_to_kwargs = lambda *x: args_to_kwargs
+        elif not callable(args_to_kwargs):
+            raise TypeError('expected dict or callable')
+        for m in self.get_midi_keys():
+            args = self.midi_to_args(m + (velocity,))
+            kwargs = args_to_kwargs(*args)
+            if kwargs:
+                yield self.encode_feedback_note(m, **kwargs)
 
     def args_to_midi(self, *args):
         return self.data
@@ -135,7 +158,7 @@ class MidiAction(FunctionWrapper):
         self.LISTENING = None
 
     def get_midi_keys(self):
-        return [self.data] if self.data else []
+        return [tuple(self.data)] if self.data else []
 
     def clear(self):
         del self.data
@@ -147,7 +170,7 @@ class MidiRowAction(MidiAction):
     DEFAULT_DATA = []
 
     def get_midi_keys(self):
-        return self.data
+        return list(map(tuple, self.data))
 
     def _dont_learn(self, midi_key):
         already_learned = self.get_midi_keys()
@@ -164,7 +187,7 @@ class MidiRowAction(MidiAction):
 
     def midi_to_args(self, midi_message):
         midi_key = self.make_midi_key(midi_message)
-        return self.data.index(midi_key), midi_message[-1]
+        return self.get_midi_keys().index(midi_key), midi_message[-1]
 
     def args_to_midi(self, *args):
         return self.data[args[0]]
@@ -191,7 +214,7 @@ class MidiGridAction(MidiRowAction):
         super(MidiGridAction, self).clear()
 
     def get_midi_keys(self):
-        return [k for row in self.data for k in row]
+        return [tuple(k) for row in self.data for k in row]
 
     def teach(self, midi_key):
         if self._dont_learn(midi_key):

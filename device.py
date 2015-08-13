@@ -43,14 +43,14 @@ class Device():
         self.input_mapping = {}
         self.output_mapping = {}
         self.name = name
-        # initializes all fields with defaults
         self._lookup_note = {}
+        # initializes all fields with defaults
         getmembers(self)
         self.update_lookup()
 
     def update_lookup(self):
         try:
-            self._lookup_note = {tuple(m): n
+            self._lookup_note = {m: n
                                  for n in MidiAction.ALL_INSTANCES
                                  for m in
                                  MidiAction.get(n, self).get_midi_keys()}
@@ -76,6 +76,25 @@ class Device():
         midi_action.teach(midi_key)
         self.update_lookup()
 
+    def select_button(self, midi_action_name, button_nr, color_state):
+        midi_action = MidiAction.get(midi_action_name, self)
+        color = self.get_color(color_state)
+        no_color = self.none_vel
+
+        def args_to_kwargs(id, *args):
+            kwargs = {'msg_type': MidiAction.NOTEON,
+                      'velocity': color if button_nr == id else no_color}
+            return kwargs
+
+        return midi_action.feedback(args_to_kwargs)
+
+    def generate_feedback_note(self, action, *args, **kwargs):
+        midi_action = MidiAction.get(action, self)
+        midi_key = midi_action.args_to_midi(*args)
+        if 'state' in kwargs:
+            kwargs['velocity'] = self.get_color(kwargs['state'])
+        return MidiAction.encode_feedback_note(midi_key, **kwargs)
+
     @staticmethod
     def decode_midi(data):
         if len(data) == 3:
@@ -84,21 +103,7 @@ class Device():
             msg_type = status >> 4
             return msg_type, channel, pitch, vel
         else:
-            raise Exception('Invalid Midi message length')
-
-    def generate_feedback_note(self, action, state, *args):
-        midi_action = MidiAction.get(action, self)
-        midi_key = midi_action.args_to_midi(*args)
-        return self.encode_feedback_note(midi_key, self.get_color(state))
-
-    def generate_feedback_notes(self, action, color):
-        midi_action = MidiAction.get(action, self)
-        midi_keys = midi_action.get_midi_keys()
-        return [self.encode_feedback_note(key, color) for key in midi_keys]
-
-    def encode_feedback_note(self, midi_key, velocity):
-        msg_type, channel, pitch = midi_key
-        return MidiAction.NOTEON << 4 | channel, pitch, velocity
+            raise Exception('Unexpected Midi message length')
 
     def get_color(self, state):
         if state in Device.COLOR_DICT:

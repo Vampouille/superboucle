@@ -197,10 +197,13 @@ class Gui(QMainWindow, Ui_MainWindow):
                 self.gridLayout.addWidget(cell, y, x)
 
         # send init command
-        for init_cmd in self.device.init_command:
-            self.queue_out.put(init_cmd)
+        self.queue_out_put(self.device.init_command)
 
         self.update()
+
+    def queue_out_put(self, items):
+        for msg in items:
+            self.queue_out.put(msg)
 
     def closeEvent(self, event):
         device_settings = QSettings('superboucle', 'devices')
@@ -371,14 +374,10 @@ class Gui(QMainWindow, Ui_MainWindow):
     @MidiRowAction
     def on_block_buttons(self, id):
         self.current_vol_block = id
-        keys = self.device.input_mapping['block_buttons']
-        for i, midi_key in enumerate(keys):
-            channel, pitch = midi_key
-            if i == self.current_vol_block:
-                color = self.device.stop_vel
-            else:
-                color = self.device.none_vel
-            self.queue_out.put(((self.NOTEON << 4) | channel, pitch, color))
+        midi_feedback = self.device.select_button('block_buttons', id,
+                                                  Clip.STOP)
+
+        self.queue_out_put(midi_feedback)
 
     def onClipNameChange(self):
         self.last_clip.name = self.clip_name.text()
@@ -535,17 +534,17 @@ class Gui(QMainWindow, Ui_MainWindow):
         else:
             state = clp.state
         if state != self.state_matrix[x][y]:
+            self.state_matrix[x][y] = state
             if clp:
                 self.btn_matrix[x][y].setColor(state)
             try:
-                note = self.device.generate_feedback_note(
-                    'start_stop', state, x, y)
+                note = self.device.generate_feedback_note('start_stop', x, y,
+                                                          state=state)
                 self.queue_out.put(note)
             except IndexError:
                 # print("No cell associated to %s x %s"
                 # % (clp.x, clp.y))
                 pass
-        self.state_matrix[x][y] = state
 
     def redraw(self):
         self.state_matrix = [[-1 for x in range(self.song.height)]
@@ -566,73 +565,6 @@ class Gui(QMainWindow, Ui_MainWindow):
                     print(e)
         except Empty:
             pass
-
-    def processNote(self, msg_type, channel, pitch, vel):
-
-        btn_id = (msg_type,
-                  channel,
-                  pitch,
-                  vel)
-        btn_id_vel = (msg_type, channel, pitch, -1)
-        ctrl_key = (msg_type, channel, pitch)
-
-        if ctrl_key == self.device.master_volume_ctrl:
-            self.song.master_volume = vel / 127
-            (self.master_volume
-             .setValue(self.song.master_volume * 256))
-        elif self.device.play_btn in [btn_id, btn_id_vel]:
-            self._jack_client.transport_start()
-        elif self.device.pause_btn in [btn_id, btn_id_vel]:
-            self._jack_client.transport_stop()
-        elif self.device.rewind_btn in [btn_id, btn_id_vel]:
-            self.on_rewind_btn()
-        elif self.device.goto_btn in [btn_id, btn_id_vel]:
-            self.on_goto_btn()
-        elif self.device.record_btn in [btn_id, btn_id_vel]:
-            self.on_record_btn()
-        elif ctrl_key in self.device.ctrls:
-            try:
-                ctrl_index = self.device.ctrls.index(ctrl_key)
-                clip = (self.song.clips_matrix
-                        [ctrl_index]
-                        [self.current_vol_block])
-                if clip:
-                    clip.volume = vel / 127
-                    if self.last_clip == clip:
-                        self.clip_volume.setValue(self.last_clip.volume * 256)
-            except KeyError:
-                pass
-        elif (btn_id in self.device.block_buttons
-              or btn_id_vel in self.device.block_buttons):
-            try:
-                self.current_vol_block = (
-                    self.device.block_buttons.index(btn_id))
-            except ValueError:
-                self.current_vol_block = (
-                    self.device.block_buttons.index(btn_id_vel))
-            for i in range(len(self.device.block_buttons)):
-                (a, b_channel, b_pitch, b) = self.device.block_buttons[i]
-                if i == self.current_vol_block:
-                    color = self.device.red_vel
-                else:
-                    color = self.device.black_vel
-                self.queue_out.put(((self.NOTEON << 4) + b_channel,
-                                    b_pitch,
-                                    color))
-        else:
-            x, y = -1, -1
-            try:
-                x, y = self.device.getXY(btn_id)
-            except IndexError:
-                pass
-            except KeyError:
-                try:
-                    x, y = self.device.getXY(btn_id_vel)
-                except KeyError:
-                    pass
-
-            if (x >= 0 and y >= 0):
-                self.on_start_stop(x, y)
 
     def toggleBlinkButton(self):
         for line in self.btn_matrix:
