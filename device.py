@@ -2,8 +2,6 @@ from clip import Clip
 
 
 class Device():
-    NOTEON = 0x90
-    NOTEOFF = 0x80
 
     def __init__(self, mapping=None):
         if mapping is None:
@@ -21,10 +19,7 @@ class Device():
 
     def generateNote(self, x, y, state):
         (msg_type, channel, pitch, velocity) = self.start_stop[y][x]
-        return (self.NOTEON + channel, pitch, self.get_color(state))
-
-    #    def __str__(self):
-    #        return str(self.mapping)
+        return (0x90 + channel, pitch, self.get_color(state))  # note on : 0x90
 
     def get_color(self, state):
         if state is None:
