@@ -167,9 +167,10 @@ class Song():
             raise Exception("No audio buffer available")
 
         if offset + data.shape[0] > self.length(clip):
-            raise Exception(("attempt to write data outside of buffer"
-                             ": %s + %s > %s ")
-                            % (offset, data.shape[0], self.length(clip)))
+            data = data[0:data.shape[0] - 2]
+            # raise Exception(("attempt to write data outside of buffer"
+            #                 ": %s + %s > %s ")
+            #                % (offset, data.shape[0], self.length(clip)))
 
         self.data[clip.audio_file][offset:offset + data.shape[0],
                                    channel] = data
