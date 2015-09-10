@@ -15,7 +15,7 @@ class Device():
         for y in range(len(self.start_stop)):
             line = self.start_stop[y]
             for x in range(len(line)):
-                self.note_to_coord[line[x]] = (x, y)
+                self.note_to_coord[tuple(line[x])] = (x, y)
 
     def generateNote(self, x, y, state):
         (msg_type, channel, pitch, velocity) = self.start_stop[y][x]
