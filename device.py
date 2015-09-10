@@ -19,9 +19,9 @@ class Device():
 
     def generateNote(self, x, y, state):
         (msg_type, channel, pitch, velocity) = self.start_stop[y][x]
-        return (0x90 + channel, pitch, self.get_color(state))  # note on : 0x90
+        return (0x90 + channel, pitch, self.getColor(state))  # note on : 0x90
 
-    def get_color(self, state):
+    def getColor(self, state):
         if state is None:
             return self.black_vel
         elif state == Clip.STOP:

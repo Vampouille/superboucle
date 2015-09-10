@@ -91,10 +91,10 @@ def my_callback(frames):
                     length = min(song.length(clip) - clip_offset, frames)
                     for ch_id, buffer in zip(range(len(clip_buffers)),
                                              clip_buffers):
-                        data = song.get_data(clip,
-                                             ch_id % song.channels(clip),
-                                             clip_offset,
-                                             length)
+                        data = song.getData(clip,
+                                            ch_id % song.channels(clip),
+                                            clip_offset,
+                                            length)
                         buffer[:length] += data
 
                     clip.last_offset = clip_offset
@@ -103,23 +103,23 @@ def my_callback(frames):
 
             if clip.state == Clip.RECORDING:
                 if next_clip_offset:
-                    song.write_data(clip,
-                                    0,
-                                    clip_offset,
-                                    inL_buffer[:next_clip_offset])
-                    song.write_data(clip,
-                                    1,
-                                    clip_offset,
-                                    inR_buffer[:next_clip_offset])
+                    song.writeData(clip,
+                                   0,
+                                   clip_offset,
+                                   inL_buffer[:next_clip_offset])
+                    song.writeData(clip,
+                                   1,
+                                   clip_offset,
+                                   inR_buffer[:next_clip_offset])
                 else:
-                    song.write_data(clip,
-                                    0,
-                                    clip_offset,
-                                    inL_buffer)
-                    song.write_data(clip,
-                                    1,
-                                    clip_offset,
-                                    inR_buffer)
+                    song.writeData(clip,
+                                   0,
+                                   clip_offset,
+                                   inL_buffer)
+                    song.writeData(clip,
+                                   1,
+                                   clip_offset,
+                                   inR_buffer)
                 clip.last_offset = clip_offset
 
             if next_clip_offset and (clip.state == Clip.START
@@ -128,10 +128,10 @@ def my_callback(frames):
                 if length:
                     for ch_id, buffer in zip(range(len(clip_buffers)),
                                              clip_buffers):
-                        data = song.get_data(clip,
-                                             ch_id % song.channels(clip),
-                                             0,
-                                             length)
+                        data = song.getData(clip,
+                                            ch_id % song.channels(clip),
+                                            0,
+                                            length)
                         buffer[next_clip_offset:] += data
 
                 clip.last_offset = 0
@@ -139,14 +139,14 @@ def my_callback(frames):
                 # format(next_clip_offset, length))
 
             if next_clip_offset and clip.state == Clip.PREPARE_RECORD:
-                song.write_data(clip,
-                                0,
-                                0,
-                                inL_buffer[next_clip_offset:])
-                song.write_data(clip,
-                                1,
-                                0,
-                                inR_buffer[next_clip_offset:])
+                song.writeData(clip,
+                               0,
+                               0,
+                               inL_buffer[next_clip_offset:])
+                song.writeData(clip,
+                               1,
+                               0,
+                               inR_buffer[next_clip_offset:])
 
             # starting or stopping clip
             if clip_offset == 0 or next_clip_offset:

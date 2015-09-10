@@ -147,7 +147,7 @@ class Song():
         else:
             return self.data[clip.audio_file].shape[0]
 
-    def get_data(self, clip, channel, offset, length):
+    def getData(self, clip, channel, offset, length):
         if clip.audio_file is None:
             return []
 
@@ -162,7 +162,7 @@ class Song():
         return (self.data[clip.audio_file][offset:offset + length, channel]
                 * clip.volume)
 
-    def write_data(self, clip, channel, offset, data):
+    def writeData(self, clip, channel, offset, data):
         if clip.audio_file is None:
             raise Exception("No audio buffer available")
 
