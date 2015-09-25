@@ -186,7 +186,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.output.clear()
         self.output.addItems(song.outputsPorts)
         self.output.addItem(Gui.ADD_PORT_LABEL)
-        self.master_volume.setValue(song.volume * 256)
+        self.master_volume.setValue(song.volume * 127)
         self.bpm.setValue(song.bpm)
         self.beat_per_bar.setValue(song.beat_per_bar)
         for x in range(song.width):
@@ -224,7 +224,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.beat_diviser.setValue(self.last_clip.beat_diviser)
             self.output.setCurrentText(self.last_clip.output)
             self.mute_group.setValue(self.last_clip.mute_group)
-            self.clip_volume.setValue(self.last_clip.volume * 256)
+            self.clip_volume.setValue(self.last_clip.volume * 127)
             state, position = self._jack_client.transport_query()
             fps = position['frame_rate']
             bps = self.bpm.value() / 60
