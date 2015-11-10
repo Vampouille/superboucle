@@ -78,6 +78,7 @@ class Gui(QMainWindow, Ui_MainWindow):
     updateUi = pyqtSignal()
     readQueueIn = pyqtSignal()
     updatePorts = pyqtSignal()
+    songLoad = pyqtSignal()
 
     def __init__(self, song, jack_client):
         QObject.__init__(self)
@@ -200,6 +201,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                             .format(song.file_name or "Empty Song"))
 
         self.update()
+        self.songLoad.emit()
 
     def closeEvent(self, event):
         device_settings = QSettings('superboucle', 'devices')
