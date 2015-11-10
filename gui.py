@@ -7,7 +7,6 @@ Gui
 from PyQt5.QtWidgets import (QMainWindow, QFileDialog,
                              QAction, QActionGroup, QMessageBox, QApplication)
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings, Qt
-
 from clip import Clip, load_song_from_file, verify_ext, Song
 from gui_ui import Ui_MainWindow
 from cell import Cell
@@ -408,6 +407,8 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         self.port_by_name = {port.shortname: port
                              for port in self._jack_client.outports}
+
+        self.updatePorts.emit()
 
     def onMuteGroupChange(self):
         self.last_clip.mute_group = self.mute_group.value()
