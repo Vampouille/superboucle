@@ -28,6 +28,7 @@ class SceneManager(QDialog, Ui_Dialog):
         self.scenelistList.setDragDropMode(QAbstractItemView.InternalMove)
         self.scenelistList.model().rowsMoved.connect(self.onMoveRows)
         self.setInitialSceneBtn.clicked.connect(self.onSetInitial)
+        self.gui.songLoad.connect(self.updateList)
         self.show()
 
     def updateList(self):
@@ -61,7 +62,6 @@ class SceneManager(QDialog, Ui_Dialog):
         if item:
             self.gui.song.initial_scene = item.text()
             self.updateList()
-
 
     def onLoadScene(self):
         item = self.scenelistList.currentItem()
