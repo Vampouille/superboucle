@@ -7,12 +7,11 @@ Gui
 from PyQt5.QtWidgets import (QMainWindow, QFileDialog,
                              QAction, QActionGroup, QMessageBox, QApplication)
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings, Qt
-
 from clip import Clip, load_song_from_file, verify_ext, Song
 from gui_ui import Ui_MainWindow
 from cell import Cell
 from learn import LearnDialog
-from manage import ManageDialog
+from device_manager import ManageDialog
 from playlist import PlaylistDialog, getSongs
 from port_manager import PortManager
 from new_song import NewSongDialog
@@ -79,6 +78,7 @@ class Gui(QMainWindow, Ui_MainWindow):
     updateUi = pyqtSignal()
     readQueueIn = pyqtSignal()
     updatePorts = pyqtSignal()
+    songLoad = pyqtSignal()
 
     def __init__(self, song, jack_client):
         QObject.__init__(self)
@@ -197,7 +197,11 @@ class Gui(QMainWindow, Ui_MainWindow):
         for init_cmd in self.device.init_command:
             self.queue_out.put(init_cmd)
 
+        self.setWindowTitle("Super Boucle - {}"
+                            .format(song.file_name or "Empty Song"))
+
         self.update()
+        self.songLoad.emit()
 
     def closeEvent(self, event):
         device_settings = QSettings('superboucle', 'devices')
@@ -310,10 +314,6 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onBeatPerBarChange(self):
         self.song.beat_per_bar = self.beat_per_bar.value()
 
-    def onStartClicked(self):
-        pass
-        self._jack_client.transport_start
-
     def onGotoClicked(self):
         state, position = self._jack_client.transport_query()
         new_position = (position['beats_per_bar']
@@ -401,7 +401,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                     current_ports.remove(port.shortname)
                     port_to_remove.append(port)
             for port in port_to_remove:
-                    port.unregister()
+                port.unregister()
 
         # create new ports
         for new_port_name in wanted_ports - current_ports:
@@ -409,6 +409,8 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         self.port_by_name = {port.shortname: port
                              for port in self._jack_client.outports}
+
+        self.updatePorts.emit()
 
     def onMuteGroupChange(self):
         self.last_clip.mute_group = self.mute_group.value()
@@ -521,8 +523,8 @@ class Gui(QMainWindow, Ui_MainWindow):
                     channel = status & 0xF
                     msg_type = status >> 4
                     self.processNote(msg_type, channel, pitch, vel)
-                # else:
-                # print("Invalid message length")
+                    # else:
+                    # print("Invalid message length")
         except Empty:
             pass
 
