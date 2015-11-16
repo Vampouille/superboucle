@@ -4,8 +4,16 @@ from PyQt5 import QtCore
 import configparser, json
 from zipfile import ZipFile
 from io import BytesIO, StringIO, TextIOWrapper
-from collections import OrderedDict
+from collections import OrderedDict as OrderedDict_
 import unicodedata
+
+
+class OrderedDict(OrderedDict_):
+    def insert(self, key, value, index=-1):
+        move_keys = list(self.keys())[index:]
+        self[key] = value
+        for k in move_keys:
+            self.move_to_end(k)
 
 
 def strip_accents(s):
