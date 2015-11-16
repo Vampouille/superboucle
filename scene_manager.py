@@ -50,9 +50,11 @@ class SceneManager(QDialog, Ui_Dialog):
 
     def onMoveRows(self, sourceParent, sourceStart, sourceEnd,
                    destinationParent, destinationRow):
-        l = self.gui.playlist
+        l = self.gui.song.scenes
+        k, v = list(l.items())[sourceStart]
+        del l[k]
         destinationRow -= destinationRow > sourceStart
-        l.insert(destinationRow, l.pop(sourceStart))
+        l.insert(k, v, destinationRow)
 
     def onAddScene(self):
         AddSceneDialog(self.gui, callback=self.updateList)
