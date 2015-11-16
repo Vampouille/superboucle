@@ -4,6 +4,7 @@ from PyQt5 import QtCore
 import configparser, json
 from zipfile import ZipFile
 from io import BytesIO, StringIO, TextIOWrapper
+from collections import OrderedDict
 import unicodedata
 
 
@@ -107,7 +108,7 @@ class Song():
         self.is_record = False
         self.outputsPorts = set()
         self.outputsPorts.add(Clip.DEFAULT_OUTPUT)
-        self.scenes = {}
+        self.scenes = OrderedDict()
         self.initial_scene = None
 
     def addScene(self, name):
@@ -120,6 +121,13 @@ class Song():
 
     def loadScene(self, name):
         clip_ids = self.scenes[name]
+        self._loadScene(clip_ids)
+
+    def loadSceneId(self, index):
+        clip_ids = list(self.scenes.values)[index]
+        self._loadScene(clip_ids)
+
+    def _loadScene(self, clip_ids):
         for i, c in enumerate(self.clips):
             if i in clip_ids:
                 c.start()
@@ -285,7 +293,8 @@ def load_song_from_file(file):
             res.outputsPorts = set(json.loads(outputs))
 
             scenes = parser['DEFAULT'].get('scenes', '{}')
-            res.scenes = json.loads(scenes)
+            jsDecoder = json.JSONDecoder(object_pairs_hook=OrderedDict)
+            res.scenes = jsDecoder.decode(scenes)
             res.initial_scene = parser['DEFAULT'].get('initial_scene', None)
 
             # Loading wavs
