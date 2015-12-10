@@ -253,8 +253,9 @@ class Song():
                                     'width': self.width,
                                     'height': self.height,
                                     'outputs': json.dumps(port_list),
-                                    'scenes': json.dumps(self.scenes),
-                                    'initial_scene': self.initial_scene}
+                                    'scenes': json.dumps(self.scenes)}
+            if self.initial_scene is not None:
+                song_file['DEFAULT']['initial_scene'] = self.initial_scene
             for clip in self.clips:
                 clip_file = {'name': clip.name,
                              'volume': str(clip.volume),
