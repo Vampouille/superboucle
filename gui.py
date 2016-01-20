@@ -13,6 +13,7 @@ from cell import Cell
 from learn import LearnDialog
 from device_manager import ManageDialog
 from playlist import PlaylistDialog, getSongs
+from scene_manager import SceneManager
 from port_manager import PortManager
 from new_song import NewSongDialog
 from add_clip import AddClipDialog
@@ -106,11 +107,13 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.updateDevices()
         self.deviceGroup.triggered.connect(self.onDeviceSelect)
 
-        # Load playlist
         self.settings = QSettings('superboucle', 'session')
         # Qsetting appear to serialize empty lists as @QInvalid
         # which is then read as None :(
+
+        # Load playlist
         self.playlist = getSongs(self.settings.value('playlist', []) or [])
+        # Load paths
         self.paths_used = self.settings.value('paths_used', {})
 
         self.auto_connect = self.settings.value('auto_connect',
@@ -127,6 +130,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionAdd_Device.triggered.connect(self.onAddDevice)
         self.actionManage_Devices.triggered.connect(self.onManageDevice)
         self.actionPlaylist_Editor.triggered.connect(self.onPlaylistEditor)
+        self.actionScene_Manager.triggered.connect(self.onSceneManager)
         self.actionPort_Manager.triggered.connect(self.onPortManager)
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
@@ -200,6 +204,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("Super Boucle - {}"
                             .format(song.file_name or "Empty Song"))
 
+        if self.song.initial_scene in self.song.scenes:
+            self.song.loadScene(self.song.initial_scene)
         self.update()
         self.songLoad.emit()
 
@@ -476,6 +482,9 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onPlaylistEditor(self):
         PlaylistDialog(self)
+
+    def onSceneManager(self):
+        SceneManager(self)
 
     def onPortManager(self):
         PortManager(self)

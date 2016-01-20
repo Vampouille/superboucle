@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1111</width>
-    <height>947</height>
+    <height>948</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -409,7 +409,7 @@ border-radius: 2px;</string>
               <x>10</x>
               <y>30</y>
               <width>161</width>
-              <height>51</height>
+              <height>74</height>
              </rect>
             </property>
             <layout class="QFormLayout" name="formLayout_4">
@@ -646,7 +646,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
             <x>10</x>
             <y>190</y>
             <width>214</width>
-            <height>91</height>
+            <height>113</height>
            </rect>
           </property>
           <layout class="QFormLayout" name="formLayout_2">
@@ -835,7 +835,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
      <x>0</x>
      <y>0</y>
      <width>1111</width>
-     <height>20</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -862,6 +862,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
     </property>
     <addaction name="actionFullScreen"/>
     <addaction name="separator"/>
+    <addaction name="actionScene_Manager"/>
     <addaction name="actionPlaylist_Editor"/>
     <addaction name="actionPort_Manager"/>
    </widget>
@@ -948,6 +949,14 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
    </property>
    <property name="shortcut">
     <string>Ctrl+M</string>
+   </property>
+  </action>
+  <action name="actionScene_Manager">
+   <property name="text">
+    <string>Scene Manager</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
    </property>
   </action>
  </widget>
