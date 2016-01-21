@@ -273,40 +273,22 @@ class LearnDialog(QDialog, Ui_Dialog):
         btn_key = (msg_type >> 1, channel, pitch)
         ctrl_key = (msg_type, channel, pitch)
 
-        labels, buttons = {
-                              self.MASTER_VOLUME_CTRL:
-                                  self.label_master_volume_ctrl,
-                              self.PLAY_BTN: self.playLabel,
-                              self.PAUSE_BTN: self.pauseLabel,
-                              self.REWIND_BTN: self.rewindLabel,
-                              self.GOTO_BTN: self.gotoLabel,
-                              self.RECORD_BTN: self.recordLabel
-                          }, {
-                              self.MASTER_VOLUME_CTRL: 'master_volume_ctrl',
-                              self.PLAY_BTN: 'play_btn',
-                              self.PAUSE_BTN: 'pause_btn',
-                              self.REWIND_BTN: 'rewind_btn',
-                              self.GOTO_BTN: 'goto_btn',
-                              self.RECORD_BTN: 'record_btn'
-                          }
-
         if ctrl_key not in self.knownCtrl:
-
             # process controller
             if self.send_midi_to == self.MASTER_VOLUME_CTRL:
                 if msg_type == self.MIDICTRL:
-                    self.send_midi_to = None
-                    self.knownCtrl.add(ctrl_key)
                     self.device.master_volume_ctrl = ctrl_key
                     (self.label_master_volume_ctrl
                      .setText(self.displayCtrl(ctrl_key)))
+                    self.knownCtrl.add(ctrl_key)
+                    self.send_midi_to = None
 
-            elif self.send_midi_to in labels:
+            elif self.send_midi_to == self.PLAY_BTN:
                 self.send_midi_to = None
                 self.knownCtrl.add(ctrl_key)
                 self.knownBtn.add(btn_key)
                 self.device.play_btn = btn_id
-                labels[self.send_midi_to].setText(self.displayCtrl(ctrl_key))
+                self.playLabel.setText(self.displayCtrl(ctrl_key))
             elif self.send_midi_to == self.PAUSE_BTN:
                 self.send_midi_to = None
                 self.knownCtrl.add(ctrl_key)
