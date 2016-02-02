@@ -5,16 +5,6 @@ import json
 from os.path import basename, splitext
 
 
-def getSongs(file_names):
-    r = []
-    for f in file_names:
-        try:
-            r.append(load_song_from_file(f))
-        except Exception as e:
-            print("could not load File {}.\nError: {}".format(f, e))
-    return r
-
-
 class PlaylistDialog(QDialog, Ui_Dialog):
     def __init__(self, parent):
         super(PlaylistDialog, self).__init__(parent)
@@ -34,14 +24,13 @@ class PlaylistDialog(QDialog, Ui_Dialog):
     def updateList(self):
         self.playlistList.clear()
         for song in self.gui.playlist:
-            name, ext = splitext(basename(song.file_name))
+            name, ext = splitext(basename(song))  # song.file_name
             self.playlistList.addItem(name)
 
     def onRemove(self):
         id = self.playlistList.currentRow()
         if id != -1:
-            song = self.gui.playlist[id]
-            self.gui.playlist.remove(song)
+            del self.gui.playlist[id]
             self.updateList()
 
     def onMoveRows(self, sourceParent, sourceStart, sourceEnd,
@@ -55,7 +44,7 @@ class PlaylistDialog(QDialog, Ui_Dialog):
                                                  'Super Boucle Song (*.sbs)',
                                                  self,
                                                  QFileDialog.getOpenFileNames)
-        self.gui.playlist += getSongs(file_names)
+        self.gui.playlist += file_names  # getSongs(file_names)
         self.updateList()
 
     def onLoadPlaylist(self):
@@ -67,7 +56,7 @@ class PlaylistDialog(QDialog, Ui_Dialog):
             return
         with open(file_name, 'r') as f:
             read_data = f.read()
-        self.gui.playlist = getSongs(json.loads(read_data))
+        self.gui.playlist = json.loads(read_data)
         self.updateList()
 
     def onSavePlaylist(self):
@@ -79,8 +68,7 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         if file_name:
             file_name = verify_ext(file_name, 'sbp')
             with open(file_name, 'w') as f:
-                f.write(
-                    json.dumps([song.file_name for song in self.gui.playlist]))
+                f.write(json.dumps(self.gui.playlist))
 
     def onLoadSong(self):
         id = self.playlistList.currentRow()
@@ -91,5 +79,10 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         self.loadSong(id)
 
     def loadSong(self, id):
-        if id != -1:
-            self.gui.initUI(self.gui.playlist[id])
+        if id == -1:
+            return
+        file_name = self.gui.playlist[id]
+        try:
+            self.gui.openSongFromDisk(file_name)
+        except Exception as e:
+            print("could not load File {}.\nError: {}".format(file_name, e))
