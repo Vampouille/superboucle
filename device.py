@@ -1,8 +1,38 @@
 from clip import Clip
 
 
-class Device():
+class DeviceOutput:
+    def __init__(self, method, name=None):
+        self.method = method
+        self.name = name or method.__name__
+        self.__doc__ = method.__doc__
 
+    def get_mapping(self, inst):
+        return inst.mapping
+
+    def __get__(self, inst, cls=None):
+        mapping = self.get_mapping(inst)
+        return mapping.setdefault(self.name, self.method(inst))
+
+    def __set__(self, inst, value):
+        mapping = self.get_mapping(inst)
+        mapping[self.name] = value
+        # inst.update_lookup()
+
+    def __delete__(self, inst):
+        mapping = self.get_mapping(inst)
+        del mapping[self.name]
+        # inst.update_lookup()
+
+
+class DeviceInput(DeviceOutput):
+    # def get_mapping(self, inst):
+    #    return inst.mapping
+
+    pass
+
+
+class Device:
     def __init__(self, mapping=None):
         if mapping is None:
             self.updateMapping({})
@@ -44,182 +74,76 @@ class Device():
 
     @property
     def name(self):
-        if 'name' in self.mapping:
-            return self.mapping['name']
-        else:
-            return ""
+        return self.mapping.get('name', '')
 
     @name.setter
     def name(self, name):
         self.mapping['name'] = name
 
-    @property
+    @DeviceInput
     def ctrls(self):
-        if 'ctrls' not in self.mapping:
-            self.mapping['ctrls'] = []
-        return self.mapping['ctrls']
+        return []
 
-    @property
+    @DeviceInput
     def start_stop(self):
-        if 'start_stop' not in self.mapping:
-            self.mapping['start_stop'] = []
-        return self.mapping['start_stop']
+        return []
 
-    @property
+    @DeviceInput
     def init_command(self):
-        if 'init_command' not in self.mapping:
-            self.mapping['init_command'] = []
-        return self.mapping['init_command']
+        return []
 
-    @property
+    @DeviceInput
     def block_buttons(self):
-        if 'block_buttons' not in self.mapping:
-            self.mapping['block_buttons'] = []
-        return self.mapping['block_buttons']
+        return []
 
-    @property
+    @DeviceInput
     def master_volume_ctrl(self):
-        if 'master_volume_ctrl' in self.mapping:
-            return self.mapping['master_volume_ctrl']
-        else:
-            return False
+        return False
 
-    @master_volume_ctrl.setter
-    def master_volume_ctrl(self, ctrl_key):
-        self.mapping['master_volume_ctrl'] = ctrl_key
-
-    @property
+    @DeviceInput
     def play_btn(self):
-        if 'play_btn' in self.mapping:
-            return self.mapping['play_btn']
-        else:
-            return False
+        return False
 
-    @play_btn.setter
-    def play_btn(self, btn):
-        self.mapping['play_btn'] = btn
-
-    @property
+    @DeviceInput
     def pause_btn(self):
-        if 'pause_btn' in self.mapping:
-            return self.mapping['pause_btn']
-        else:
-            return False
+        return False
 
-    @pause_btn.setter
-    def pause_btn(self, btn):
-        self.mapping['pause_btn'] = btn
-
-    @property
+    @DeviceInput
     def rewind_btn(self):
-        if 'rewind_btn' in self.mapping:
-            return self.mapping['rewind_btn']
-        else:
-            return False
+        return False
 
-    @rewind_btn.setter
-    def rewind_btn(self, btn):
-        self.mapping['rewind_btn'] = btn
-
-    @property
+    @DeviceInput
     def goto_btn(self):
-        if 'goto_btn' in self.mapping:
-            return self.mapping['goto_btn']
-        else:
-            return False
+        return False
 
-    @goto_btn.setter
-    def goto_btn(self, btn):
-        self.mapping['goto_btn'] = btn
-
-    @property
+    @DeviceInput
     def record_btn(self):
-        if 'record_btn' in self.mapping:
-            return self.mapping['record_btn']
-        else:
-            return False
+        return False
 
-    @record_btn.setter
-    def record_btn(self, btn):
-        self.mapping['record_btn'] = btn
-
-    @master_volume_ctrl.setter
-    def master_volume_ctrl(self, ctrl_key):
-        self.mapping['master_volume_ctrl'] = ctrl_key
-
-    @property
+    @DeviceOutput
     def black_vel(self):
-        if 'black_vel' in self.mapping:
-            return self.mapping['black_vel']
-        else:
-            return 0
+        return 0
 
-    @property
+    @DeviceOutput
     def green_vel(self):
-        if 'green_vel' in self.mapping:
-            return self.mapping['green_vel']
-        else:
-            return 0
+        return 0
 
-    @property
+    @DeviceOutput
     def blink_green_vel(self):
-        if 'blink_green_vel' in self.mapping:
-            return self.mapping['blink_green_vel']
-        else:
-            return 0
+        return 0
 
-    @property
+    @DeviceOutput
     def red_vel(self):
-        if 'red_vel' in self.mapping:
-            return self.mapping['red_vel']
-        else:
-            return 0
+        return 0
 
-    @property
+    @DeviceOutput
     def blink_red_vel(self):
-        if 'blink_red_vel' in self.mapping:
-            return self.mapping['blink_red_vel']
-        else:
-            return 0
+        return 0
 
-    @property
+    @DeviceOutput
     def amber_vel(self):
-        if 'amber_vel' in self.mapping:
-            return self.mapping['amber_vel']
-        else:
-            return 0
+        return 0
 
-    @property
+    @DeviceOutput
     def blink_amber_vel(self):
-        if 'blink_amber_vel' in self.mapping:
-            return self.mapping['blink_amber_vel']
-        else:
-            return 0
-
-    @black_vel.setter
-    def black_vel(self, vel):
-        self.mapping['black_vel'] = vel
-
-    @green_vel.setter
-    def green_vel(self, vel):
-        self.mapping['green_vel'] = vel
-
-    @blink_green_vel.setter
-    def blink_green_vel(self, vel):
-        self.mapping['blink_green_vel'] = vel
-
-    @red_vel.setter
-    def red_vel(self, vel):
-        self.mapping['red_vel'] = vel
-
-    @blink_red_vel.setter
-    def blink_red_vel(self, vel):
-        self.mapping['blink_red_vel'] = vel
-
-    @amber_vel.setter
-    def amber_vel(self, vel):
-        self.mapping['amber_vel'] = vel
-
-    @blink_amber_vel.setter
-    def blink_amber_vel(self, vel):
-        self.mapping['blink_amber_vel'] = vel
+        return 0
