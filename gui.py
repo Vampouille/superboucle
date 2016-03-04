@@ -587,6 +587,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
             try:
                 self.song.loadSceneId(scene_id)
+                self.update()
             except IndexError:
                 print('cannot load scene {} - there are only {} scenes.'
                       ''.format(scene_id, len(self.song.scenes)))
