@@ -364,6 +364,81 @@
       </layout>
      </item>
      <item>
+      <widget class="QGroupBox" name="groupBox_12">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="title">
+        <string>Scenes</string>
+       </property>
+       <widget class="QWidget" name="horizontalLayoutWidget_5">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>40</y>
+          <width>81</width>
+          <height>52</height>
+         </rect>
+        </property>
+        <layout class="QHBoxLayout" name="scenesHorizontalLayout">
+         <property name="sizeConstraint">
+          <enum>QLayout::SetMinAndMaxSize</enum>
+         </property>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="gridLayoutWidget_12">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>261</width>
+          <height>33</height>
+         </rect>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_14">
+         <property name="sizeConstraint">
+          <enum>QLayout::SetMinimumSize</enum>
+         </property>
+         <item row="0" column="0">
+          <widget class="QPushButton" name="learn_scenes">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>177</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Learn scenes</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="stop4">
+           <property name="minimumSize">
+            <size>
+             <width>10</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Stop</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
