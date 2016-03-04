@@ -97,6 +97,10 @@ class Device:
         return []
 
     @DeviceInput
+    def scene_buttons(self):
+        return []
+
+    @DeviceInput
     def master_volume_ctrl(self):
         return False
 
