@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'scene_manager_ui.ui'
 #
-# Created: Mon Mar 14 12:27:24 2016
+# Created: Mon Mar 14 18:56:15 2016
 #      by: PyQt5 UI code generator 5.2.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -36,6 +36,10 @@ class Ui_Dialog(object):
         self.removeScenesBtn = QtWidgets.QPushButton(Dialog)
         self.removeScenesBtn.setObjectName("removeScenesBtn")
         self.verticalLayout_3.addWidget(self.removeScenesBtn)
+        self.preview = QtWidgets.QGridLayout()
+        self.preview.setSpacing(2)
+        self.preview.setObjectName("preview")
+        self.verticalLayout_3.addLayout(self.preview)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_3.addItem(spacerItem)
         self.setInitialSceneBtn = QtWidgets.QPushButton(Dialog)

@@ -1,9 +1,9 @@
-from PyQt5.QtWidgets import QDialog, QAbstractItemView, QListWidgetItem
+from PyQt5.QtWidgets import QDialog, QAbstractItemView, QListWidgetItem, QFrame
 from PyQt5.QtGui import QColor
+from PyQt5.QtCore import QSize
 from scene_manager_ui import Ui_Dialog
 from add_scene import AddSceneDialog
 from clip import load_song_from_file
-
 
 def getScenes(file_names):
     r = []
@@ -27,8 +27,10 @@ class SceneManager(QDialog, Ui_Dialog):
         self.scenelistList.itemDoubleClicked.connect(self.onSceneDoubleClick)
         self.scenelistList.setDragDropMode(QAbstractItemView.InternalMove)
         self.scenelistList.model().rowsMoved.connect(self.onMoveRows)
+        self.scenelistList.currentItemChanged.connect(self.onCurrentItemChanged)
         self.setInitialSceneBtn.clicked.connect(self.onSetInitial)
         self.gui.songLoad.connect(self.updateList)
+        self.initPreview()
         self.show()
 
     def updateList(self):
@@ -41,6 +43,22 @@ class SceneManager(QDialog, Ui_Dialog):
         anyScenes = bool(self.gui.song.scenes)
         self.loadScenesBtn.setEnabled(anyScenes)
         self.removeScenesBtn.setEnabled(anyScenes)
+        self.initPreview()
+
+    def initPreview(self):
+        self.previewcells = [[None for y in range(self.gui.song.height)]
+                             for x in range(self.gui.song.width)]
+        
+        for i in reversed(range(self.preview.count())):
+            self.preview.itemAt(i).widget().close()
+            self.preview.itemAt(i).widget().setParent(None)
+            
+        for y in range(self.gui.song.height):
+            for x in range(self.gui.song.width):
+                self.previewcells[x][y] = QFrame(self)
+                self.previewcells[x][y].setMinimumSize(QSize(10, 10))
+                self.previewcells[x][y].setStyleSheet("background-color: rgb(217, 217, 217);")
+                self.preview.addWidget(self.previewcells[x][y], y, x, 1, 1)
 
     def onRemove(self):
         item = self.scenelistList.currentItem()
@@ -74,6 +92,21 @@ class SceneManager(QDialog, Ui_Dialog):
     def onSceneDoubleClick(self, item):
         self.loadScene(item.text())
         self.gui.update()
+        
+    def onCurrentItemChanged(self, item):
+        
+        if item is not None:
+            scene = self.gui.song.getSceneDesc(item.text())
+            for x in range(len(scene)):
+                line = scene[x]
+                for y in range(len(line)):
+                    cell = self.previewcells[x][y]
+                    if line[y] is None:
+                        cell.setStyleSheet("background-color: rgb(217, 217, 217);")
+                    elif line[y]:
+                        cell.setStyleSheet("background-color: rgb(125,242,0);")
+                    else:
+                        cell.setStyleSheet("background-color: rgb(255, 21, 65);")
 
     def loadScene(self, scene):
         try:

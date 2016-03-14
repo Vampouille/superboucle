@@ -127,6 +127,14 @@ class Song():
     def removeScene(self, name):
         del self.scenes[name]
 
+    def getSceneDesc(self, name):
+        res = [[None for y in range(self.height)]
+                    for x in range(self.width)]
+        clip_ids = self.scenes[name]      
+        for i, c in enumerate(self.clips):
+            res[c.x][c.y] = i in clip_ids
+        return res
+        
     def loadScene(self, name):
         clip_ids = self.scenes[name]
         self._loadScene(clip_ids)

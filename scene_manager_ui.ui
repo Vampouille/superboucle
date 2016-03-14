@@ -65,6 +65,13 @@
         </widget>
        </item>
        <item>
+        <layout class="QGridLayout" name="preview">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+        </layout>
+       </item>
+       <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
