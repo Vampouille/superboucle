@@ -132,7 +132,7 @@ class Song():
         self._loadScene(clip_ids)
 
     def loadSceneId(self, index):
-        clip_ids = list(self.scenes.values)[index]
+        clip_ids = list(self.scenes.values())[index]
         self._loadScene(clip_ids)
 
     def _loadScene(self, clip_ids):

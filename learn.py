@@ -46,6 +46,7 @@ class LearnDialog(QDialog, Ui_Dialog):
     REWIND_BTN = 6
     GOTO_BTN = 7
     RECORD_BTN = 8
+    SCENES_BTN = 9
 
     updateUi = pyqtSignal()
 
@@ -99,6 +100,14 @@ class LearnDialog(QDialog, Ui_Dialog):
          .setText("\n".join([", ".join([str(num)
                                         for num in init_cmd])
                              for init_cmd in self.device.init_command])))
+        for vol_btn in self.device.scene_buttons:
+            (msg_type, channel, pitch, velocity) = vol_btn
+            cell = LearnCell(self)
+            cell.label.setText("Ch %s\n%s"
+                               % (channel + 1,
+                                  self.displayNote(pitch)))
+            cell.setStyleSheet(self.NEW_CELL_STYLE)
+            self.scenesHorizontalLayout.addWidget(cell)
         for vol_btn in self.device.block_buttons:
             (msg_type, channel, pitch, velocity) = vol_btn
             cell = LearnCell(self)
@@ -146,9 +155,11 @@ class LearnDialog(QDialog, Ui_Dialog):
         self.sendInitButton.clicked.connect(self.onSendInit)
         self.learn_ctrls.clicked.connect(self.onCtrls)
         self.learn_block_bts.clicked.connect(self.onBlockBts)
+        self.learn_scenes.clicked.connect(self.onScenesButton)
         self.stop1.clicked.connect(self.onStopClicked)
         self.stop2.clicked.connect(self.onStopClicked)
         self.stop3.clicked.connect(self.onStopClicked)
+        self.stop4.clicked.connect(self.onStopClicked)
         self.learn_black.clicked.connect(self.onBlack)
         self.learn_green.clicked.connect(self.onGreen)
         self.learn_blink_green.clicked.connect(self.onBlinkGreen)
@@ -200,6 +211,9 @@ class LearnDialog(QDialog, Ui_Dialog):
 
     def onRecordButton(self):
         self.send_midi_to = self.RECORD_BTN
+
+    def onScenesButton(self):
+        self.send_midi_to = self.SCENES_BTN
 
     def onSendInit(self):
         try:
@@ -326,6 +340,17 @@ class LearnDialog(QDialog, Ui_Dialog):
 
             # then process other
             elif btn_key not in self.knownBtn:
+                if self.send_midi_to == self.SCENES_BTN:
+                    cell = LearnCell(self)
+                    cell.label.setText("Ch %s\n%s"
+                                       % (channel + 1,
+                                          self.displayNote(pitch)))
+                    cell.setStyleSheet(self.NEW_CELL_STYLE)
+                    self.scenesHorizontalLayout.addWidget(cell)
+                    self.device.scene_buttons.append(btn_id)
+                    self.knownCtrl.add(ctrl_key)
+                    self.knownBtn.add(btn_key)
+
                 if self.send_midi_to == self.BLOCK_BUTTONS:
                     cell = LearnCell(self)
                     cell.label.setText("Ch %s\n%s"

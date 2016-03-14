@@ -103,7 +103,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             for raw_device in device_settings.value('devices'):
                 self.devices.append(Device(pickle.loads(raw_device)))
         else:
-            self.devices.append(Device({'name': 'No Device', }))
+            self.devices.append(Device({'name': 'No Device',}))
         self.updateDevices()
         self.deviceGroup.triggered.connect(self.onDeviceSelect)
 
@@ -578,6 +578,20 @@ class Gui(QMainWindow, Ui_MainWindow):
                         self.clip_volume.setValue(self.last_clip.volume * 256)
             except KeyError:
                 pass
+        elif (btn_id in self.device.scene_buttons
+              or btn_id_vel in self.device.scene_buttons):
+            try:
+                scene_id = self.device.scene_buttons.index(btn_id)
+            except ValueError:
+                scene_id = self.device.scene_buttons.index(btn_id_vel)
+
+            try:
+                self.song.loadSceneId(scene_id)
+                self.update()
+            except IndexError:
+                print('cannot load scene {} - there are only {} scenes.'
+                      ''.format(scene_id, len(self.song.scenes)))
+
         elif (btn_id in self.device.block_buttons
               or btn_id_vel in self.device.block_buttons):
             try:
