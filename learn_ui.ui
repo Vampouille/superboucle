@@ -421,7 +421,7 @@
          <x>10</x>
          <y>30</y>
          <width>351</width>
-         <height>33</height>
+         <height>31</height>
         </rect>
        </property>
        <layout class="QFormLayout" name="formLayout_2">
@@ -450,7 +450,7 @@
        <rect>
         <x>400</x>
         <y>0</y>
-        <width>521</width>
+        <width>791</width>
         <height>221</height>
        </rect>
       </property>
@@ -592,19 +592,14 @@
         </property>
        </layout>
       </widget>
-      <zorder>gridLayoutWidget_6</zorder>
-      <zorder>horizontalLayoutWidget</zorder>
-      <zorder>gridLayoutWidget_7</zorder>
-      <zorder>horizontalLayoutWidget_2</zorder>
-      <zorder>groupBox_12</zorder>
      </widget>
      <widget class="QGroupBox" name="groupBox_3">
       <property name="geometry">
        <rect>
         <x>180</x>
         <y>240</y>
-        <width>161</width>
-        <height>71</height>
+        <width>150</width>
+        <height>70</height>
        </rect>
       </property>
       <property name="font">
@@ -620,8 +615,8 @@
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>154</width>
-         <height>35</height>
+         <width>139</width>
+         <height>31</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
@@ -645,10 +640,10 @@
      <widget class="QGroupBox" name="groupBox_4">
       <property name="geometry">
        <rect>
-        <x>350</x>
+        <x>340</x>
         <y>240</y>
-        <width>161</width>
-        <height>71</height>
+        <width>150</width>
+        <height>70</height>
        </rect>
       </property>
       <property name="font">
@@ -664,8 +659,8 @@
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>154</width>
-         <height>35</height>
+         <width>139</width>
+         <height>31</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_8">
@@ -689,10 +684,10 @@
      <widget class="QGroupBox" name="groupBox_5">
       <property name="geometry">
        <rect>
-        <x>520</x>
+        <x>500</x>
         <y>240</y>
-        <width>161</width>
-        <height>71</height>
+        <width>150</width>
+        <height>70</height>
        </rect>
       </property>
       <property name="font">
@@ -708,8 +703,8 @@
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>154</width>
-         <height>35</height>
+         <width>139</width>
+         <height>31</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_3">
@@ -733,10 +728,10 @@
      <widget class="QGroupBox" name="groupBox_6">
       <property name="geometry">
        <rect>
-        <x>690</x>
+        <x>660</x>
         <y>240</y>
-        <width>161</width>
-        <height>71</height>
+        <width>150</width>
+        <height>70</height>
        </rect>
       </property>
       <property name="font">
@@ -752,8 +747,8 @@
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>154</width>
-         <height>35</height>
+         <width>139</width>
+         <height>31</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_4">
@@ -773,8 +768,6 @@
         </item>
        </layout>
       </widget>
-      <zorder>gridLayoutWidget_3</zorder>
-      <zorder>groupBox_12</zorder>
      </widget>
      <widget class="QGroupBox" name="groupBox_7">
       <property name="geometry">
@@ -845,12 +838,14 @@ example:
         <x>10</x>
         <y>240</y>
         <width>161</width>
-        <height>71</height>
+        <height>70</height>
        </rect>
       </property>
       <property name="font">
        <font>
         <pointsize>11</pointsize>
+        <weight>50</weight>
+        <bold>false</bold>
        </font>
       </property>
       <property name="title">
@@ -861,8 +856,8 @@ example:
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>154</width>
-         <height>35</height>
+         <width>139</width>
+         <height>31</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_5">
@@ -886,10 +881,10 @@ example:
      <widget class="QGroupBox" name="groupBox_10">
       <property name="geometry">
        <rect>
-        <x>860</x>
+        <x>820</x>
         <y>240</y>
-        <width>161</width>
-        <height>71</height>
+        <width>150</width>
+        <height>70</height>
        </rect>
       </property>
       <property name="font">
@@ -905,8 +900,8 @@ example:
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>154</width>
-         <height>35</height>
+         <width>139</width>
+         <height>31</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_11">
@@ -930,10 +925,10 @@ example:
      <widget class="QGroupBox" name="groupBox_11">
       <property name="geometry">
        <rect>
-        <x>1030</x>
+        <x>980</x>
         <y>240</y>
-        <width>161</width>
-        <height>71</height>
+        <width>150</width>
+        <height>70</height>
        </rect>
       </property>
       <property name="font">
@@ -949,8 +944,8 @@ example:
         <rect>
          <x>10</x>
          <y>30</y>
-         <width>154</width>
-         <height>35</height>
+         <width>139</width>
+         <height>31</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_12">
@@ -976,7 +971,7 @@ example:
        <rect>
         <x>10</x>
         <y>320</y>
-        <width>1011</width>
+        <width>1181</width>
         <height>131</height>
        </rect>
       </property>
@@ -985,6 +980,11 @@ example:
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>11</pointsize>
+       </font>
       </property>
       <property name="title">
        <string>Scenes</string>
