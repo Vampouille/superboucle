@@ -66,12 +66,12 @@ Typical usage :
         sudo aptitude install python3 python3-pip python3-cffi python3-numpy python3-pyqt5
         sudo pip3 install PySoundFile
 
-* Download and extract last version of SuperBoucle from https://sourceforge.net/projects/superboucle/files/
+* Download and extract last version of SuperBoucle from https://github.com/Vampouille/superboucle/releases/
 
 ### Windows
 
 * Run Jack Audio Kit setup : http://jackaudio.org/downloads/
-* Run SuperBoucle windows Setup from https://sourceforge.net/projects/superboucle/files/
+* Run SuperBoucle windows Setup from https://github.com/Vampouille/superboucle/releases
 
 ## Running
 
