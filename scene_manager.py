@@ -16,6 +16,8 @@ def getScenes(file_names):
 
 
 class SceneManager(QDialog, Ui_Dialog):
+    ITEM_IT_ROLE = 100
+
     def __init__(self, parent):
         super(SceneManager, self).__init__(parent)
         self.gui = parent
@@ -35,11 +37,12 @@ class SceneManager(QDialog, Ui_Dialog):
 
     def updateList(self):
         self.scenelistList.clear()
-        for scene in self.gui.song.scenes:
+        for i, scene in enumerate(self.gui.song.scenes):
+            item = QListWidgetItem('{}. {}'.format(i + 1, scene))
+            item.setData(self.ITEM_IT_ROLE, i)
             if self.gui.song.initial_scene == scene:
-                scene = QListWidgetItem(scene)
-                scene.setBackground(QColor('red'))
-            self.scenelistList.addItem(scene)
+                item.setBackground(QColor('red'))
+            self.scenelistList.addItem(item)
         anyScenes = bool(self.gui.song.scenes)
         self.loadScenesBtn.setEnabled(anyScenes)
         self.removeScenesBtn.setEnabled(anyScenes)
@@ -60,10 +63,13 @@ class SceneManager(QDialog, Ui_Dialog):
                 self.previewcells[x][y].setStyleSheet("background-color: rgb(217, 217, 217);")
                 self.preview.addWidget(self.previewcells[x][y], y, x, 1, 1)
 
+    def _getSceneName(self, item):
+        return list(self.gui.song.scenes.keys())[item.data(self.ITEM_IT_ROLE)]
+
     def onRemove(self):
         item = self.scenelistList.currentItem()
         if item:
-            self.gui.song.removeScene(item.text())
+            self.gui.song.removeScene(self._getSceneName(item))
             self.updateList()
 
     def onMoveRows(self, sourceParent, sourceStart, sourceEnd,
@@ -73,6 +79,7 @@ class SceneManager(QDialog, Ui_Dialog):
         del l[k]
         destinationRow -= destinationRow > sourceStart
         l.insert(k, v, destinationRow)
+        self.updateList()
 
     def onAddScene(self):
         AddSceneDialog(self.gui, callback=self.updateList)
@@ -80,17 +87,17 @@ class SceneManager(QDialog, Ui_Dialog):
     def onSetInitial(self):
         item = self.scenelistList.currentItem()
         if item:
-            self.gui.song.initial_scene = item.text()
+            self.gui.song.initial_scene = self._getSceneName(item)
             self.updateList()
 
     def onLoadScene(self):
         item = self.scenelistList.currentItem()
         if item:
-            self.loadScene(item.text())
+            self.loadScene(self._getSceneName(item))
             self.gui.update()
 
     def onSceneDoubleClick(self, item):
-        self.loadScene(item.text())
+        self.loadScene(self._getSceneName(item))
         self.gui.update()
         
     def onCurrentItemChanged(self, item):
