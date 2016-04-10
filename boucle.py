@@ -3,13 +3,25 @@
 """JACK client that prints all received MIDI events."""
 
 import jack
-import sys
-from clip import Clip, Song
+import sys, os.path
+from clip import Clip, Song, load_song_from_file
 from gui import Gui
 from PyQt5.QtWidgets import QApplication
 from queue import Empty
+import argparse
 
-song = Song(8, 8)
+
+parser = argparse.ArgumentParser(description='launch superboucle')
+parser.add_argument("songfile", nargs="?", help="load the song specified here")
+args = parser.parse_args()
+
+song = None
+if os.path.isfile(args.songfile):
+    song = load_song_from_file(args.songfile)
+else:
+    if args.songfile:
+        print("File {} does not exist.".format(args.songfile))
+    song = Song(8, 8)
 
 client = jack.Client("Super Boucle")
 midi_in = client.midi_inports.register("input")
@@ -68,7 +80,7 @@ def my_callback(frames):
 
             frame_per_beat = fpm / bpm
             clip_period = (
-                fpm * clip.beat_diviser) / bpm  # length of the clip in frames
+                              fpm * clip.beat_diviser) / bpm  # length of the clip in frames
             total_frame_offset = clip.frame_offset + (
                 clip.beat_offset * frame_per_beat)
             # frame_beat: how many times the clip hast been played already
