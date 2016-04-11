@@ -16,11 +16,12 @@ parser.add_argument("songfile", nargs="?", help="load the song specified here")
 args = parser.parse_args()
 
 song = None
-if os.path.isfile(args.songfile):
-    song = load_song_from_file(args.songfile)
+if args.songfile:
+    if os.path.isfile(args.songfile):
+        song = load_song_from_file(args.songfile)
+    else:
+        sys.exit("File {} does not exist.".format(args.songfile))
 else:
-    if args.songfile:
-        print("File {} does not exist.".format(args.songfile))
     song = Song(8, 8)
 
 client = jack.Client("Super Boucle")
