@@ -23,9 +23,9 @@ class PlaylistDialog(QDialog, Ui_Dialog):
 
     def updateList(self):
         self.playlistList.clear()
-        for song in self.gui.playlist:
+        for i, song in enumerate(self.gui.playlist):
             name, ext = splitext(basename(song))  # song.file_name
-            self.playlistList.addItem(name)
+            self.playlistList.addItem('{}. {}'.format(i + 1, name))
 
     def onRemove(self):
         id = self.playlistList.currentRow()
@@ -38,6 +38,7 @@ class PlaylistDialog(QDialog, Ui_Dialog):
         l = self.gui.playlist
         destinationRow -= destinationRow > sourceStart
         l.insert(destinationRow, l.pop(sourceStart))
+        self.updateList()
 
     def onAddSongs(self):
         file_names, a = self.gui.getOpenFileName('Add Songs',
