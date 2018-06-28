@@ -323,6 +323,12 @@ def load_song_from_file(file):
                 buffer.write(wav_res.read())
                 buffer.seek(0)
                 data, samplerate = sf.read(buffer, dtype=np.float32)
+                # If soundfile is mono then soundfile library return an *one dimension* array with data
+                # with stereo or multichannel files it always return an array containing one array per channel
+                # So to have unified data structure we need to put array of data for mono file in a an array
+                # to have an array with one array for mono channel.
+                if len(data.shape) == 1:
+                    data = np.array([data])
                 res.data[member] = data
                 res.samplerate[member] = samplerate
 
