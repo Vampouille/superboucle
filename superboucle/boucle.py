@@ -4,8 +4,8 @@
 
 import jack
 import sys, os.path
-from clip import Clip, Song, load_song_from_file
-from gui import Gui
+import Clip, Song, load_song_from_file
+import Gui
 from PyQt5.QtWidgets import QApplication
 from queue import Empty
 import argparse
@@ -191,29 +191,31 @@ def my_callback(frames):
 
 client.set_process_callback(my_callback)
 
+
 # activate !
-with client:
-    # make connection
-    playback = client.get_ports(is_physical=True, is_input=True)
-    if not playback:
-        raise RuntimeError("No physical playback ports")
+def start():
+    with client:
+        # make connection
+        playback = client.get_ports(is_physical=True, is_input=True)
+        if not playback:
+            raise RuntimeError("No physical playback ports")
 
-    record = client.get_ports(is_physical=True, is_output=True)
-    if not record:
-        raise RuntimeError("No physical record ports")
+        record = client.get_ports(is_physical=True, is_output=True)
+        if not record:
+            raise RuntimeError("No physical record ports")
 
-    my_format = Song.CHANNEL_NAME_PATTERN.format
-    if gui.auto_connect:
-        # connect inputs
-        client.connect(record[0], inL)
-        client.connect(record[1], inR)
+        my_format = Song.CHANNEL_NAME_PATTERN.format
+        if gui.auto_connect:
+            # connect inputs
+            client.connect(record[0], inL)
+            client.connect(record[1], inR)
 
-        # connect outputs
-        for ch_name, pl_port in zip([my_format(port=Clip.DEFAULT_OUTPUT,
-                                               channel=ch)
-                                     for ch in Song.CHANNEL_NAMES],
-                                    playback):
-            sb_out = gui.port_by_name[ch_name]
-            client.connect(sb_out, pl_port)
+            # connect outputs
+            for ch_name, pl_port in zip([my_format(port=Clip.DEFAULT_OUTPUT,
+                                                   channel=ch)
+                                         for ch in Song.CHANNEL_NAMES],
+                                        playback):
+                sb_out = gui.port_by_name[ch_name]
+                client.connect(sb_out, pl_port)
 
-    app.exec_()
+        app.exec_()
