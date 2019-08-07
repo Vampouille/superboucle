@@ -51,11 +51,11 @@ class SceneManager(QDialog, Ui_Dialog):
     def initPreview(self):
         self.previewcells = [[None for y in range(self.gui.song.height)]
                              for x in range(self.gui.song.width)]
-        
+
         for i in reversed(range(self.preview.count())):
             self.preview.itemAt(i).widget().close()
             self.preview.itemAt(i).widget().setParent(None)
-            
+
         for y in range(self.gui.song.height):
             for x in range(self.gui.song.width):
                 self.previewcells[x][y] = QFrame(self)
@@ -99,9 +99,9 @@ class SceneManager(QDialog, Ui_Dialog):
     def onSceneDoubleClick(self, item):
         self.loadScene(self._getSceneName(item))
         self.gui.update()
-        
+
     def onCurrentItemChanged(self, item):
-        
+
         if item is not None:
             scene = self.gui.song.getSceneDesc(item.text())
             for x in range(len(scene)):
