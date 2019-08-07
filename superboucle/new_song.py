@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QDialog
-from new_song_ui import Ui_Dialog
-from clip import Song
+from superboucle.new_song_ui import Ui_Dialog
+from superboucle.clip import Song
 
 
 class NewSongDialog(QDialog, Ui_Dialog):

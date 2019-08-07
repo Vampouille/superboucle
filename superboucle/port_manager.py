@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QDialog, QListWidgetItem
-from port_manager_ui import Ui_Dialog
-from add_port import AddPortDialog
-from clip import verify_ext, Clip
+from superboucle.port_manager_ui import Ui_Dialog
+from superboucle.add_port import AddPortDialog
+from superboucle.clip import verify_ext, Clip
 import json
 
 

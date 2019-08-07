@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QDialog
-from add_port_ui import Ui_Dialog
+from superboucle.add_port_ui import Ui_Dialog
 
 
 class AddPortDialog(QDialog, Ui_Dialog):

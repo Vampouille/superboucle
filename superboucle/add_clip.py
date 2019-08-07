@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QDialog
-from add_clip_ui import Ui_Dialog
-from clip import Clip, basename
+from superboucle.add_clip_ui import Ui_Dialog
+from superboucle.clip import Clip, basename
 
 
 class AddClipDialog(QDialog, Ui_Dialog):

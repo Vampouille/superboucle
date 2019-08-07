@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QDialog
-from add_scene_ui import Ui_Dialog
+from superboucle.add_scene_ui import Ui_Dialog
 
 class AddSceneDialog(QDialog, Ui_Dialog):
     def __init__(self, gui, callback=None):

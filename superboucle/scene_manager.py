@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import QDialog, QAbstractItemView, QListWidgetItem, QFrame
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import QSize
-from scene_manager_ui import Ui_Dialog
-from add_scene import AddSceneDialog
-from clip import load_song_from_file
+from superboucle.scene_manager_ui import Ui_Dialog
+from superboucle.add_scene import AddSceneDialog
+from superboucle.clip import load_song_from_file
 
 def getScenes(file_names):
     r = []

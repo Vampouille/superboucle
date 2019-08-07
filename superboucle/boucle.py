@@ -2,10 +2,10 @@
 
 """JACK client that prints all received MIDI events."""
 
-import jack
+import superboucle.jack as jack
 import sys, os.path
-import Clip, Song, load_song_from_file
-import Gui
+from superboucle.clip import Clip, Song, load_song_from_file
+from superboucle.gui import Gui
 from PyQt5.QtWidgets import QApplication
 from queue import Empty
 import argparse

@@ -1,4 +1,4 @@
-from clip import Clip
+from superboucle.clip import Clip
 
 
 class DeviceOutput:

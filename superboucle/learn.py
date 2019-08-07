@@ -3,9 +3,9 @@ from PyQt5.QtCore import pyqtSignal
 import struct
 from copy import deepcopy
 from queue import Queue, Empty
-from learn_cell_ui import Ui_LearnCell
-from learn_ui import Ui_Dialog
-from device import Device
+from superboucle.learn_cell_ui import Ui_LearnCell
+from superboucle.learn_ui import Ui_Dialog
+from superboucle.device import Device
 import re
 
 _init_cmd_regexp = re.compile("^\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*$")

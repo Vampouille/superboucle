@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QFileDialog, QAbstractItemView
-from playlist_ui import Ui_Dialog
-from clip import load_song_from_file, verify_ext
+from superboucle.playlist_ui import Ui_Dialog
+from superboucle.clip import load_song_from_file, verify_ext
 import json
 from os.path import basename, splitext
 
