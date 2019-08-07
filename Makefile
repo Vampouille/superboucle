@@ -1,14 +1,19 @@
+#UI = $(for line in `find -name "*_ui.ui" `; do ; echo -n "${line/%_ui.ui/_ui.py} "; done;)
+UI = superboucle/gui_ui.py superboucle/cell_ui.py superboucle/learn_ui.py superboucle/learn_cell_ui.py superboucle/device_manager_ui.py superboucle/new_song_ui.py superboucle/add_clip_ui.py superboucle/playlist_ui.py superboucle/port_manager_ui.py superboucle/add_port_ui.py superboucle/scene_manager_ui.py superboucle/add_scene_ui.py
 
-UI = gui_ui.py cell_ui.py learn_ui.py learn_cell_ui.py device_manager_ui.py new_song_ui.py add_clip_ui.py playlist_ui.py port_manager_ui.py add_port_ui.py scene_manager_ui.py add_scene_ui.py
-
-dep : $(UI) gui_rc.py
+dep : $(UI) superboucle/gui_rc.py
+	echo $$UI
 
 run : dep
 	./boucle.py
 
-%_ui.py : %_ui.ui
-	@echo "compiling $<"
-	pyuic5 $< > $@
+clean:
+	cd superboucle;rm -f `find -name "*_ui.py"`
 
-gui_rc.py : gui.qrc icons/*
-	pyrcc5 gui.qrc > gui_rc.py
+%_ui.py : %_ui.ui
+	echo $(UI)
+	@echo "compiling $<"
+	pyuic5 --import-from=superboucle $< > $@
+
+superboucle/gui_rc.py : superboucle/gui.qrc superboucle/icons/*
+	pyrcc5 superboucle/gui.qrc > superboucle/gui_rc.py
