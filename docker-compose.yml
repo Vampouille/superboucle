@@ -1,0 +1,9 @@
+version: '2'
+services:
+  builder:
+    build: ./
+    image: superbouble-builder
+    stdin_open: true
+    tty: true
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
