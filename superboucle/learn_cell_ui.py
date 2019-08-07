@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'learn_cell_ui.ui'
+# Form implementation generated from reading ui file 'superboucle/learn_cell_ui.ui'
 #
-# Created: Mon Mar 14 12:27:23 2016
-#      by: PyQt5 UI code generator 5.2.1
+# Created by: PyQt5 UI code generator 5.11.3
 #
 # WARNING! All changes made in this file will be lost!
 
