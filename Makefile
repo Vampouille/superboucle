@@ -9,6 +9,16 @@ run : dep
 
 clean:
 	cd superboucle;rm -f `find -name "*_ui.py"`
+	cd debian; rm -fr superboucle debhelper-build-stamp files superboucle.substvars
+
+deb:
+	git apply setup.py.debian.patch
+	dpkg-buildpackage -us -uc
+	git checkout -- setup.py
+
+docker-test:
+	cp ../superboucle_1.2.0-1_all.deb debian/
+	cd debian; docker-compose build && docker-compose up
 
 %_ui.py : %_ui.ui
 	echo $(UI)
