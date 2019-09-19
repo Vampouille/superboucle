@@ -454,5 +454,5 @@ class Ui_MainWindow(object):
         self.actionScene_Manager.setText(_translate("MainWindow", "Scene Manager"))
         self.actionScene_Manager.setShortcut(_translate("MainWindow", "Ctrl+E"))
 
-from qsuperdial import QSuperDial
-import gui_rc
+from superboucle.qsuperdial import QSuperDial
+from superboucle import gui_rc

@@ -967,7 +967,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
   <customwidget>
    <class>QSuperDial</class>
    <extends>QDial</extends>
-   <header>qsuperdial.h</header>
+   <header>superboucle/qsuperdial.h</header>
   </customwidget>
  </customwidgets>
  <resources>
