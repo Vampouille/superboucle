@@ -23,9 +23,6 @@ setup(
         "Topic :: Multimedia :: Sound/Audio :: Capture/Recording",
         "Topic :: Multimedia :: Sound/Audio :: MIDI",
     ],
-    entry_points = {
-        'console_scripts': [
-            'superboucle = superboucle.boucle:start',
-        ],
-    },
+    entry_points={'console_scripts':
+                  ['superboucle = superboucle.boucle:start']},
 )
