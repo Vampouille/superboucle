@@ -3,15 +3,32 @@ Maintainer: Julien Acroute <superboucle@nura.eu>
 Section: sound
 Priority: optional
 Standards-Version: 3.9.4
-Build-Depends: debhelper (>= 9), dh-python,
- python3-all (>= 3.3), python3-setuptools, python3-soundfile (>= 0.10),
- python3-cffi (>= 1.12), python3-numpy (>= 1.16), python3-pyqt5 (>= 5.11)
+Build-Depends: debhelper (>= 9),
+ dh-python,
+ python3-all (>= 3.3),
+ python3-cffi (>= 1.12),
+ python3-numpy (>= 1.16),
+ python3-pyqt5 (>= 5.11)
+ python3-setuptools,
+ python3-soundfile (>= 0.10),
 
 Package: superboucle
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends},
- python3-soundfile (>= 0.10), python3-cffi (>= 1.12), python3-numpy (>= 1.16),
- python3-pyqt5 (>= 5.11), libsndfile1-dev, libjack-jackd2-dev
-Description: SuperBoucle is a loop based software fully controllable with any
-  midi device. SuperBoucle is also synced with jack transport. You can use it
-  on live performance or for composition.
+ libjack-jackd2-dev
+ libsndfile1-dev,
+ python3-cffi (>= 1.12),
+ python3-numpy (>= 1.16),
+ python3-pyqt5 (>= 5.11),
+ python3-soundfile (>= 0.10),
+Description: Loop application synced with jack transport
+ SuperBoucle is a loop based software fully controllable with any midi device.
+ SuperBoucle is also synced with jack transport. You can use it on live
+ performance or for composition.
+ SuperBoucle is composed of a matrix of sample controllable with external midi
+ device like pad. SuperBoucle will send back information to midi device (light
+ up led). Sample will always start and stop on a beat or group of beats. You can
+ adjust duration of sample (loop period) in beat and offset in beat. But you can
+ also adjust sample offset in raw frame count negative or positive. Which mean
+ sample can start before next beat (useful for reversed sample). You can record
+ loop of any size, adjust BPM, reverse, normalize samples, ...
