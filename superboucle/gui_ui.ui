@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1111</width>
-    <height>948</height>
+    <height>915</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -838,7 +838,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
      <x>0</x>
      <y>0</y>
      <width>1111</width>
-     <height>27</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -873,7 +873,6 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
    <addaction name="menuDevice"/>
    <addaction name="menuView"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="actionNew">
    <property name="text">
     <string>New...</string>
