@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1111</width>
+    <width>400</width>
     <height>915</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Super Boucle</string>
@@ -21,6 +27,12 @@
    <string notr="true">QMainWindow {background-color: black;}</string>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="styleSheet">
     <string notr="true">#centralwidget {background-color: Black;}</string>
    </property>
@@ -837,7 +849,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1111</width>
+     <width>400</width>
      <height>20</height>
     </rect>
    </property>
