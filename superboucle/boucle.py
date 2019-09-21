@@ -219,3 +219,7 @@ def start():
                 client.connect(sb_out, pl_port)
 
         app.exec_()
+
+
+if __name__ == "__main__":
+    start()
