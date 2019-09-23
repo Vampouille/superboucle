@@ -39,6 +39,7 @@ class SceneManager(QDialog, Ui_Dialog):
         self.scenelistList.clear()
         for i, scene in enumerate(self.gui.song.scenes):
             item = QListWidgetItem('{}. {}'.format(i + 1, scene))
+            item.setData(1, scene)
             item.setData(self.ITEM_IT_ROLE, i)
             if self.gui.song.initial_scene == scene:
                 item.setBackground(QColor('red'))
@@ -103,7 +104,7 @@ class SceneManager(QDialog, Ui_Dialog):
     def onCurrentItemChanged(self, item):
 
         if item is not None:
-            scene = self.gui.song.getSceneDesc(item.text())
+            scene = self.gui.song.getSceneDesc(item.data(1))
             for x in range(len(scene)):
                 line = scene[x]
                 for y in range(len(line)):
