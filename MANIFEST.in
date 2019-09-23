@@ -1,0 +1,2 @@
+include *.md superboucle/gui.qrc superboucle/icons/icon.ico
+recursive-include superboucle *.png

@@ -1,0 +1,12 @@
+version: '2'
+services:
+  superboucle:
+    build: ./
+    user: "1000"
+    privileged: true
+    entrypoint: "/usr/bin/superboucle"
+    environment:
+      - DISPLAY=:0
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev/shm:/dev/shm
