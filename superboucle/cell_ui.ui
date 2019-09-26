@@ -19,7 +19,7 @@
   <property name="minimumSize">
    <size>
     <width>120</width>
-    <height>120</height>
+    <height>112</height>
    </size>
   </property>
   <property name="font">
@@ -36,7 +36,7 @@
      <x>0</x>
      <y>0</y>
      <width>110</width>
-     <height>110</height>
+     <height>102</height>
     </rect>
    </property>
    <property name="sizePolicy">
@@ -85,9 +85,9 @@ border-radius: 10px;}</string>
     <property name="geometry">
      <rect>
       <x>7</x>
-      <y>89</y>
+      <y>87</y>
       <width>97</width>
-      <height>16</height>
+      <height>10</height>
      </rect>
     </property>
     <property name="maximum">
