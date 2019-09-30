@@ -32,7 +32,7 @@ Typical usage :
 * Negative sample offset, sample offset in beats or frames
 * Load several formats: WAV, FLAC, AIFF, ...  (no MP3 for the moment)
 * Full intuitive MIDI learn interface
-* Support any MIDI device : generic keyboard, pad, BCF, Akai APC, ...
+* Support any MIDI device : generic keyboard, pad, LaunchPad, BCF, Akai APC, ...
 * Fully controllable by MIDI device or mouse/keyboard
 * Goto function to move jack transport to specified location
 
@@ -49,24 +49,31 @@ Typical usage :
 
 * Jack Audio Kit
 
+## Optional tools
+
+The following may be insteresting with superboucle :
+
+* audacity: edit sample, determine sample offset
+* a2jmidid: ALSA/Jack midi bridge
+* patchage: manipulate jack audio and midi connections
+
+sudo aptitude install a2jmidid audacity patchage
+
 ## Installation
 
-### Linux
+## Debian buster
 
-* Install Jack server :
+* Download the debian package from https://github.com/Vampouille/superboucle/releases/
+* Install the debian package :
+  gdebi -i superboucle.deb
 
-        sudo aptitude install jackd2 qjackctl
+### Install from source
 
-* Install midi bridge (optional) : 
-
-        sudo aptitude install a2jmidid
-
-* Install python modules : 
-
-        sudo aptitude install python3 python3-pip python3-cffi python3-numpy python3-pyqt5
-        sudo pip3 install PySoundFile
-
-* Download and extract last version of SuperBoucle from https://github.com/Vampouille/superboucle/releases/
+* sudo apt-get update && sudo apt-get install -y git python3-pip
+* git clone https://github.com/Vampouille/superboucle
+* cd superboucle
+* pip3 install -r requirements.txt
+* python3 setup.py install
 
 ### Windows
 
@@ -77,9 +84,9 @@ Typical usage :
 
 ### Linux
 
-Start Jack audio server and then run SuperBoucle.sh script from SuperBoucle directory :
+Start Jack audio server and then run superboucle script:
 
-	./SuperBoucle.sh
+  superboucle
 
 ### Windows
 
@@ -88,7 +95,7 @@ Start "Jack PortAudio" from start menu and then start SuperBoucle from start men
 ## Contact
 
 Feel free to send an email to superboucle@nura.eu if you have any questions,
-remarks or if you find a bug.
+remarks. If you find a bug create an issue here : https://github.com/Vampouille/superboucle/issues/new
 
 ## Midi devices
 
@@ -101,7 +108,7 @@ I will include it in next release.
 
 ### What can be controlled by external midi device ?
 
-You can : 
+You can :
 
 * Start or stop clip/sample.
 * Start, pause jack transport
@@ -201,6 +208,6 @@ If you have a reset command or a particular midi command to send to your
 midi device, you can put those commands here. One command per line in
 decimal value separated by comma. For example, for LaunchPad S this will
 reset all buttons and switch to blinking mode :
-	
-	176, 0, 0
-	176, 0, 40
+
+  176, 0, 0
+  176, 0, 40
