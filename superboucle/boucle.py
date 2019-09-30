@@ -2,7 +2,7 @@
 
 """JACK client that prints all received MIDI events."""
 
-import superboucle.jack as jack
+import jack
 import sys, os.path
 from superboucle.clip import Clip, Song, load_song_from_file
 from superboucle.gui import Gui
