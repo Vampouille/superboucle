@@ -211,7 +211,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def openSongFromDisk(self, file_name):
         self._jack_client.transport_stop()
-        self._jack_client.transport_locate(0)
+        self._jack_client.transport_frame = 0
 
         self.setEnabled(False)
         message = QMessageBox(self)
@@ -338,7 +338,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                         * (self.gotoTarget.value() - 1)
                         * position['frame_rate']
                         * (60 / position['beats_per_minute']))
-        self._jack_client.transport_locate(int(round(new_position, 0)))
+        self._jack_client.transport_frame = int(round(new_position, 0))
 
     def onRecord(self):
         self.song.is_record = not self.song.is_record
@@ -356,7 +356,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.queue_out.put(((msg_type << 4) + channel, pitch, color))
 
     def onRewindClicked(self):
-        self._jack_client.transport_locate(0)
+        self._jack_client.transport_frame = 0
 
     def onClipNameChange(self):
         self.last_clip.name = self.clip_name.text()

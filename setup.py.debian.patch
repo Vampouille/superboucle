@@ -1,11 +1,10 @@
---- setup.py.orig	2019-09-20 20:37:21.225084734 +0200
-+++ setup.py	2019-09-20 20:37:36.697702211 +0200
-@@ -9,7 +9,7 @@
-     author_email='superboucle@nura.eu',
+--- setup.py.orig	2019-09-30 19:16:22.578773094 +0200
++++ setup.py	2019-09-30 19:16:29.371726762 +0200
+@@ -10,7 +10,6 @@
      description='Loop application synced with jack transport',
      long_description=open('readme.md').read(),
--    install_requires=["SoundFile>=0.10", "PyQt5>=5.11", "numpy>=1.16"],
-+    install_requires=["SoundFile>=0.10", "numpy>=1.16"],
+     install_requires=["JACK-Client>=0.4.5",
+-                      "PyQt5>=5.11",
+                       "SoundFile>=0.10",
+                       "numpy>=1.16"],
      include_package_data=True,
-     url='http://superboucle.nura.eu',
-     classifiers=[

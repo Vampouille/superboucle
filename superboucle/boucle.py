@@ -186,8 +186,6 @@ def my_callback(frames):
     except Empty:
         pass
 
-    return jack.CALL_AGAIN
-
 
 client.set_process_callback(my_callback)
 
