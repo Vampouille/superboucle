@@ -22,7 +22,7 @@ from superboucle.device import Device
 import struct
 from queue import Queue, Empty
 import pickle
-from os.path import expanduser, dirname
+from os.path import expanduser, dirname, isfile
 import numpy as np
 import soundfile as sf
 
@@ -103,7 +103,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             for raw_device in device_settings.value('devices'):
                 self.devices.append(Device(pickle.loads(raw_device)))
         else:
-            self.devices.append(Device({'name': 'No Device',}))
+            self.devices.append(Device({'name': 'No Device'}))
         self.updateDevices()
         self.deviceGroup.triggered.connect(self.onDeviceSelect)
 
@@ -459,8 +459,14 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onActionOpen(self):
         file_name, a = self.getOpenFileName('Open Song',
                                             'Super Boucle Song (*.sbs)')
-        if a and file_name:
+        if a and file_name and self.checkFileExists(file_name):
             self.openSongFromDisk(file_name)
+        else:
+            QMessageBox.critical(self, "File not found",
+                                 "File %s does not seem to exist" % file_name)
+
+    def checkFileExists(self, file_name):
+        return isfile(file_name)
 
     def onActionSave(self):
         if self.song.file_name:
