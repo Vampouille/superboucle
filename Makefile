@@ -12,12 +12,18 @@ clean:
 	cd debian; rm -fr superboucle debhelper-build-stamp files superboucle.substvars
 
 deb: dep
+	make deb_aux || make unpatch_setup
+
+deb_aux:
 	git apply setup.py.debian.patch
 	dpkg-buildpackage -us -uc
+	cp ../superboucle_1.2.0-1_all.deb debian/
+	make unpatch_setup
+
+unpatch_setup:
 	git checkout -- setup.py
 
 docker-test: deb
-	cp ../superboucle_1.2.0-1_all.deb debian/
 	cd debian; docker-compose build && docker-compose up
 
 %_ui.py : %_ui.ui
