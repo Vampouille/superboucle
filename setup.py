@@ -4,6 +4,7 @@ from setuptools import setup, find_packages
 setup(
     name='superboucle',
     version='1.2.0',
+    python_requires='>=3',
     packages=find_packages(),
     author='Vampouille',
     author_email='superboucle@nura.eu',
