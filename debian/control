@@ -3,7 +3,8 @@ Maintainer: Julien Acroute <superboucle@nura.eu>
 Section: sound
 Priority: optional
 Standards-Version: 3.9.4
-Build-Depends: debhelper (>= 9),
+Build-Depends:
+ debhelper (>= 9),
  dh-python,
  python3-all (>= 3.3),
  python3-cffi (>= 1.12),
@@ -11,10 +12,13 @@ Build-Depends: debhelper (>= 9),
  python3-pyqt5 (>= 5.11),
  python3-setuptools,
  python3-soundfile (>= 0.10),
+Homepage: https://superboucle.nura.eu/
 
 Package: superboucle
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends},
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
  libjack-jackd2-dev,
  libsndfile1-dev,
  python3-cffi (>= 1.12),

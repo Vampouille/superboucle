@@ -1,0 +1,3 @@
+version=3
+opts=filenamemangle=s/.+\/release-?(\d\S*)\.tar\.gz/superboucle-$1\.tar\.gz/ \
+  https://github.com/Vampouille/superboucle/tags .*/release-?(\d\S*)\.tar\.gz
