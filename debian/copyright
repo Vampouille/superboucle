@@ -4,7 +4,9 @@ Upstream-Contact: Julien Acroute <superboucle@nura.eu>
 Source: https://github.com/Vampouille/superboucle
 
 Files: *
-Copyright: 2019 Julien Acroute <superboucle@nura.eu>
+Copyright:
+ 2019 Julien Acroute <superboucle@nura.eu>
+ 2019 Julian Jarecki <julian.jarecki@gmail.com>
 License: GPL-3+
 
 Files: debian/*
