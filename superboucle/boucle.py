@@ -3,7 +3,8 @@
 """JACK client that prints all received MIDI events."""
 
 import jack
-import sys, os.path
+import sys
+import os.path
 from superboucle.clip import Clip, Song, load_song_from_file
 from superboucle.gui import Gui
 from PyQt5.QtWidgets import QApplication
@@ -13,6 +14,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='launch superboucle')
 parser.add_argument("songfile", nargs="?", help="load the song specified here")
+parser.add_argument("--debug", help="enable debug log", action="store_true")
 args = parser.parse_args()
 
 song = None
@@ -29,6 +31,25 @@ midi_in = client.midi_inports.register("input")
 midi_out = client.midi_outports.register("output")
 inL = client.inports.register("input_L")
 inR = client.inports.register("input_R")
+
+if args.debug:
+    from superboucle.debug import (client_registration_callback,
+                                   port_registration_callback,
+                                   port_connect_callback,
+                                   port_rename_callback,
+                                   graph_order_callback,
+                                   xrun_callback,
+                                   property_change_callback)
+    client.set_client_registration_callback(client_registration_callback)
+    client.set_port_registration_callback(port_registration_callback,
+                                          only_available=False)
+    client.set_port_connect_callback(port_connect_callback,
+                                     only_available=False)
+    client.set_port_rename_callback(port_rename_callback,
+                                    only_available=False)
+    client.set_graph_order_callback(graph_order_callback)
+    client.set_xrun_callback(xrun_callback)
+    #client.set_property_change_callback(property_change_callback)
 
 app = QApplication(sys.argv)
 gui = Gui(song, client)

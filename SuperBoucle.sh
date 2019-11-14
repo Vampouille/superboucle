@@ -1,2 +1,3 @@
 #!/bin/bash
-python3 superboucle/boucle.py
+export PYTHONPATH=$(pwd):$PYTHONPATH
+python3 superboucle/boucle.py $*
