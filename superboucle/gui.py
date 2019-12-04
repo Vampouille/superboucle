@@ -81,10 +81,11 @@ class Gui(QMainWindow, Ui_MainWindow):
     updatePorts = pyqtSignal()
     songLoad = pyqtSignal()
 
-    def __init__(self, song, jack_client):
+    def __init__(self, song, jack_client, app):
         QObject.__init__(self)
         super(Gui, self).__init__()
         self._jack_client = jack_client
+        self.app = app
         self.setupUi(self)
         self.clip_volume.knobRadius = 3
         self.is_learn_device_mode = False
@@ -127,6 +128,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionOpen.triggered.connect(self.onActionOpen)
         self.actionSave.triggered.connect(self.onActionSave)
         self.actionSave_As.triggered.connect(self.onActionSaveAs)
+        self.actionQuit.triggered.connect(self.onActionQuit)
         self.actionAdd_Device.triggered.connect(self.onAddDevice)
         self.actionManage_Devices.triggered.connect(self.onManageDevice)
         self.actionPlaylist_Editor.triggered.connect(self.onPlaylistEditor)
@@ -483,6 +485,9 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.song.file_name = file_name
             self.song.save()
             print("File saved to : {}".format(self.song.file_name))
+
+    def onActionQuit(self):
+        self.app.quit()
 
     def onAddDevice(self):
         self.learn_device = LearnDialog(self, self.addDevice)

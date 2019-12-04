@@ -31,7 +31,7 @@ inL = client.inports.register("input_L")
 inR = client.inports.register("input_R")
 
 app = QApplication(sys.argv)
-gui = Gui(song, client)
+gui = Gui(song, client, app)
 
 CLIP_TRANSITION = {Clip.STARTING: Clip.START,
                    Clip.STOPPING: Clip.STOP,
