@@ -130,11 +130,11 @@ class Song():
     def getSceneDesc(self, name):
         res = [[None for y in range(self.height)]
                     for x in range(self.width)]
-        clip_ids = self.scenes[name]      
+        clip_ids = self.scenes[name]
         for i, c in enumerate(self.clips):
             res[c.x][c.y] = i in clip_ids
         return res
-        
+
     def loadScene(self, name):
         clip_ids = self.scenes[name]
         self._loadScene(clip_ids)
@@ -284,7 +284,7 @@ class Song():
 
             for member in self.data:
                 buffer = BytesIO()
-                sf.write(self.data[member], buffer,
+                sf.write(buffer, self.data[member],
                          self.samplerate[member],
                          subtype=sf.default_subtype('WAV'),
                          format='WAV')

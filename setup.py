@@ -10,7 +10,9 @@ setup(
     author_email='superboucle@nura.eu',
     description='Loop application synced with jack transport',
     long_description=open('readme.md').read(),
-    install_requires=["SoundFile>=0.10", "PyQt5>=5.11", "numpy>=1.16"],
+    install_requires=["PyQt5>=5.11",
+                      "SoundFile>=0.8.0",
+                      "numpy>=1.16"],
     include_package_data=True,
     url='http://superboucle.nura.eu',
     classifiers=[

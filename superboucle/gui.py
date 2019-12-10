@@ -309,7 +309,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
             if file_name:
                 file_name = verify_ext(file_name, 'wav')
-                sf.write(self.song.data[audio_file], file_name,
+                sf.write(file_name, self.song.data[audio_file],
                          self.song.samplerate[audio_file],
                          subtype=sf.default_subtype('WAV'),
                          format='WAV')
