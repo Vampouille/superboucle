@@ -186,6 +186,8 @@ class Song():
         '''Return channel count for specified clip'''
         if clip.audio_file is None:
             return 0
+        elif len(self.data[clip.audio_file].shape) == 1:
+            return 1
         else:
             return self.data[clip.audio_file].shape[1]
 
@@ -206,9 +208,12 @@ class Song():
         if (length + offset) > self.length(clip):
             raise Exception("Index out of range : {0} + {1} > {2}".
                             format(length, offset, self.length(clip)))
-
-        return (self.data[clip.audio_file][offset:offset + length, channel]
-                * clip.volume)
+        if self.channels(clip) == 1:
+            return (self.data[clip.audio_file][offset:offset + length]
+                    * clip.volume)
+        else:
+            return (self.data[clip.audio_file][offset:offset + length, channel]
+                    * clip.volume)
 
     def writeData(self, clip, channel, offset, data):
         if clip.audio_file is None:
