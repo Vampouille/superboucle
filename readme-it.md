@@ -14,7 +14,7 @@ prima della prossima battuata (utile per i campioni che sono stati invertiti -
 "reversed sample"). Puoi registrare loops di qualunque durata, modificare i BPM, 
 invertire e normalizzare samples ...
 
-Utilizzi tipico:
+Utilizzo tipico:
 
 * Ti occorre controllare il Trasporto di Jack (Play, pausa, riavvolgi...) con un
   dispositivo midi esterno e vuoi un pulsante per saltare ad un preciso punto
