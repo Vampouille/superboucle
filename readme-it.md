@@ -217,3 +217,6 @@ causerà il reset di tutti i bottoni ed imposterà la modalità lapeggiamento:
 	
 	176, 0, 0
 	176, 0, 40
+
+
+(traduzione italiana: Manu Controvento) (manu.puk@gmail.com)
