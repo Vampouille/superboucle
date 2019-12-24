@@ -33,19 +33,29 @@ class DeviceInput(DeviceOutput):
 
 
 class Device:
-    def __init__(self, mapping=None):
-        if mapping is None:
-            self.updateMapping({})
-        else:
-            self.updateMapping(mapping)
+    def __init__(self, mapping={}):
+        self.updateMapping(mapping)
 
     def updateMapping(self, new_mapping):
         self.note_to_coord = {}
+        for key in new_mapping.keys():
+            new_mapping[key] = self._formatMapping(new_mapping[key])
         self.mapping = new_mapping
         for y in range(len(self.start_stop)):
             line = self.start_stop[y]
             for x in range(len(line)):
-                self.note_to_coord[tuple(line[x])] = (x, y)
+                self.note_to_coord[line[x]] = (x, y)
+
+    def _formatMapping(self, value):
+        if type(value) is not list or not len(value):
+            return value
+        elif type(value[0]) is int:
+            return tuple(value)
+        elif type(value[0]) is list:
+            return [self._formatMapping(v) for v in value]
+        else:
+            print("Unknown structure...")
+            return value
 
     def generateNote(self, x, y, state):
         (msg_type, channel, pitch, velocity) = self.start_stop[y][x]
