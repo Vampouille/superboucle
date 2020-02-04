@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Superboucle
+GenericName=Looper
+GenericName[fr]=Boucleur
+Comment=Loop application synced with jack transport
+Comment[fr]=Application de boucle synchronisée avec le transport jack
+Type=Application
+Categories=Audio;AudioVideo;
+Exec=superboucle
+Terminal=false
+Icon=superboucle-icon
