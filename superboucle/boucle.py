@@ -7,9 +7,11 @@ import jack
 import sys, os.path
 from superboucle.clip import Clip, Song, load_song_from_file
 from superboucle.gui import Gui
+from superboucle.midi_transport import MidiTransport
 from PyQt5.QtWidgets import QApplication
 from queue import Empty
 import argparse
+
 
 
 parser = argparse.ArgumentParser(description='launch superboucle')
@@ -30,9 +32,13 @@ midi_in = client.midi_inports.register("input")
 midi_out = client.midi_outports.register("output")
 inL = client.inports.register("input_L")
 inR = client.inports.register("input_R")
+midi_transport = MidiTransport(client.samplerate, client.blocksize)
 
 app = QApplication(sys.argv)
 gui = Gui(song, client, app)
+
+# Debug
+gui.old_hex_data = "iuy"
 
 CLIP_TRANSITION = {Clip.STARTING: Clip.START,
                    Clip.STOPPING: Clip.STOP,
@@ -61,10 +67,24 @@ def my_callback(frames):
     else:
         for offset, indata in midi_in.incoming_midi_events():
             gui.queue_in.put(indata)
+            midi_transport.notify(client.last_frame_time, offset, bytes(indata))
+            hex_data = binascii.hexlify(indata).decode()
+            if hex_data != gui.old_hex_data:
+                #print('{}: 0x{}'.format(client.last_frame_time + offset, hex_data))
+                gui.old_hex_data = hex_data
         gui.readQueueIn.emit()
     midi_out.clear_buffer()
 
-    if ((state == 1
+    # Démarrage: 
+    # 0xfa Start
+    # 0xf8 Click
+    # ...
+    # 0xb27b00: All Sound Off
+    # 0xfc: Song Position Pointer
+    p = midi_transport.position(client.last_frame_time)
+    if p:
+        print("POS: %s" % round(p, 2))
+    if ((state == jack.ROLLING
          and 'beats_per_minute' in position
          and position['frame_rate'] != 0)):
         frame = position['frame']
