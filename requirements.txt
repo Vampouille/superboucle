@@ -1,3 +1,4 @@
 PyQt5>=5.11
 SoundFile>=0.8.0
 numpy>=1.16
+JACK-Client

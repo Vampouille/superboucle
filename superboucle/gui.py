@@ -189,7 +189,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.output.clear()
         self.output.addItems(song.outputsPorts)
         self.output.addItem(Gui.ADD_PORT_LABEL)
-        self.master_volume.setValue(song.volume * 256)
+        self.master_volume.setValue(int(song.volume * 256))
         self.bpm.setValue(song.bpm)
         self.beat_per_bar.setValue(song.beat_per_bar)
         for x in range(song.width):

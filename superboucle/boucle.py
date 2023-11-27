@@ -2,7 +2,8 @@
 
 """JACK client that prints all received MIDI events."""
 
-import superboucle.jack as jack
+import binascii
+import jack
 import sys, os.path
 from superboucle.clip import Clip, Song, load_song_from_file
 from superboucle.gui import Gui
@@ -185,8 +186,6 @@ def my_callback(frames):
             i += 1
     except Empty:
         pass
-
-    return jack.CALL_AGAIN
 
 
 client.set_process_callback(my_callback)
