@@ -1,5 +1,5 @@
 #UI = $(for line in `find -name "*_ui.ui" `; do ; echo -n "${line/%_ui.ui/_ui.py} "; done;)
-UI = superboucle/gui_ui.py superboucle/cell_ui.py superboucle/learn_ui.py superboucle/learn_cell_ui.py superboucle/device_manager_ui.py superboucle/new_song_ui.py superboucle/add_clip_ui.py superboucle/playlist_ui.py superboucle/port_manager_ui.py superboucle/add_port_ui.py superboucle/scene_manager_ui.py superboucle/add_scene_ui.py
+UI = superboucle/gui_ui.py superboucle/cell_ui.py superboucle/learn_ui.py superboucle/learn_cell_ui.py superboucle/device_manager_ui.py superboucle/new_song_ui.py superboucle/add_clip_ui.py superboucle/playlist_ui.py superboucle/port_manager_ui.py superboucle/add_port_ui.py superboucle/scene_manager_ui.py superboucle/add_scene_ui.py superboucle/edit_clip_ui.py
 
 dep : $(UI) superboucle/gui_rc.py
 	echo $$UI

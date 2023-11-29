@@ -70,7 +70,7 @@ class Clip():
                          5: "RECORDING"}
 
     def __init__(self, audio_file=None, name='',
-                 volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=1,
+                 volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=8,
                  output=DEFAULT_OUTPUT, mute_group=0):
 
         if name is '' and audio_file:
@@ -83,6 +83,7 @@ class Clip():
         self.beat_diviser = beat_diviser
         self.state = Clip.STOP
         self.audio_file = audio_file
+        # Last bytes played for this clip
         self.last_offset = 0
         self.output = output
         self.mute_group = mute_group
@@ -209,11 +210,10 @@ class Song():
             raise Exception("Index out of range : {0} + {1} > {2}".
                             format(length, offset, self.length(clip)))
         if self.channels(clip) == 1:
-            return (self.data[clip.audio_file][offset:offset + length]
-                    * clip.volume)
+            res = np.squeeze(self.data[clip.audio_file][offset:offset + length])
         else:
-            return (self.data[clip.audio_file][offset:offset + length, channel]
-                    * clip.volume)
+            res = np.squeeze(self.data[clip.audio_file][offset:offset + length, channel])
+        return res * clip.volume
 
     def writeData(self, clip, channel, offset, data):
         if clip.audio_file is None:

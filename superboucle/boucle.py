@@ -5,6 +5,7 @@
 import binascii
 import jack
 import sys, os.path
+import numpy as np
 from superboucle.clip import Clip, Song, load_song_from_file
 from superboucle.gui import Gui
 from superboucle.midi_transport import MidiTransport
@@ -123,13 +124,14 @@ def my_callback(frames):
                 # is there enough audio data ?
                 if clip_offset < song.length(clip):
                     length = min(song.length(clip) - clip_offset, frames)
-                    for ch_id, buffer in zip(range(len(clip_buffers)),
-                                             clip_buffers):
+                    for ch_id, buffer in enumerate(clip_buffers):
                         data = song.getData(clip,
                                             ch_id % song.channels(clip),
                                             clip_offset,
                                             length)
-                        buffer[:length] += data
+                        # buffer[:length] += data
+                        print("Buffer: %s [%s:%s] data: %s" % (buffer.shape, 0, len(data), data.shape))
+                        np.add.at(buffer, slice(0, len(data)), data)
 
                     clip.last_offset = clip_offset
                     # print("buffer[:{0}] = sample[{1}:{2}]".
@@ -160,13 +162,16 @@ def my_callback(frames):
                                      or clip.state == Clip.STARTING):
                 length = min(song.length(clip), blocksize - next_clip_offset)
                 if length:
-                    for ch_id, buffer in zip(range(len(clip_buffers)),
-                                             clip_buffers):
+                    for ch_id, buffer in enumerate(clip_buffers):
                         data = song.getData(clip,
                                             ch_id % song.channels(clip),
                                             0,
                                             length)
-                        buffer[next_clip_offset:] += data
+                        # buffer[next_clip_offset:] += data
+                        s_start = next_clip_offset
+                        s_stop = s_start + len(data)
+                        print("Buffer: %s [%s:%s] data: %s" % (buffer.shape, s_start, s_stop, data.shape))
+                        np.add.at(buffer, slice(s_start, s_stop), data)
 
                 clip.last_offset = 0
                 # print("buffer[{0}:] = sample[:{1}]".

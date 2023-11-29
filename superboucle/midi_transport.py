@@ -50,5 +50,4 @@ class MidiTransport:
     def position(self, pos):
         if self.state == STOPPED or self.ticks is None or self.last_tick is None or self.period is None:
             return None
-        print("TICKS/24: %s" % (self.ticks / 24))
         return (float(pos - self.last_tick) / (24 * self.period)) + (float(self.ticks) / 24)

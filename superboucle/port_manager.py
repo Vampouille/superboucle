@@ -12,6 +12,7 @@ class PortManager(QDialog, Ui_Dialog):
         self.setupUi(self)
         self.backup_indixes = []
         self.updateList()
+        self.gui.registerPortListUpdateCallback(self.updateList)
         self.removePortBtn.clicked.connect(self.onRemove)
         self.addPortBtn.clicked.connect(self.onAddPort)
         self.loadPortlistBtn.clicked.connect(self.onLoadPortlist)
@@ -22,16 +23,24 @@ class PortManager(QDialog, Ui_Dialog):
         self.gui.updatePorts.connect(self.updateList)
         self.show()
 
+    def onAddPort(self):
+        AddPortDialog(self, self.addPortOkCallback, self.addPortCancelCallback)
+
     def updateList(self):
         self.portList.clear()
-        self.backup_indixes = list(self.gui.song.outputsPorts)
-        for name in self.backup_indixes:
-            this_item = QListWidgetItem(name)
+        for port in self.gui.song.outputsPorts:
+            this_item = QListWidgetItem(port)
             this_item.setFlags(this_item.flags())
             self.portList.addItem(this_item)
 
-    def onAddPort(self):
-        AddPortDialog(self.gui, callback=self.updateList)
+    def addPortOkCallback(self, name):
+        self.gui.song.outputsPorts.add(name)
+        self.gui.updateJackPorts(self.gui.song)
+        self.gui.portListUpdate()
+
+    def addPortCancelCallback(self):
+        self.output.setCurrentText(self.clip.output)
+
 
     def onRemove(self):
         currentItem = self.portList.currentItem()
