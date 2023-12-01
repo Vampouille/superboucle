@@ -112,6 +112,9 @@ background-color: rgb(175, 178, 178);}</string>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
+         <property name="lineWidth">
+          <number>0</number>
+         </property>
          <widget class="QSuperDial" name="master_volume">
           <property name="geometry">
            <rect>
@@ -135,7 +138,7 @@ color: black;</string>
            <number>256</number>
           </property>
          </widget>
-         <widget class="QLabel" name="label_6">
+         <widget class="QLabel" name="master_label">
           <property name="geometry">
            <rect>
             <x>10</x>
@@ -167,7 +170,7 @@ color: black;</string>
           <property name="geometry">
            <rect>
             <x>55</x>
-            <y>150</y>
+            <y>180</y>
             <width>36</width>
             <height>30</height>
            </rect>
@@ -195,7 +198,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
           <property name="geometry">
            <rect>
             <x>100</x>
-            <y>150</y>
+            <y>180</y>
             <width>36</width>
             <height>30</height>
            </rect>
@@ -223,7 +226,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>150</y>
+            <y>180</y>
             <width>36</width>
             <height>30</height>
            </rect>
@@ -280,7 +283,7 @@ color: rgb(0, 255, 0);</string>
           <property name="geometry">
            <rect>
             <x>190</x>
-            <y>150</y>
+            <y>180</y>
             <width>36</width>
             <height>30</height>
            </rect>
@@ -308,9 +311,9 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>190</y>
+            <y>220</y>
             <width>214</width>
-            <height>113</height>
+            <height>91</height>
            </rect>
           </property>
           <layout class="QFormLayout" name="formLayout_2">
@@ -419,7 +422,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
           <property name="geometry">
            <rect>
             <x>145</x>
-            <y>150</y>
+            <y>180</y>
             <width>36</width>
             <height>30</height>
            </rect>
@@ -442,6 +445,157 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
             <height>24</height>
            </size>
           </property>
+         </widget>
+         <widget class="QLabel" name="jack_transport_label">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>150</y>
+            <width>121</width>
+            <height>20</height>
+           </rect>
+          </property>
+          <property name="font">
+           <font>
+            <family>Lato</family>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Jack Transport</string>
+          </property>
+         </widget>
+         <widget class="QFrame" name="frame">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>320</y>
+            <width>181</width>
+            <height>81</height>
+           </rect>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <property name="lineWidth">
+           <number>0</number>
+          </property>
+          <widget class="QLabel" name="sync_source_label">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>10</y>
+             <width>90</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <family>Lato</family>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Sync Source:</string>
+           </property>
+          </widget>
+          <widget class="QRadioButton" name="sync_auto">
+           <property name="geometry">
+            <rect>
+             <x>110</x>
+             <y>10</y>
+             <width>58</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>Lato</family>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Auto</string>
+           </property>
+          </widget>
+          <widget class="QRadioButton" name="sync_jack">
+           <property name="geometry">
+            <rect>
+             <x>110</x>
+             <y>50</y>
+             <width>54</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>Lato</family>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Jack</string>
+           </property>
+          </widget>
+          <widget class="QRadioButton" name="sync_midi">
+           <property name="geometry">
+            <rect>
+             <x>110</x>
+             <y>30</y>
+             <width>59</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>Lato</family>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>MIDI</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="sync_description">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>40</y>
+             <width>91</width>
+             <height>31</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <family>Lato</family>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
          </widget>
         </widget>
        </widget>

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>216</width>
-    <height>486</height>
+    <height>567</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
      <x>0</x>
      <y>0</y>
      <width>216</width>
-     <height>486</height>
+     <height>541</height>
     </rect>
    </property>
    <property name="styleSheet">
@@ -64,8 +64,8 @@
    <widget class="QLabel" name="label_5">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>50</y>
+      <x>20</x>
+      <y>35</y>
       <width>71</width>
       <height>19</height>
      </rect>
@@ -78,11 +78,14 @@
       <bold>true</bold>
      </font>
     </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
     <property name="text">
      <string>Volume</string>
     </property>
     <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
    <widget class="QSuperDial" name="clip_volume">
@@ -91,8 +94,8 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>90</x>
-      <y>35</y>
+      <x>30</x>
+      <y>55</y>
       <width>51</width>
       <height>51</height>
      </rect>
@@ -111,8 +114,8 @@ color: black;</string>
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>105</y>
+      <x>100</x>
+      <y>35</y>
       <width>111</width>
       <height>19</height>
      </rect>
@@ -128,12 +131,15 @@ color: black;</string>
     <property name="text">
      <string>Beat Amount</string>
     </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
    </widget>
    <widget class="QSpinBox" name="beat_diviser">
     <property name="geometry">
      <rect>
-      <x>130</x>
-      <y>95</y>
+      <x>120</x>
+      <y>60</y>
       <width>71</width>
       <height>41</height>
      </rect>
@@ -150,32 +156,11 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
      <number>999</number>
     </property>
    </widget>
-   <widget class="QLabel" name="clip_description">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>370</y>
-      <width>196</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">color: white;
-background-color: black;
-border-radius: 2px;</string>
-    </property>
-    <property name="text">
-     <string>Description</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-    </property>
-   </widget>
    <widget class="QPushButton" name="deleteButton">
     <property name="geometry">
      <rect>
       <x>99</x>
-      <y>450</y>
+      <y>500</y>
       <width>101</width>
       <height>23</height>
      </rect>
@@ -191,7 +176,7 @@ border-radius: 2px;</string>
     <property name="geometry">
      <rect>
       <x>100</x>
-      <y>420</y>
+      <y>470</y>
       <width>101</width>
       <height>23</height>
      </rect>
@@ -207,7 +192,7 @@ border-radius: 2px;</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>450</y>
+      <y>500</y>
       <width>80</width>
       <height>23</height>
      </rect>
@@ -223,7 +208,7 @@ border-radius: 2px;</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>420</y>
+      <y>470</y>
       <width>81</width>
       <height>23</height>
      </rect>
@@ -239,7 +224,7 @@ border-radius: 2px;</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>310</y>
+      <y>320</y>
       <width>191</width>
       <height>51</height>
      </rect>
@@ -270,7 +255,7 @@ border-radius: 2px;</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>140</y>
+      <y>120</y>
       <width>191</width>
       <height>91</height>
      </rect>
@@ -290,7 +275,7 @@ border-radius: 2px;</string>
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>30</y>
+       <y>27</y>
        <width>161</width>
        <height>74</height>
       </rect>
@@ -354,7 +339,7 @@ border-radius: 2px;</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>240</y>
+      <y>390</y>
       <width>191</width>
       <height>61</height>
      </rect>
@@ -378,6 +363,102 @@ border-radius: 2px;</string>
        <width>141</width>
        <height>23</height>
       </rect>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_4">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>230</y>
+      <width>191</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Lato</family>
+      <pointsize>11</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="title">
+     <string>Stretch Mode</string>
+    </property>
+    <widget class="QRadioButton" name="stretch_mode_resample">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>48</y>
+       <width>91</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <family>Lato</family>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Resample</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="stretch_mode_timestretch">
+     <property name="geometry">
+      <rect>
+       <x>97</x>
+       <y>48</y>
+       <width>101</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <family>Lato</family>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>TimeStretch</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="stretch_mode_disable">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>23</y>
+       <width>91</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <family>Lato</family>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Disable</string>
      </property>
     </widget>
    </widget>
