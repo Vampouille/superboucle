@@ -231,7 +231,8 @@ class Gui(QMainWindow, Ui_MainWindow):
             bps = position['beats_per_minute'] / 60
             fps = position['frame_rate']
             size = int((1 / bps) * clip.beat_diviser * fps)
-            self.song.init_record_buffer(clip, 2, size, fps)
+            beat_sample = fps / bps
+            self.song.init_record_buffer(clip, 2, size, fps, beat_sample)
             # set frame offset based on jack block size
             clip.frame_offset = self._jack_client.blocksize
             clip.state = Clip.PREPARE_RECORD

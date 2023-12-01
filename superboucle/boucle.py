@@ -101,6 +101,9 @@ def my_callback(frames):
 
         for clip in song.clips:
 
+            if clip.audio_file is None:
+                continue
+
             # get pointer to the buffer where to write clip data (ex: Main_R, Main_L)
             my_format = Song.CHANNEL_NAME_PATTERN.format
             clip_buffers = [output_buffers[my_format(port=clip.output,
@@ -146,23 +149,19 @@ def my_callback(frames):
 
             if clip.state == Clip.RECORDING:
                 if next_clip_offset:
-                    song.writeData(clip,
-                                   0,
-                                   clip_offset,
-                                   inL_buffer[:next_clip_offset])
-                    song.writeData(clip,
-                                   1,
-                                   clip_offset,
-                                   inR_buffer[:next_clip_offset])
+                    clip.writeSamples(0,
+                                      inL_buffer[:next_clip_offset],
+                                      start_pos=clip_offset)
+                    clip.writeSamples(1,
+                                      inL_buffer[:next_clip_offset],
+                                      start_pos=clip_offset)
                 else:
-                    song.writeData(clip,
-                                   0,
-                                   clip_offset,
-                                   inL_buffer)
-                    song.writeData(clip,
-                                   1,
-                                   clip_offset,
-                                   inR_buffer)
+                    clip.writeSamples(0,
+                                      inL_buffer,
+                                      start_pos=clip_offset)
+                    clip.writeSamples(1,
+                                      inL_buffer,
+                                      start_pos=clip_offset)
                 clip.last_offset = clip_offset
 
             if next_clip_offset and (clip.state == Clip.START
@@ -184,14 +183,8 @@ def my_callback(frames):
                 # format(next_clip_offset, length))
 
             if next_clip_offset and clip.state == Clip.PREPARE_RECORD:
-                song.writeData(clip,
-                               0,
-                               0,
-                               inL_buffer[next_clip_offset:])
-                song.writeData(clip,
-                               1,
-                               0,
-                               inR_buffer[next_clip_offset:])
+                clip.writeSamples(0, inL_buffer[next_clip_offset:])
+                clip.writeSamples(1, inR_buffer[next_clip_offset:])
 
             # starting or stopping clip
             if clip_offset == 0 or next_clip_offset:

@@ -96,11 +96,14 @@ class EditClipDialog(QDialog, Ui_Dialog):
             self.song.data[audio_file] = self.song.data[audio_file][::-1]
 
     def onNormalizeClip(self):
-        if self.clip and self.clip.audio_file:
-            audio_file = self.clip.audio_file
-            absolute_val = np.absolute(self.song.data[audio_file])
-            current_level = np.ndarray.max(absolute_val)
-            self.song.data[audio_file][:] *= 1 / current_level
+        c = self.clip
+        if c:
+            if c.audio_file:
+                c.audio_file.normalize()
+            if c.audio_file_a:
+                c.audio_file_a.normalize()
+            if c.audio_file_b:
+                c.audio_file_b.normalize()
 
     def onExportClip(self):
         if self.clip and self.clip.audio_file:

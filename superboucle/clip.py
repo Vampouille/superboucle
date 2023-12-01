@@ -78,6 +78,13 @@ class WaveForm():
         if move_head:
             self.last_offset = e
         return res
+    
+    def writeSamples(self, channel, data, start_pos=None, move_head=True):
+        s = self.last_offset + 1 if start_pos is None else start_pos
+        e = min(self.length(), s + len(data))
+        self.data[s:e,channel % self.channels()] = data[0:e - s]
+        if move_head:
+            self.last_offset = e
 
     def resample(self, new_beat_sample):
         return WaveForm(resample(self.data, self.sr, self.sr * (new_beat_sample / self.beat_sample)), self.sr, new_beat_sample)
@@ -93,6 +100,12 @@ class WaveForm():
 
     def channels(self):
         return self.data.shape[1]
+    
+    def normalize(self):
+        absolute_val = np.absolute(self.data)
+        current_level = np.ndarray.max(absolute_val)
+        self.data[:] *= 1 / current_level
+
 
 
 
@@ -137,13 +150,20 @@ class Clip():
         self.state = Clip.STOP
         # Original audio file
         self.audio_file = audio_file
-        self.audio_file_a = audio_file.copy()
-        self.audio_file_b = None
         # set the audio_file attribute to use :
+        # 0: self.audio_file
         # 1: self.audio_file_a
         # 2: self.audio_file_b
-        self.audio_file_id = 1
-        self.audio_file_next_id = 1
+        self.audio_file_id = None
+        self.audio_file_a = None
+        self.audio_file_b = None
+        if stretch_mode == 'disable':
+            # Just use the original wav
+            self.audio_file_id = 0
+        elif self.audio_file is not None:
+            self.audio_file_a = self.audio_file.copy()
+            self.audio_file_id = 1
+        self.audio_file_b = None
         # Last bytes played for this clip
         self.last_offset = 0
         # position relative to the clip between 0 and 1
@@ -170,7 +190,9 @@ class Clip():
             else self.state
 
     def getAudio(self):
-        if self.audio_file_id == 1:
+        if self.audio_file_id == 0:
+            return self.audio_file
+        elif self.audio_file_id == 1:
             return self.audio_file_a
         elif self.audio_file_id == 2:
             return self.audio_file_b
@@ -187,7 +209,10 @@ class Clip():
             return self.audio_file.resample(new_beat_sample)
 
     def changeBeatSample(self, new_beat_sample):
-        if self.audio_file_id == 1:
+        if self.audio_file_id == 0:
+            self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
+            self.audio_file_next_id = 1
+        elif self.audio_file_id == 1:
             self.audio_file_b = self.generateNewWaveForm(new_beat_sample)
             self.audio_file_next_id = 2
         elif self.audio_file_id == 2:
@@ -202,6 +227,12 @@ class Clip():
                                           fade_out,
                                           move_head)
         return data * self.volume
+
+    def writeSamples(self, channel, data, start_pos=None):
+        if self.audio_file is None:
+            raise Exception("No audio buffer available")
+
+        self.getAudio().writeSamples(channel, data, start_pos)
 
     def rewind(self):
         self.getAudio().rewind()
@@ -323,40 +354,25 @@ class Song():
     #        res = np.squeeze(self.data[clip.audio_file][offset:offset + length, channel])
     #    return res * clip.volume
 
-    def writeData(self, clip, channel, offset, data):
-        if clip.audio_file is None:
-            raise Exception("No audio buffer available")
+    #def writeData(self, clip, channel, offset, data):
+    #    if clip.audio_file is None:
+    #        raise Exception("No audio buffer available")
 
-        if offset + data.shape[0] > self.length(clip):
-            data = data[0:data.shape[0] - 2]
-            # raise Exception(("attempt to write data outside of buffer"
-            #                 ": %s + %s > %s ")
-            #                % (offset, data.shape[0], self.length(clip)))
+    #    if offset + data.shape[0] > self.length(clip):
+    #        data = data[0:data.shape[0] - 2]
+    #        # raise Exception(("attempt to write data outside of buffer"
+    #        #                 ": %s + %s > %s ")
+    #        #                % (offset, data.shape[0], self.length(clip)))
 
-        self.data[clip.audio_file][offset:offset + data.shape[0],
-        channel] = data
-        # print("Write %s bytes at offset %s to channel %s" % (data.shape[0],
-        # offset,
-        # channel))
+    #    self.data[clip.audio_file][offset:offset + data.shape[0],
+    #    channel] = data
+    #    # print("Write %s bytes at offset %s to channel %s" % (data.shape[0],
+    #    # offset,
+    #    # channel))
 
-    def init_record_buffer(self, clip, channel, size, samplerate):
-        i = 0
-        audio_file_base = basename(clip.name) or 'audio'
+    def init_record_buffer(self, clip, channel, size, samplerate, beat_sample):
+        clip.audio_file = WaveForm(np.zeros((size, channel), dtype=np.float32), samplerate, beat_sample)
 
-        # remove old audio if not used
-        if clip.audio_file is not None:
-            current_audio_file = clip.audio_file
-            clip.audio_file = None
-            if current_audio_file not in [c.audio_file for c in self.clips]:
-                del self.data[current_audio_file]
-
-        while '%s-%02d.wav' % (audio_file_base, i) in self.data:
-            i += 1
-        audio_file = '%s-%02d.wav' % (audio_file_base, i)
-        self.data[audio_file] = np.zeros((size, channel),
-                                         dtype=np.float32)
-        self.samplerate[audio_file] = samplerate
-        clip.audio_file = audio_file
 
     def save(self):
         if self.file_name:
