@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QWidget
 from superboucle.cell_ui import Ui_Cell
-from superboucle.clip import basename, Clip
+from superboucle.clip import WaveForm, basename, Clip
 import numpy as np
 import soundfile as sf
 
@@ -100,11 +100,17 @@ class Cell(QWidget, Ui_Cell):
                 i += 1
             wav_id = "%s-%02d" % (wav_id, i)
 
-        data, samplerate = sf.read(audio_file, dtype=np.float32)
+        data, samplerate = sf.read(audio_file, dtype=np.float32, always_2d=True)
         self.gui.song.data[wav_id] = data
         self.gui.song.samplerate[wav_id] = samplerate
 
-        return Clip(basename(wav_id))
+        wf = WaveForm(data,
+                      samplerate,
+                      None)
+
+        audio_name = audio_file.split('/')[-1].split('.')[0]
+
+        return Clip(wf, audio_name)
 
     def setColor(self, state):
         self.setStyleSheet(Cell.STATE_COLORS[state])

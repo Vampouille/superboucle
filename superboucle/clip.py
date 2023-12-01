@@ -5,6 +5,8 @@ import configparser, json
 from zipfile import ZipFile
 from io import BytesIO, StringIO, TextIOWrapper
 from collections import OrderedDict as OrderedDict_
+from librosa import resample
+from pyrubberband import time_stretch
 import unicodedata
 
 
@@ -39,6 +41,60 @@ def verify_ext(file, ext):
 class Communicate(QtCore.QObject):
     updateUI = QtCore.pyqtSignal()
 
+class WaveForm():
+    def __init__(self, data, sr, beat_sample):
+        self.data = data
+        self.sr = sr
+        # How many sample per beat
+        self.beat_sample = beat_sample
+        # last sample played
+        self.last_offset = -1
+
+    def rewind(self):
+        self.last_offset = -1
+
+    def getSamples(self, channel, length, start_pos=None, fade_in=0, fade_out=0, move_head=True):
+        # Normalize channel
+        channel %= self.channels()
+
+        if start_pos is not None:
+            s = start_pos
+            e = start_pos + length
+        else:
+            s = self.last_offset + 1
+            e = self.last_offset + 1 + length
+
+        # Don't try to extract more sample than available
+        e = min(e, self.length() - 1)
+        res = self.data[s:e, channel]
+        if fade_in > 0:
+            fade_in = min(fade_in, len(res))
+            fade_factor = np.linspace(0, 1, fade_in)
+            res[:fade_in] *= fade_factor
+        if fade_out > 0:
+            fade_out = min(fade_out, len(res))
+            fade_factor = np.linspace(1, 0, fade_out)
+            res[len(res) - fade_out:] *= fade_factor
+        if move_head:
+            self.last_offset = e
+        return res
+
+    def resample(self, new_beat_sample):
+        return WaveForm(resample(self.data, self.sr, self.sr * (new_beat_sample / self.beat_sample)), self.sr, new_beat_sample)
+
+    def timeStretch(self, new_beat_sample):
+        return WaveForm(time_stretch(self.data, self.sr, new_beat_sample / self.beat_sample), self.sr, new_beat_sample)
+
+    def copy(self):
+        return WaveForm(np.copy(self.data), self.sr, self.beat_sample)
+
+    def length(self):
+        return self.data.shape[0]
+
+    def channels(self):
+        return self.data.shape[1]
+
+
 
 class Clip():
     DEFAULT_OUTPUT = "Main"
@@ -71,22 +127,37 @@ class Clip():
 
     def __init__(self, audio_file=None, name='',
                  volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=8,
-                 output=DEFAULT_OUTPUT, mute_group=0):
+                 stretch_mode='disable', output=DEFAULT_OUTPUT, mute_group=0):
 
-        if name is '' and audio_file:
-            self.name = audio_file
-        else:
-            self.name = name
+        self.name = name
         self.volume = volume
         self.frame_offset = frame_offset
         self.beat_offset = beat_offset
         self.beat_diviser = beat_diviser
         self.state = Clip.STOP
+        # Original audio file
         self.audio_file = audio_file
+        self.audio_file_a = audio_file.copy()
+        self.audio_file_b = None
+        # set the audio_file attribute to use :
+        # 1: self.audio_file_a
+        # 2: self.audio_file_b
+        self.audio_file_id = 1
+        self.audio_file_next_id = 1
         # Last bytes played for this clip
         self.last_offset = 0
+        # position relative to the clip between 0 and 1
+        self.pos = 0
+        self.stretch_mode = stretch_mode
         self.output = output
         self.mute_group = mute_group
+        if self.audio_file is None:
+            self.channels = 0
+        else:
+            self.channels = self.audio_file.channels()
+
+    def channels(self,):
+        '''Return channel count for specified clip'''
 
     def stop(self):
         self.state = Clip.STOPPING if self.state == Clip.START \
@@ -98,6 +169,43 @@ class Clip():
             else Clip.START if self.state == Clip.STOPPING \
             else self.state
 
+    def getAudio(self):
+        if self.audio_file_id == 1:
+            return self.audio_file_a
+        elif self.audio_file_id == 2:
+            return self.audio_file_b
+        else:
+            return None
+
+    def getBeatSample(self):
+        return self.getAudio().beat_sample
+
+    def generateNewWaveForm(new_beat_sample):
+        if self.stretch_mode == "time":
+            return self.audio_file.timeStretch(new_beat_sample)
+        elif self.stretch_mode == "resample":
+            return self.audio_file.resample(new_beat_sample)
+
+    def changeBeatSample(self, new_beat_sample):
+        if self.audio_file_id == 1:
+            self.audio_file_b = self.generateNewWaveForm(new_beat_sample)
+            self.audio_file_next_id = 2
+        elif self.audio_file_id == 2:
+            self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
+            self.audio_file_next_id = 1
+
+    def getSamples(self, channel, length, start_pos=None, fade_in=0, fade_out=0, move_head=True):
+        data = self.getAudio().getSamples(channel,
+                                          length,
+                                          start_pos,
+                                          fade_in,
+                                          fade_out,
+                                          move_head)
+        return data * self.volume
+
+    def rewind(self):
+        self.getAudio().rewind()
+    
 
 class Song():
     CHANNEL_NAMES = ["L", "R"]
@@ -198,22 +306,22 @@ class Song():
         else:
             return self.data[clip.audio_file].shape[0]
 
-    def getData(self, clip, channel, offset, length):
-        if clip.audio_file is None:
-            return []
+    #def getData(self, clip, channel, offset, length):
+    #    if clip.audio_file is None:
+    #        return []
 
-        channel %= self.channels(clip)
-        if offset > (self.length(clip) - 1) or offset < 0 or length < 0:
-            raise Exception("Invalid length or offset: {0} {1} {2}".
-                            format(length, offset, self.length(clip)))
-        if (length + offset) > self.length(clip):
-            raise Exception("Index out of range : {0} + {1} > {2}".
-                            format(length, offset, self.length(clip)))
-        if self.channels(clip) == 1:
-            res = np.squeeze(self.data[clip.audio_file][offset:offset + length])
-        else:
-            res = np.squeeze(self.data[clip.audio_file][offset:offset + length, channel])
-        return res * clip.volume
+    #    channel %= self.channels(clip)
+    #    if offset > (self.length(clip) - 1) or offset < 0 or length < 0:
+    #        raise Exception("Invalid length or offset: {0} {1} {2}".
+    #                        format(length, offset, self.length(clip)))
+    #    if (length + offset) > self.length(clip):
+    #        raise Exception("Index out of range : {0} + {1} > {2}".
+    #                        format(length, offset, self.length(clip)))
+    #    if self.channels(clip) == 1:
+    #        res = np.squeeze(self.data[clip.audio_file][offset:offset + length])
+    #    else:
+    #        res = np.squeeze(self.data[clip.audio_file][offset:offset + length, channel])
+    #    return res * clip.volume
 
     def writeData(self, clip, channel, offset, data):
         if clip.audio_file is None:
@@ -270,32 +378,32 @@ class Song():
             if self.initial_scene is not None:
                 song_file['DEFAULT']['initial_scene'] = self.initial_scene
             for clip in self.clips:
+                section = "%s-%s" % (clip.x, clip.y)
+                # Write clip metadata
                 clip_file = {'name': clip.name,
                              'volume': str(clip.volume),
                              'frame_offset': str(clip.frame_offset),
                              'beat_offset': str(clip.beat_offset),
                              'beat_diviser': str(clip.beat_diviser),
+                             'beat_sample': str(clip.audio_file.beat_sample),
                              'output': clip.output,
-                             'mute_group': str(clip.mute_group),
-                             'audio_file': basename(
-                                 clip.audio_file)}
-                if clip_file['audio_file'] is None:
-                    clip_file['audio_file'] = 'no-sound'
-                song_file["%s/%s" % (clip.x, clip.y)] = clip_file
+                             'mute_group': str(clip.mute_group)
+                             }
+                song_file[section] = clip_file
 
+                # Write clip soundfile to the archive
+                buffer = BytesIO()
+                sf.write(buffer, clip.audio_file.data,
+                         clip.audio_file.sr,
+                         subtype=sf.default_subtype('WAV'),
+                         format='WAV')
+                zip.writestr("%s.wav" % section, buffer.getvalue())
+
+
+            # Store metadata.ini in archive
             buffer = StringIO()
             song_file.write(buffer)
             zip.writestr('metadata.ini', buffer.getvalue())
-
-            for member in self.data:
-                buffer = BytesIO()
-                sf.write(buffer, self.data[member],
-                         self.samplerate[member],
-                         subtype=sf.default_subtype('WAV'),
-                         format='WAV')
-                zip.writestr(member, buffer.getvalue())
-
-        self.file_name = file
 
 
 def load_song_from_file(file):
@@ -319,36 +427,36 @@ def load_song_from_file(file):
             res.scenes = jsDecoder.decode(scenes)
             res.initial_scene = parser['DEFAULT'].get('initial_scene', None)
 
-            # Loading wavs
-            for member in zip.namelist():
-                if member == 'metadata.ini':
+            # loading clips
+            for section_label in parser:
+                if section_label == 'DEFAULT':
                     continue
+                x, y = section_label.split('-')
+                x, y = int(x), int(y)
+
+                # Extract soundfile from archive
+                wav_res = zip.open("%s.wav" % section_label)
                 buffer = BytesIO()
-                wav_res = zip.open(member)
                 buffer.write(wav_res.read())
                 buffer.seek(0)
                 data, samplerate = sf.read(buffer, dtype=np.float32, always_2d=True)
-                res.data[member] = data
-                res.samplerate[member] = samplerate
 
-            # loading clips
-            for section in parser:
-                if section == 'DEFAULT':
-                    continue
-                x, y = section.split('/')
-                x, y = int(x), int(y)
-                if parser[section]['audio_file'] == 'no-sound':
-                    audio_file = None
-                else:
-                    audio_file = parser[section]['audio_file']
-                clip = Clip(audio_file,
-                            parser[section]['name'],
-                            parser[section].getfloat('volume', 1.0),
-                            parser[section].getint('frame_offset', 0),
-                            parser[section].getfloat('beat_offset', 0.0),
-                            parser[section].getint('beat_diviser'),
-                            parser[section].get('output', Clip.DEFAULT_OUTPUT),
-                            parser[section].getint('mute_group', 0))
+                section = parser[section_label]
+                # Build WaveForm object
+                beat_sample = None if section.get('beat_sample') == 'None' else int(section.get('beat_sample'))
+                audio_file = WaveForm(data,
+                                      samplerate,
+                                      beat_sample)
+
+                clip = Clip(audio_file=audio_file,
+                            name=section['name'],
+                            volume=section.getfloat('volume', 1.0),
+                            frame_offset=section.getint('frame_offset', 0),
+                            beat_offset=section.getfloat('beat_offset', 0.0),
+                            beat_diviser=section.getint('beat_diviser'),
+                            stretch_mode=section.get('stretch_mode','disable'),
+                            output=section.get('output', Clip.DEFAULT_OUTPUT),
+                            mute_group=section.getint('mute_group', 0))
                 res.addClip(clip, x, y)
 
     return res

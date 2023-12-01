@@ -556,9 +556,9 @@ class Gui(QMainWindow, Ui_MainWindow):
         for line in self.btn_matrix:
             for btn in line:
                 if btn.clip and btn.clip.audio_file:
-                    value = ((btn.clip.last_offset
-                              / self.song.length(btn.clip))
-                             * 97)
+                    sr = pos['frame_rate']
+
+                    value = btn.clip.pos * 97
                     btn.clip_position.setValue(int(value))
                     btn.clip_position.repaint()
 
@@ -605,7 +605,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         (bar, beat) = divmod(beats, int(round(pos.beats_per_bar, 0)))
         (pos.bar, pos.beat) = (bar + 1, beat + 1)
         return None
-    
+
     def registerPortListUpdateCallback(self, callback):
         self.portListCallback.add(callback)
 

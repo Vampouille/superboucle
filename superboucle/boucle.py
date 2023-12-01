@@ -8,7 +8,7 @@ import sys, os.path
 import numpy as np
 from superboucle.clip import Clip, Song, load_song_from_file
 from superboucle.gui import Gui
-from superboucle.midi_transport import MidiTransport
+from superboucle.midi_transport import MidiTransport, STOPPED, RUNNING
 from PyQt5.QtWidgets import QApplication
 from queue import Empty
 import argparse
@@ -33,10 +33,9 @@ midi_in = client.midi_inports.register("input")
 midi_out = client.midi_outports.register("output")
 inL = client.inports.register("input_L")
 inR = client.inports.register("input_R")
-midi_transport = MidiTransport(client.samplerate, client.blocksize)
-
 app = QApplication(sys.argv)
 gui = Gui(song, client, app)
+midi_transport = MidiTransport(gui, client.samplerate, client.blocksize)
 
 # Debug
 gui.old_hex_data = "iuy"
@@ -61,6 +60,10 @@ def my_callback(frames):
         b[:] = 0
 
     # check midi in
+
+    # beat_offset: number of sample since beginning of buffer to the beat
+    # None for no beat in buffer
+    beat_offset = None
     if gui.is_learn_device_mode:
         for offset, indata in midi_in.incoming_midi_events():
             gui.learn_device.queue.put(indata)
@@ -68,21 +71,22 @@ def my_callback(frames):
     else:
         for offset, indata in midi_in.incoming_midi_events():
             gui.queue_in.put(indata)
-            midi_transport.notify(client.last_frame_time, offset, bytes(indata))
-            hex_data = binascii.hexlify(indata).decode()
-            if hex_data != gui.old_hex_data:
-                #print('{}: 0x{}'.format(client.last_frame_time + offset, hex_data))
-                gui.old_hex_data = hex_data
+            if midi_transport.notify(client.last_frame_time + offset, bytes(indata)):
+                beat_offset = offset
+            #hex_data = binascii.hexlify(indata).decode()
+            #if hex_data != gui.old_hex_data:
+            #    #print('{}: 0x{}'.format(client.last_frame_time + offset, hex_data))
+            #    gui.old_hex_data = hex_data
         gui.readQueueIn.emit()
     midi_out.clear_buffer()
 
-    # Démarrage: 
+    # Démarrage:
     # 0xfa Start
     # 0xf8 Click
     # ...
     # 0xb27b00: All Sound Off
     # 0xfc: Song Position Pointer
-    p = midi_transport.position(client.last_frame_time)
+    p = midi_transport.position_beats(client.last_frame_time)
     if p:
         print("POS: %s" % round(p, 2))
     if ((state == jack.ROLLING
@@ -93,17 +97,18 @@ def my_callback(frames):
         fpm = fps * 60
         bpm = position['beats_per_minute']
         blocksize = client.blocksize
+        frame_per_beat = fpm / bpm
 
         for clip in song.clips:
 
+            # get pointer to the buffer where to write clip data (ex: Main_R, Main_L)
             my_format = Song.CHANNEL_NAME_PATTERN.format
             clip_buffers = [output_buffers[my_format(port=clip.output,
                                                      channel=base)]
                             for base in Song.CHANNEL_NAMES]
 
-            frame_per_beat = fpm / bpm
             clip_period = (
-                              fpm * clip.beat_diviser) / bpm  # length of the clip in frames
+                fpm * clip.beat_diviser) / bpm  # length of the clip in frames
             total_frame_offset = clip.frame_offset + (
                 clip.beat_offset * frame_per_beat)
             # frame_beat: how many times the clip hast been played already
@@ -112,7 +117,7 @@ def my_callback(frames):
                 (frame - total_frame_offset) * bpm, fpm * clip.beat_diviser)
             clip_offset = round(clip_offset / bpm)
 
-            # next beat is in block ?
+            # buffer is larger than remaining sample from clip
             if (clip_offset + blocksize) > clip_period:
                 next_clip_offset = (clip_offset + blocksize) - clip_period
                 next_clip_offset = round(blocksize - next_clip_offset)
@@ -122,18 +127,20 @@ def my_callback(frames):
 
             if clip.state == Clip.START or clip.state == Clip.STOPPING:
                 # is there enough audio data ?
-                if clip_offset < song.length(clip):
-                    length = min(song.length(clip) - clip_offset, frames)
+                if clip_offset < clip.getAudio().length():
+                    length = min(clip.getAudio().length() - clip_offset, frames)
                     for ch_id, buffer in enumerate(clip_buffers):
-                        data = song.getData(clip,
-                                            ch_id % song.channels(clip),
-                                            clip_offset,
-                                            length)
-                        # buffer[:length] += data
-                        print("Buffer: %s [%s:%s] data: %s" % (buffer.shape, 0, len(data), data.shape))
+                        data = clip.getSamples(ch_id, length, start_pos=clip_offset)
+                        # Test if we are at the end of the wavform
+                        # getSamples does not return enough samples
+                        if len(data) < frames:
+                            # Fade out on 10 samples
+                            fade_out = min(len(data), 10)
+                            fade_factor = np.linspace(1, 0, fade_out)
+                            data[len(data) - fade_out:] *= fade_factor
+                        #print("Buffer: %s [%s:%s] data: %s" % (buffer.shape, 0, len(data), data.shape))
                         np.add.at(buffer, slice(0, len(data)), data)
 
-                    clip.last_offset = clip_offset
                     # print("buffer[:{0}] = sample[{1}:{2}]".
                     # format(length, clip_offset, clip_offset+length))
 
@@ -160,17 +167,16 @@ def my_callback(frames):
 
             if next_clip_offset and (clip.state == Clip.START
                                      or clip.state == Clip.STARTING):
-                length = min(song.length(clip), blocksize - next_clip_offset)
+                length = min(clip.getAudio().length(), blocksize - next_clip_offset)
                 if length:
                     for ch_id, buffer in enumerate(clip_buffers):
-                        data = song.getData(clip,
-                                            ch_id % song.channels(clip),
-                                            0,
-                                            length)
-                        # buffer[next_clip_offset:] += data
+                        data = clip.getSamples(ch_id,
+                                               length,
+                                               start_pos=0,
+                                               fade_in=10)
                         s_start = next_clip_offset
                         s_stop = s_start + len(data)
-                        print("Buffer: %s [%s:%s] data: %s" % (buffer.shape, s_start, s_stop, data.shape))
+                        #print("Buffer: %s [%s:%s] data: %s" % (buffer.shape, s_start, s_stop, data.shape))
                         np.add.at(buffer, slice(s_start, s_stop), data)
 
                 clip.last_offset = 0
@@ -194,7 +200,7 @@ def my_callback(frames):
                     if clip.state == Clip.RECORDING:
                         clip.frame_offset = 0
                     clip.state = CLIP_TRANSITION[clip.state]
-                    clip.last_offset = 0
+                    clip.rewind()
                     gui.updateUi.emit()
                 except KeyError:
                     pass
@@ -202,6 +208,10 @@ def my_callback(frames):
         # apply master volume
         for b in output_buffers.values():
             b[:] *= song.volume
+
+    elif midi_transport.state == RUNNING:
+        pass
+
 
     try:
         i = 1

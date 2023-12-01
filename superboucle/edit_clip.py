@@ -28,6 +28,12 @@ class EditClipDialog(QDialog, Ui_Dialog):
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.setValue(clip.beat_offset)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
+        if clip.stretch_mode == 'disable':
+            self.stretch_mode_disable.setChecked(True)
+        if clip.stretch_mode == 'resample':
+            self.stretch_mode_resample.setChecked(True)
+        if clip.stretch_mode == 'timestretch':
+            self.stretch_mode_timestretch.setChecked(True)
         self.output.clear()
         self.output.addItems(song.outputsPorts)
         self.output.addItem(EditClipDialog.ADD_PORT_LABEL)
