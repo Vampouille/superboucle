@@ -1,6 +1,7 @@
 import numpy as np
 import soundfile as sf
 from PyQt5 import QtCore
+from PyQt5.QtCore import QObject, pyqtSignal
 import configparser, json
 from zipfile import ZipFile
 from io import BytesIO, StringIO, TextIOWrapper
@@ -109,7 +110,7 @@ class WaveForm():
 
 
 
-class Clip():
+class Clip(QObject):
     DEFAULT_OUTPUT = "Main"
 
     STOP = 0
@@ -138,10 +139,12 @@ class Clip():
                          4: "PREPARE_RECORD",
                          5: "RECORDING"}
 
+    updateAudioSignal = pyqtSignal()
+
     def __init__(self, audio_file=None, name='',
                  volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=8,
                  stretch_mode='disable', output=DEFAULT_OUTPUT, mute_group=0):
-
+        QObject.__init__(self)
         self.name = name
         self.volume = volume
         self.frame_offset = frame_offset
@@ -175,6 +178,8 @@ class Clip():
             self.channels = 0
         else:
             self.channels = self.audio_file.channels()
+        self.audioChangeCallbacks = []
+        self.updateAudioSignal.connect(self.triggerAudioChangeCallbacks)
 
     def channels(self,):
         '''Return channel count for specified clip'''
@@ -218,6 +223,7 @@ class Clip():
         elif self.audio_file_id == 2:
             self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
             self.audio_file_next_id = 1
+        self.triggerAudioChangeCallbacks()
 
     def getSamples(self, channel, length, start_pos=None, fade_in=0, fade_out=0, move_head=True):
         data = self.getAudio().getSamples(channel,
@@ -236,6 +242,16 @@ class Clip():
 
     def rewind(self):
         self.getAudio().rewind()
+
+    def registerAudioChange(self, callback):
+        self.audioChangeCallbacks.append(callback)
+    
+    def unregisterAudioChange(self, callback):
+        self.audioChangeCallbacks.remove(callback)
+    
+    def triggerAudioChangeCallbacks(self):
+        for c in self.audioChangeCallbacks:
+            c()
     
 
 class Song():
@@ -459,7 +475,7 @@ def load_song_from_file(file):
 
                 section = parser[section_label]
                 # Build WaveForm object
-                beat_sample = None if section.get('beat_sample') == 'None' else int(section.get('beat_sample'))
+                beat_sample = None if section.get('beat_sample') == 'None' else float(section.get('beat_sample'))
                 audio_file = WaveForm(data,
                                       samplerate,
                                       beat_sample)

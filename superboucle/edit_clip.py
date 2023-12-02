@@ -16,6 +16,7 @@ class EditClipDialog(QDialog, Ui_Dialog):
         self.setupUi(self)
         self.song = song
         self.clip = clip
+        self.clip.registerAudioChange(self.updateAudioDesc)
         self.clip_name.setText(clip.name)
         self.clip_name.textChanged.connect(self.onClipNameChange)
         self.setWindowTitle(clip.name)
@@ -28,11 +29,11 @@ class EditClipDialog(QDialog, Ui_Dialog):
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.setValue(clip.beat_offset)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
-        if clip.stretch_mode == 'disable':
+        if clip.stretch_mode == "disable":
             self.stretch_mode_disable.setChecked(True)
-        if clip.stretch_mode == 'resample':
+        if clip.stretch_mode == "resample":
             self.stretch_mode_resample.setChecked(True)
-        if clip.stretch_mode == 'timestretch':
+        if clip.stretch_mode == "timestretch":
             self.stretch_mode_timestretch.setChecked(True)
         self.output.clear()
         self.output.addItems(song.outputsPorts)
@@ -45,6 +46,7 @@ class EditClipDialog(QDialog, Ui_Dialog):
         self.normalizeButton.clicked.connect(self.onNormalizeClip)
         self.exportButton.clicked.connect(self.onExportClip)
         self.deleteButton.clicked.connect(self.onDeleteClipClicked)
+        self.updateAudioDesc()
         self.show()
 
     def onClipNameChange(self):
@@ -134,3 +136,24 @@ class EditClipDialog(QDialog, Ui_Dialog):
 
     def onFinished(self):
         self.gui.unregisterPortListUpdateCallback(self.updatePortList)
+
+    def generate_audio_desc(self, wf):
+        if wf is None:
+            return "-"
+        if wf.beat_sample is None:
+            return "- BPM %s" % str(wf.data.shape)
+        return "%s BPM %s" % (
+            (wf.sr * 60) / (wf.beat_sample),
+            wf.data.shape,
+        )
+
+
+    def updateAudioDesc(self):
+        self.audio_0.setText(self.generate_audio_desc(self.clip.audio_file))
+        self.audio_a.setText(self.generate_audio_desc(self.clip.audio_file_a))
+        self.audio_b.setText(self.generate_audio_desc(self.clip.audio_file_b))
+        id = self.clip.audio_file_id
+        labels = [self.audio_0_label, self.audio_a_label, self.audio_b_label]
+        for l in labels:
+            l.setStyleSheet("")
+        labels[self.clip.audio_file_id].setStyleSheet("background-color: rgb(223, 27, 130);")

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>216</width>
-    <height>567</height>
+    <height>657</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
      <x>0</x>
      <y>0</y>
      <width>216</width>
-     <height>541</height>
+     <height>651</height>
     </rect>
    </property>
    <property name="styleSheet">
@@ -461,6 +461,120 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
       <string>Disable</string>
      </property>
     </widget>
+   </widget>
+   <widget class="QLabel" name="audio_0_label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>540</y>
+      <width>54</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Lato</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Audio 0:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="audio_b_label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>600</y>
+      <width>54</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Lato</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Audio B:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="audio_a_label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>570</y>
+      <width>54</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Lato</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Audio A:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="audio_0">
+    <property name="geometry">
+     <rect>
+      <x>65</x>
+      <y>540</y>
+      <width>141</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Lato</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="audio_a">
+    <property name="geometry">
+     <rect>
+      <x>65</x>
+      <y>570</y>
+      <width>141</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Lato</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="audio_b">
+    <property name="geometry">
+     <rect>
+      <x>65</x>
+      <y>600</y>
+      <width>141</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Lato</family>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
    </widget>
   </widget>
  </widget>
