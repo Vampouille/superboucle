@@ -88,7 +88,8 @@ def my_callback(frames):
     # 0xfc: Song Position Pointer
     p = midi_transport.position_beats(client.last_frame_time)
     if p:
-        print("POS: %s" % round(p, 2))
+        #print("POS: %s" % round(p, 2))
+        pass
     if ((state == jack.ROLLING
          and 'beats_per_minute' in position
          and position['frame_rate'] != 0)):

@@ -25,7 +25,7 @@ import pickle
 from os.path import expanduser, dirname, isfile
 
 BAR_START_TICK = 0.0
-BEATS_PER_BAR = 4.0
+#BEATS_PER_BAR = 4.0
 BEAT_TYPE = 4.0
 TICKS_PER_BEAT = 960.0
 
@@ -252,7 +252,6 @@ class Gui(QMainWindow, Ui_MainWindow):
             cell.setClip(cell.openClip())
         else:
             AddClipDialog(self, cell)
-
 
     def onMasterVolumeChange(self):
         self.song.volume = (self.master_volume.value() / 256)
@@ -544,22 +543,22 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.blktimer.state = not self.blktimer.state
 
     def updateProgress(self):
-        state, pos = self._jack_client.transport_query()
-        if 'bar' in pos:
-            bbt = "%d|%d|%03d" % (pos['bar'], pos['beat'], pos['tick'])
-        else:
-            bbt = "-|-|-"
-        seconds = int(pos['frame'] / pos['frame_rate'])
-        (minutes, second) = divmod(seconds, 60)
-        (hour, minute) = divmod(minutes, 60)
-        time = "%d:%02d:%02d" % (hour, minute, second)
-        self.bbtLabel.setText("%s\n%s" % (bbt, time))
+        if not self.sync_midi.isChecked():
+            state, pos = self._jack_client.transport_query()
+            if 'bar' in pos:
+                bbt = "%d|%d|%03d" % (pos['bar'], pos['beat'], pos['tick'])
+            else:
+                bbt = "-|-|-"
+            seconds = int(pos['frame'] / pos['frame_rate'])
+            (minutes, second) = divmod(seconds, 60)
+            (hour, minute) = divmod(minutes, 60)
+            time = "%d:%02d:%02d" % (hour, minute, second)
+            self.bbtLabel.setText("%s\n%s" % (bbt, time))
         for line in self.btn_matrix:
             for btn in line:
                 if btn.clip and btn.clip.audio_file:
-                    sr = pos['frame_rate']
 
-                    value = btn.clip.pos * 97
+                    value = btn.clip.getPos() * 97
                     btn.clip_position.setValue(int(value))
                     btn.clip_position.repaint()
 

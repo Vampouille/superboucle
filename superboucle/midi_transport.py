@@ -11,7 +11,7 @@ MIDI_STOP = b"\xfc"
 MIDI_TICK = b"\xf8"
 
 class MidiTransport(QObject):
-    
+
     prepareNextBeatSignal = pyqtSignal()
     updateSyncSignal = pyqtSignal()
     updatePosSignal = pyqtSignal()
@@ -24,8 +24,8 @@ class MidiTransport(QObject):
         self.samplerate = samplerate
         self.blocksize = blocksize
         self.ticks = 0
-        self.beat_per_bar = 4
         self.periods = deque(maxlen=10)
+        self.first_tick = None
         self.last_tick = None
         self.state = STOPPED
         self.prepareNextBeatSignal.connect(self.prepareNextBeat)
@@ -96,26 +96,29 @@ class MidiTransport(QObject):
             for y in range(len(line)):
                 clp = line[y]
                 if clp is not None and clp.stretch_mode != 'disable':
-                    diff = clp.getBeatSample() - beat_sample
+                    diff = clp.getNextBeatSample() - beat_sample
                     print("Diff: %s" % diff)
                     # 5 sample of diff after 16 beat mean ~ 100ms of drift
-                    if (clp.getBeatSample() - beat_sample) > 5:
+                    if abs(diff) > 200:
                         clp.changeBeatSample(beat_sample)
-    
+
     def updateSync(self):
         if self.state == RUNNING:
             self.gui.sync_midi.setChecked(True)
         elif self.state == STOPPED:
-            self.gui.sync_mmidi.setChecked(False)
+            self.gui.sync_midi.setChecked(False)
 
     def updatePos(self):
-        beat = self.ticks / 24
-        bar = beat / self.beat_per_bar
-        beat %= self.beat_per_bar
-        bbt = "%d|%d|%03d" % (bar, beat, 0)
+        beat, tick = divmod(self.ticks, 24)
+        bar = beat / self.gui.beat_per_bar.value()
+        beat %= self.gui.beat_per_bar.value()
+        bbt = "%d|%d|%03d" % (bar + 1, beat + 1, tick)
+        sr = self.gui._jack_client.samplerate
+        ft = self.gui._jack_client.frame_time
         _, pos = self.gui._jack_client.transport_query()
-        seconds = int((pos['frame'] - self.first_tick) / pos['frame_rate'])
+        seconds = int((ft - self.first_tick) / sr)
         (minutes, second) = divmod(seconds, 60)
         (hour, minute) = divmod(minutes, 60)
         time = "%d:%02d:%02d" % (hour, minute, second)
         self.gui.bbtLabel.setText("%s\n%s" % (bbt, time))
+        self.gui.bpm.setValue(self.getBPM())

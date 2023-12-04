@@ -161,7 +161,7 @@ class Ui_MainWindow(object):
         self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.label_10)
         self.bpm = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
         self.bpm.setMinimum(1.0)
-        self.bpm.setMaximum(260.0)
+        self.bpm.setMaximum(400.0)
         self.bpm.setProperty("value", 120.0)
         self.bpm.setObjectName("bpm")
         self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.bpm)

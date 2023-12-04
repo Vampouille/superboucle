@@ -461,6 +461,19 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
       <string>Disable</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="set_tempo">
+     <property name="geometry">
+      <rect>
+       <x>102</x>
+       <y>25</y>
+       <width>80</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Set Tempo</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QLabel" name="audio_0_label">
     <property name="geometry">
@@ -478,7 +491,7 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
      </font>
     </property>
     <property name="text">
-     <string>Audio 0:</string>
+     <string>Original:</string>
     </property>
    </widget>
    <widget class="QLabel" name="audio_b_label">
@@ -535,7 +548,7 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
      </font>
     </property>
     <property name="text">
-     <string/>
+     <string>BPM</string>
     </property>
    </widget>
    <widget class="QLabel" name="audio_a">

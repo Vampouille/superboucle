@@ -6,7 +6,7 @@ import configparser, json
 from zipfile import ZipFile
 from io import BytesIO, StringIO, TextIOWrapper
 from collections import OrderedDict as OrderedDict_
-from librosa import resample
+import resampy
 from pyrubberband import time_stretch
 import unicodedata
 
@@ -79,7 +79,7 @@ class WaveForm():
         if move_head:
             self.last_offset = e
         return res
-    
+
     def writeSamples(self, channel, data, start_pos=None, move_head=True):
         s = self.last_offset + 1 if start_pos is None else start_pos
         e = min(self.length(), s + len(data))
@@ -88,7 +88,7 @@ class WaveForm():
             self.last_offset = e
 
     def resample(self, new_beat_sample):
-        return WaveForm(resample(self.data, self.sr, self.sr * (new_beat_sample / self.beat_sample)), self.sr, new_beat_sample)
+        return WaveForm(resampy.resample(self.data, self.sr, self.sr * (new_beat_sample / self.beat_sample)), self.sr, new_beat_sample)
 
     def timeStretch(self, new_beat_sample):
         return WaveForm(time_stretch(self.data, self.sr, new_beat_sample / self.beat_sample), self.sr, new_beat_sample)
@@ -101,7 +101,7 @@ class WaveForm():
 
     def channels(self):
         return self.data.shape[1]
-    
+
     def normalize(self):
         absolute_val = np.absolute(self.data)
         current_level = np.ndarray.max(absolute_val)
@@ -157,20 +157,13 @@ class Clip(QObject):
         # 0: self.audio_file
         # 1: self.audio_file_a
         # 2: self.audio_file_b
-        self.audio_file_id = None
+        self.audio_file_id = 0
         self.audio_file_a = None
         self.audio_file_b = None
-        if stretch_mode == 'disable':
-            # Just use the original wav
-            self.audio_file_id = 0
-        elif self.audio_file is not None:
-            self.audio_file_a = self.audio_file.copy()
-            self.audio_file_id = 1
-        self.audio_file_b = None
+        # Just use the original wav
+        self.audio_file_id = 0
+        self.audio_file_next_id = 0
         # Last bytes played for this clip
-        self.last_offset = 0
-        # position relative to the clip between 0 and 1
-        self.pos = 0
         self.stretch_mode = stretch_mode
         self.output = output
         self.mute_group = mute_group
@@ -207,7 +200,15 @@ class Clip(QObject):
     def getBeatSample(self):
         return self.getAudio().beat_sample
 
-    def generateNewWaveForm(new_beat_sample):
+    def getNextBeatSample(self):
+        if self.audio_file_next_id == 0:
+            return self.audio_file.beat_sample
+        elif self.audio_file_next_id == 1:
+            return self.audio_file_a.beat_sample
+        elif self.audio_file_next_id == 2:
+            return self.audio_file_b.beat_sample
+
+    def generateNewWaveForm(self,new_beat_sample):
         if self.stretch_mode == "time":
             return self.audio_file.timeStretch(new_beat_sample)
         elif self.stretch_mode == "resample":
@@ -215,15 +216,20 @@ class Clip(QObject):
 
     def changeBeatSample(self, new_beat_sample):
         if self.audio_file_id == 0:
+            self.triggerAudioChangeCallbacks(1,"Creating")
             self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
             self.audio_file_next_id = 1
+            self.triggerAudioChangeCallbacks(1,"Next")
         elif self.audio_file_id == 1:
+            self.triggerAudioChangeCallbacks(2,"Creating")
             self.audio_file_b = self.generateNewWaveForm(new_beat_sample)
             self.audio_file_next_id = 2
+            self.triggerAudioChangeCallbacks(2,"Next")
         elif self.audio_file_id == 2:
+            self.triggerAudioChangeCallbacks(1,"Creating")
             self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
             self.audio_file_next_id = 1
-        self.triggerAudioChangeCallbacks()
+            self.triggerAudioChangeCallbacks(1,"Next")
 
     def getSamples(self, channel, length, start_pos=None, fade_in=0, fade_out=0, move_head=True):
         data = self.getAudio().getSamples(channel,
@@ -245,14 +251,24 @@ class Clip(QObject):
 
     def registerAudioChange(self, callback):
         self.audioChangeCallbacks.append(callback)
-    
+
     def unregisterAudioChange(self, callback):
         self.audioChangeCallbacks.remove(callback)
-    
-    def triggerAudioChangeCallbacks(self):
+
+    def triggerAudioChangeCallbacks(self, a_b, msg):
         for c in self.audioChangeCallbacks:
-            c()
+            c(a_b, msg)
     
+    # position relative to the clip between 0 and 1
+    def getPos(self):
+        beat_sample = self.getAudio().beat_sample
+        if beat_sample is None:
+            return self.getAudio().last_offset / self.getAudio().length()
+        else:
+            return self.getAudio().last_offset / (self.getAudio().sr * beat_sample * self.beat_diviser)
+                                                  
+
+
 
 class Song():
     CHANNEL_NAMES = ["L", "R"]

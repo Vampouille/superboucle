@@ -4,3 +4,4 @@ numpy>=1.16
 JACK-Client
 librosa
 pyrubberband
+resampy
