@@ -478,7 +478,7 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
    <widget class="QLabel" name="audio_0_label">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>20</x>
       <y>540</y>
       <width>54</width>
       <height>17</height>
@@ -497,7 +497,7 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
    <widget class="QLabel" name="audio_b_label">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>20</x>
       <y>600</y>
       <width>54</width>
       <height>17</height>
@@ -516,7 +516,7 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
    <widget class="QLabel" name="audio_a_label">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>20</x>
       <y>570</y>
       <width>54</width>
       <height>17</height>
@@ -535,9 +535,9 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
    <widget class="QLabel" name="audio_0">
     <property name="geometry">
      <rect>
-      <x>65</x>
+      <x>80</x>
       <y>540</y>
-      <width>141</width>
+      <width>131</width>
       <height>17</height>
      </rect>
     </property>
@@ -548,15 +548,15 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
      </font>
     </property>
     <property name="text">
-     <string>BPM</string>
+     <string/>
     </property>
    </widget>
    <widget class="QLabel" name="audio_a">
     <property name="geometry">
      <rect>
-      <x>65</x>
+      <x>80</x>
       <y>570</y>
-      <width>141</width>
+      <width>131</width>
       <height>17</height>
      </rect>
     </property>
@@ -573,9 +573,9 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
    <widget class="QLabel" name="audio_b">
     <property name="geometry">
      <rect>
-      <x>65</x>
+      <x>80</x>
       <y>600</y>
-      <width>141</width>
+      <width>131</width>
       <height>17</height>
      </rect>
     </property>
@@ -589,6 +589,75 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
      <string/>
     </property>
    </widget>
+   <widget class="QPushButton" name="save_a">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>566</y>
+      <width>19</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="gui.qrc">
+      <normaloff>:/icons/icons/floppy-disk-solid.svg</normaloff>:/icons/icons/floppy-disk-solid.svg</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>13</width>
+      <height>13</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="save_b">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>597</y>
+      <width>19</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="gui.qrc">
+      <normaloff>:/icons/icons/floppy-disk-solid.svg</normaloff>:/icons/icons/floppy-disk-solid.svg</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>13</width>
+      <height>13</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="save_orig">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>536</y>
+      <width>19</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="gui.qrc">
+      <normaloff>:/icons/icons/floppy-disk-solid.svg</normaloff>:/icons/icons/floppy-disk-solid.svg</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>13</width>
+      <height>13</height>
+     </size>
+    </property>
+   </widget>
   </widget>
  </widget>
  <customwidgets>
@@ -598,6 +667,8 @@ QSpinBox { border : 0px; border-radius: 2px}</string>
    <header>superboucle/qsuperdial.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="gui.qrc"/>
+ </resources>
  <connections/>
 </ui>

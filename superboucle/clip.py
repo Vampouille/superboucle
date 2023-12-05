@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import soundfile as sf
 from PyQt5 import QtCore
@@ -73,23 +74,31 @@ class WaveForm():
             fade_out = min(fade_out, len(res))
             fade_factor = np.tile(np.linspace(1, 0, fade_out)[:, np.newaxis], self.data.shape[1])
             res[len(res) - fade_out:] *= fade_factor
-        print("(%s)%s-%s(%s)" % (fade_in, s, e, fade_out))
+        #print("(%s)%s-%s(%s)" % (fade_in, s, e, fade_out))
         if move_head:
             self.next_offset = e
         return res
 
-    def writeSamples(self, channel, data, start_pos=None, move_head=True):
+    def writeSamples(self, bufferL, bufferR, start_pos=None, move_head=True):
         s = self.next_offset if start_pos is None else start_pos
-        e = min(self.length(), s + len(data))
-        self.data[s:e,channel % self.channels()] = data[0:e - s]
+        e = min(self.length(), s + len(bufferL))
+        #print("WRITE: %s-%s" % (s, e))
+        self.data[s:e] = np.column_stack((bufferL, bufferR))
+
         if move_head:
             self.next_offset = e
 
     def resample(self, new_beat_sample):
-        return WaveForm(resampy.resample(self.data, self.sr, self.sr * (new_beat_sample / self.beat_sample)), self.sr, new_beat_sample)
+        start = time.time()
+        new_samplerate = self.sr * (new_beat_sample / self.beat_sample)
+        res = WaveForm(resampy.resample(self.data, self.sr, new_samplerate, axis=0), self.sr, new_beat_sample)
+        #print("Resample: %s -> %s / %s / %s -> %s"
+        #       % (self.beat_sample, new_beat_sample, new_samplerate, self.data.shape, res.data.shape))
+        #print("Resample: %s" % round(1000 * (time.time() - start), 2))
+        return res
 
     def timeStretch(self, new_beat_sample):
-        return WaveForm(time_stretch(self.data, self.sr, new_beat_sample / self.beat_sample), self.sr, new_beat_sample)
+        return WaveForm(time_stretch(self.data, self.sr, self.beat_sample / new_beat_sample ), self.sr, new_beat_sample)
 
     def copy(self):
         return WaveForm(np.copy(self.data), self.sr, self.beat_sample)
@@ -138,6 +147,7 @@ class Clip(QObject):
                          5: "RECORDING"}
 
     updateAudioSignal = pyqtSignal()
+    refreshSignal = pyqtSignal()
 
     def __init__(self, audio_file=None, name='',
                  volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=8,
@@ -171,6 +181,7 @@ class Clip(QObject):
             self.channels = self.audio_file.channels()
         self.audioChangeCallbacks = []
         self.updateAudioSignal.connect(self.triggerAudioChangeCallbacks)
+        self.refreshSignal.connect(self.triggerRefreshCallbacks)
 
     def channels(self,):
         '''Return channel count for specified clip'''
@@ -244,11 +255,11 @@ class Clip(QObject):
         wf = self.getAudio()
         return wf.length() - wf.next_offset
 
-    def writeSamples(self, channel, data, start_pos=None):
+    def writeSamples(self, bufferL, bufferR, start_pos=None):
         if self.audio_file is None:
             raise Exception("No audio buffer available")
 
-        self.getAudio().writeSamples(channel, data, start_pos)
+        self.getAudio().writeSamples(bufferL, bufferR, start_pos)
 
     def rewind(self):
         self.getAudio().rewind()
@@ -259,6 +270,18 @@ class Clip(QObject):
     def unregisterAudioChange(self, callback):
         self.audioChangeCallbacks.remove(callback)
 
+    def registerRefresh(self, callback):
+        self.refreshCallbacks.append(callback)
+
+    def unregisterRefreshChange(self, callback):
+        self.refreshCallbacks.remove(callback)
+
+    # Re-draw everything
+    def triggerRefreshCallbacks(self):
+        for c in self.refreshCallbacks:
+            c()
+
+    # Update only one audio file
     def triggerAudioChangeCallbacks(self, a_b, msg):
         for c in self.audioChangeCallbacks:
             c(a_b, msg)

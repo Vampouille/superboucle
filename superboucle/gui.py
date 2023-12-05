@@ -82,6 +82,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         QObject.__init__(self)
         super(Gui, self).__init__()
         self._jack_client = jack_client
+        self.sr = jack_client.samplerate
         self.app = app
         self.setupUi(self)
         self.is_learn_device_mode = False
@@ -228,14 +229,17 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.song.is_record = False
             self.updateRecordBtn()
             # calculate buffer size
-            state, position = self._jack_client.transport_query()
-            bps = position['beats_per_minute'] / 60
-            fps = position['frame_rate']
-            size = int((1 / bps) * clip.beat_diviser * fps)
-            beat_sample = fps / bps
-            self.song.init_record_buffer(clip, 2, size, fps, beat_sample)
+            if self.sync_source == 0:
+                _, position = self._jack_client.transport_query()
+                bpm = position['beats_per_minute']
+            elif self.sync_source == 1:
+                bpm = self.bpm.value()
+            beat_sample = self.bpm_to_beat_period(bpm)
+            print("FPS: %s BPM: %s BS: %s" % (self.sr, bpm, beat_sample))
+            size = int((60 / bpm) * clip.beat_diviser * self.sr)
+            self.song.init_record_buffer(clip, 2, size, self.sr, beat_sample)
             # set frame offset based on jack block size
-            clip.frame_offset = self._jack_client.blocksize
+            #clip.frame_offset = self._jack_client.blocksize
             clip.state = Clip.PREPARE_RECORD
             self.recordButton.setStyleSheet(self.RECORD_DEFAULT)
         else:
@@ -618,3 +622,16 @@ class Gui(QMainWindow, Ui_MainWindow):
     def portListUpdate(self):
         for l in self.portListCallback:
             l()
+    
+    def bpm_to_tick_period(self, bpm):
+        return (60 * self.sr) / (bpm * 24)
+
+    def tick_period_to_bpm(self, period):
+        return (60 * self.sr) / (period * 24)
+
+    def bpm_to_beat_period(self, bpm):
+        return (60 * self.sr) / (bpm)
+
+    def beat_period_to_bpm(self, beat_period):
+        return (60 * self.sr) / (beat_period)
+

@@ -10,9 +10,10 @@ from superboucle.set_tempo import SetTempoDialog
 class EditClipDialog(QDialog, Ui_Dialog):
     ADD_PORT_LABEL = "Add new Port..."
 
-    COLORS = {"Creating": "#df8b67",
-              "Next": "#df67a6",
-              "Playing": "rgb(223, 27, 130)"}
+    COLORS = {"Creating": "background-color: #df8b67",
+              "Next": "background-color: #df67a6",
+              "Active": "background-color: rgb(223, 27, 130)",
+              "Inactive": ""}
     NOT_AVAILABLE = "BPM on original is mandatory, please first set tempo"
 
 
@@ -37,7 +38,7 @@ class EditClipDialog(QDialog, Ui_Dialog):
         self.beat_offset.setValue(clip.beat_offset)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
         self.set_tempo.clicked.connect(self.onSetTempo)
-        if clip.audio_file.beat_sample == None:
+        if clip.audio_file == None or clip.audio_file.beat_sample == None:
             self.stretch_mode_resample.setEnabled(False)
             self.stretch_mode_timestretch.setEnabled(False)
             self.stretch_mode_resample.setToolTip(EditClipDialog.NOT_AVAILABLE)
@@ -62,8 +63,28 @@ class EditClipDialog(QDialog, Ui_Dialog):
         self.normalizeButton.clicked.connect(self.onNormalizeClip)
         self.exportButton.clicked.connect(self.onExportClip)
         self.deleteButton.clicked.connect(self.onDeleteClipClicked)
-        self.updateAudioDesc(self.clip.audio_file_id, "Playing")
+        self.save_orig.clicked.connect(self.onSaveOrig)
+        self.save_a.clicked.connect(self.onSaveA)
+        self.save_b.clicked.connect(self.onSaveB)
+        self.refreshAudioDesc()
         self.show()
+
+
+    def onSaveOrig(self):
+        self.saveWF(self.clip.audio_file, "Original audio")
+    
+    def onSaveA(self):
+        self.saveWF(self.clip.audio_file_a, "Audio A")
+    
+    def onSaveB(self):
+        self.saveWF(self.clip.audio_file_b, "Audio B")
+    
+    def saveWF(self, wf, desc):
+        file_name, a = self.gui.getSaveFileName("Save %s" % desc,
+                                               'Wav file (*.wav)')  
+        if file_name:
+            file_name = verify_ext(file_name, 'wav')
+            sf.write(file_name, wf.data, wf.sr)
 
     def onClipNameChange(self):
         self.clip.name = self.clip_name.text()
@@ -169,12 +190,8 @@ class EditClipDialog(QDialog, Ui_Dialog):
         if wf is None:
             return "-"
         if wf.beat_sample is None:
-            return "- BPM %s" % str(wf.data.shape)
-        return "%s BPM %s" % (
-            round((wf.sr * 60) / (wf.beat_sample), 2),
-            wf.data.shape,
-        )
-
+            return "- BPM"
+        return "%s BPM" % round(self.gui.beat_period_to_bpm(wf.beat_sample), 2)
 
     def updateAudioDesc(self, a_b, msg):
         self.audio_0.setText(self.generate_audio_desc(self.clip.audio_file))
@@ -185,4 +202,12 @@ class EditClipDialog(QDialog, Ui_Dialog):
             l.setStyleSheet("")
         labels[a_b].setStyleSheet("background-color: %s" % self.COLORS[msg])
         labels[a_b].repaint()
-        print("%s: %s" % (a_b, msg))
+
+    def refreshAudioDesc(self):
+        self.audio_0.setText(self.generate_audio_desc(self.clip.audio_file))
+        self.audio_a.setText(self.generate_audio_desc(self.clip.audio_file_a))
+        self.audio_b.setText(self.generate_audio_desc(self.clip.audio_file_b))
+        labels = [self.audio_0_label, self.audio_a_label, self.audio_b_label]
+        for l in labels:
+            l.setStyleSheet("")
+        labels[self.clip.audio_file_id].setStyleSheet("%s" % self.COLORS['Active'])

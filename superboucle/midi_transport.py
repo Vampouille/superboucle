@@ -18,12 +18,10 @@ class MidiTransport(QObject):
     updatePosSignal = pyqtSignal()
 
 
-    def __init__(self, gui, samplerate, blocksize):
+    def __init__(self, gui):
         QObject.__init__(self)
         super(MidiTransport, self).__init__()
         self.gui = gui
-        self.samplerate = samplerate
-        self.blocksize = blocksize
         self.ticks = 0
         self.periods = deque(maxlen=10)
         self.first_tick = None
@@ -34,18 +32,12 @@ class MidiTransport(QObject):
         self.updatePosSignal.connect(self.updatePos)
         self.wip = threading.Lock()
 
-    def bpm_to_period(self, bpm):
-        return (60 * self.samplerate) / (bpm * 24)
-
-    def period_to_bpm(self, period):
-        return (60 * self.samplerate) / (period * 24)
-
     def getBPM(self):
-        return self.period_to_bpm(self.periodMean())
+        return self.gui.tick_period_to_bpm(self.periodMean())
 
     def periodMean(self):
         if self.gui.force_integer_bpm.isChecked():
-            return self.bpm_to_period(round(self.period_to_bpm(sum(self.periods)/len(self.periods))))
+            return self.gui.bpm_to_tick_period(round(self.gui.tick_period_to_bpm(sum(self.periods)/len(self.periods))))
         else:
             return sum(self.periods)/len(self.periods)
 
@@ -111,16 +103,16 @@ class MidiTransport(QObject):
                         diff = clp.getNextBeatSample() - beat_sample
                         # 5 sample of diff after 16 beat mean ~ 100ms of drift
                         if abs(diff) > 200:
-                            print("---------------------------------------")
-                            print("(%s) Diff: %s %s -> %s" 
-                                  % (self.gui._jack_client.frame_time,
-                                     diff,
-                                     self.period_to_bpm(clp.getNextBeatSample() / 24),
-                                     self.period_to_bpm(beat_sample / 24)))
-                            print("id: %s next: %s" %(clp.audio_file_id, clp.audio_file_next_id))
+                            #print("---------------------------------------")
+                            #print("(%s) Diff: %s %s -> %s" 
+                            #      % (self.gui._jack_client.frame_time,
+                            #         diff,
+                            #         self.period_to_bpm(clp.getNextBeatSample() / 24),
+                            #         self.period_to_bpm(beat_sample / 24)))
+                            #print("id: %s next: %s" %(clp.audio_file_id, clp.audio_file_next_id))
 
                             clp.changeBeatSample(beat_sample)
-                            print("id: %s next: %s" %(clp.audio_file_id, clp.audio_file_next_id))
+                            #print("id: %s next: %s" %(clp.audio_file_id, clp.audio_file_next_id))
             self.wip.release()
         else:
             print("Process Overlap")
@@ -139,7 +131,7 @@ class MidiTransport(QObject):
         beat %= self.gui.beat_per_bar.value()
         bbt = "%d|%d|%03d" % (bar + 1, beat + 1, tick)
         ft = self.gui._jack_client.frame_time
-        seconds = int((ft - self.first_tick) / self.samplerate)
+        seconds = int((ft - self.first_tick) / self.gui.sr)
         (minutes, second) = divmod(seconds, 60)
         (hour, minute) = divmod(minutes, 60)
         time = "%d:%02d:%02d" % (hour, minute, second)

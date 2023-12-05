@@ -3,16 +3,24 @@
 """JACK client that prints all received MIDI events."""
 
 import binascii
+import re
 import jack
 import sys, os.path
 import numpy as np
+import resampy
 from superboucle.clip import Clip, Song, load_song_from_file
 from superboucle.gui import Gui
 from superboucle.midi_transport import MidiTransport, STOPPED, RUNNING
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QTimer
 from queue import Empty
 import argparse
 
+# Force load of the resampy dependencies to avoid xruns on first usage
+tps = np.arange(0, 1, 1 / 44100)
+sinusoide = 0.5 * np.sin(2 * np.pi * 440 * tps)
+sinusoide_resampled = resampy.resample(sinusoide, 44100, 48000)
+print(sinusoide_resampled.shape)
 
 
 parser = argparse.ArgumentParser(description='launch superboucle')
@@ -29,13 +37,14 @@ else:
     song = Song(8, 8)
 
 client = jack.Client("Super Boucle")
-midi_in = client.midi_inports.register("input")
-midi_out = client.midi_outports.register("output")
+sync_midi_in = client.midi_inports.register("sync")
+cmd_midi_in = client.midi_inports.register("cmd_in")
+cmd_midi_out = client.midi_outports.register("cmd_feedback")
 inL = client.inports.register("input_L")
 inR = client.inports.register("input_R")
 app = QApplication(sys.argv)
 gui = Gui(song, client, app)
-midi_transport = MidiTransport(gui, client.samplerate, client.blocksize)
+midi_transport = MidiTransport(gui)
 
 # Debug
 gui.old_hex_data = "iuy"
@@ -45,9 +54,9 @@ CLIP_TRANSITION = {Clip.STARTING: Clip.START,
                    Clip.STOP: Clip.STOP,
                    Clip.START: Clip.START,
                    Clip.PREPARE_RECORD: Clip.RECORDING,
-                   Clip.RECORDING: Clip.STOP}
+                   Clip.RECORDING: Clip.START}
 
-
+@client.set_process_callback
 def my_callback(frames):
     song = gui.song
     state, position = client.transport_query()
@@ -69,22 +78,19 @@ def my_callback(frames):
     beat = None
     beat_offset = None
     if gui.is_learn_device_mode:
-        for offset, indata in midi_in.incoming_midi_events():
+        for offset, indata in cmd_midi_in.incoming_midi_events():
             gui.learn_device.queue.put(indata)
         gui.learn_device.updateUi.emit()
     else:
-        for offset, indata in midi_in.incoming_midi_events():
+        for offset, indata in cmd_midi_in.incoming_midi_events():
             gui.queue_in.put(indata)
-            res = midi_transport.notify(client.last_frame_time + offset, bytes(indata))
-            if res != -1:
-                beat = res
-                beat_offset = offset
-            #hex_data = binascii.hexlify(indata).decode()
-            #if hex_data != gui.old_hex_data:
-            #    #print('{}: 0x{}'.format(client.last_frame_time + offset, hex_data))
-            #    gui.old_hex_data = hex_data
         gui.readQueueIn.emit()
-    midi_out.clear_buffer()
+    for offset, indata in sync_midi_in.incoming_midi_events():
+        res = midi_transport.notify(client.last_frame_time + offset, bytes(indata))
+        if res != -1:
+            beat = res
+            beat_offset = offset
+    cmd_midi_out.clear_buffer()
 
     # Démarrage:
     # 0xfa Start
@@ -96,7 +102,7 @@ def my_callback(frames):
     if p:
         #print("POS: %s" % round(p, 2))
         pass
-    if gui.sync_source == 1:
+    if gui.sync_source == 1: # MIDI
 
         for clip in song.clips:
             if clip.audio_file is None:
@@ -112,12 +118,14 @@ def my_callback(frames):
 
             # Add sample from already playing clip
             # Write samples until end of buffer or available sample from clip
+            rs = clip.remainingSamples()
+            length = min(rs, client.blocksize if clip_loop is None else clip_loop)
             if clip.state == Clip.START or clip.state == Clip.STOPPING:
-                rs = clip.remainingSamples()
-                length = min(rs, client.blocksize if clip_loop is None else clip_loop)
                 data = clip.getSamples(length, fade_out=0 if length == client.blocksize else min(10,length))
-                print(data.shape)
+                #print(data.shape)
                 addBuffer(clip_buffers, 0, data)
+            elif clip.state == Clip.RECORDING:
+                clip.writeSamples(inL_buffer[:rs], inR_buffer[:rs])
 
             # Trigger clip loop
             # * rewind
@@ -125,14 +133,20 @@ def my_callback(frames):
             # * play beginning of the clip
             if clip_loop is not None:
                 clip.state = CLIP_TRANSITION[clip.state]
+                clip.triggerAudioChangeCallbacks(clip.audio_file_id,"Inactive")
                 clip.audio_file_id = clip.audio_file_next_id
+                clip.triggerAudioChangeCallbacks(clip.audio_file_id,"Active")
                 clip.rewind()
                 gui.updateUi.emit()
+
                 if clip.state == Clip.START or clip.state == Clip.STOPPING:
                     rs = clip.remainingSamples()
                     length = min(rs, client.blocksize - clip_loop)
                     data = clip.getSamples(length, fade_in=10)
                     addBuffer(clip_buffers, clip_loop, data)
+                elif clip.state == Clip.RECORDING:
+                    clip.writeSamples(inL_buffer, inR_buffer)
+
 
     elif ((state == jack.ROLLING
          and 'beats_per_minute' in position
@@ -230,7 +244,7 @@ def my_callback(frames):
         i = 1
         while True:
             note = gui.queue_out.get(block=False)
-            midi_out.write_midi_event(i, note)
+            cmd_midi_out.write_midi_event(i, note)
             i += 1
     except Empty:
         pass
@@ -249,14 +263,34 @@ def addBuffer(clip_buffers, offset, data):
         # Add fade out if clip does not continue on next buffer
         np.add.at(buffer, slice(offset, offset + data.shape[0]), data[:, ch_id % data.shape[1]])
 
+def connectMidiDevice(_=None,__=None):
+    # Try to connect any MIDI Compatible device
+    # For tempo:
+    for port in client.get_ports(is_midi=True, is_output=True, is_physical=True):
+        if re.search('RHYTHM DESIGNER', port.name):
+            try:
+                client.connect(port, sync_midi_in)
+            except jack.JackError:
+                pass
+    # For Command
+    for port in client.get_ports(is_midi=True, is_output=True, is_physical=True):
+        if re.search('Launchpad', port.name):
+            try:
+                client.connect(port, cmd_midi_in)
+            except jack.JackError:
+                pass
+    for port in client.get_ports(is_midi=True, is_input=True, is_physical=True):
+        if re.search('Launchpad', port.name):
+            try:
+                client.connect(cmd_midi_out, port)
+            except jack.JackError:
+                pass
 
-
-client.set_process_callback(my_callback)
-
+client.set_port_registration_callback(connectMidiDevice)
 
 # activate !
 def start():
-    with client:
+    with client: # call activate() ?
         # make connection
         playback = client.get_ports(is_physical=True, is_input=True)
         if not playback:
@@ -268,17 +302,25 @@ def start():
 
         my_format = Song.CHANNEL_NAME_PATTERN.format
         if gui.auto_connect:
-            # connect inputs
+            # Connect inputs
             client.connect(record[0], inL)
             client.connect(record[1], inR)
 
-            # connect outputs
+            # Connect outputs
             for ch_name, pl_port in zip([my_format(port=Clip.DEFAULT_OUTPUT,
                                                    channel=ch)
                                          for ch in Song.CHANNEL_NAMES],
                                         playback):
                 sb_out = gui.port_by_name[ch_name]
                 client.connect(sb_out, pl_port)
+            
+            # Connect MIDI Devices
+            connectMidiDevice()
+            
+            autoConnectTimer = QTimer()
+            autoConnectTimer.start(2000)
+            autoConnectTimer.timeout.connect(connectMidiDevice)
+
 
         app.exec_()
 
