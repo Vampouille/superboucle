@@ -3,3 +3,4 @@
 .*.swp
 debian/*.deb
 .idea
+superboucle/__pycache__/

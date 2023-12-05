@@ -91,6 +91,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.current_vol_block = 0
         self.last_clip = None
         self.portListCallback = set()
+        self.sync_source = 0 # Jack
 
         # Load devices
         self.deviceGroup = QActionGroup(self.menuDevice)
@@ -543,7 +544,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.blktimer.state = not self.blktimer.state
 
     def updateProgress(self):
-        if not self.sync_midi.isChecked():
+        if self.sync_source == 0:
             state, pos = self._jack_client.transport_query()
             if 'bar' in pos:
                 bbt = "%d|%d|%03d" % (pos['bar'], pos['beat'], pos['tick'])
@@ -589,6 +590,8 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.redraw()
 
     def timebase_callback(self, state, nframes, pos, new_pos):
+        if self.sync_source == 1:
+            return None
         if pos.frame_rate == 0:
             return None
         pos.valid = 0x10

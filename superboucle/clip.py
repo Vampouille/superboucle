@@ -49,43 +49,41 @@ class WaveForm():
         # How many sample per beat
         self.beat_sample = beat_sample
         # last sample played
-        self.last_offset = -1
+        self.next_offset = 0
 
     def rewind(self):
-        self.last_offset = -1
+        self.next_offset = 0
 
-    def getSamples(self, channel, length, start_pos=None, fade_in=0, fade_out=0, move_head=True):
-        # Normalize channel
-        channel %= self.channels()
-
+    def getSamples(self, length, start_pos=None, fade_in=0, fade_out=0, move_head=True):
         if start_pos is not None:
             s = start_pos
             e = start_pos + length
         else:
-            s = self.last_offset + 1
-            e = self.last_offset + 1 + length
+            s = self.next_offset 
+            e = self.next_offset + length
 
         # Don't try to extract more sample than available
         e = min(e, self.length() - 1)
-        res = self.data[s:e, channel]
+        res = self.data[s:e, :]
         if fade_in > 0:
             fade_in = min(fade_in, len(res))
-            fade_factor = np.linspace(0, 1, fade_in)
+            fade_factor = np.tile(np.linspace(0, 1, fade_in)[:, np.newaxis], self.data.shape[1])
             res[:fade_in] *= fade_factor
         if fade_out > 0:
             fade_out = min(fade_out, len(res))
-            fade_factor = np.linspace(1, 0, fade_out)
+            fade_factor = np.tile(np.linspace(1, 0, fade_out)[:, np.newaxis], self.data.shape[1])
             res[len(res) - fade_out:] *= fade_factor
+        print("(%s)%s-%s(%s)" % (fade_in, s, e, fade_out))
         if move_head:
-            self.last_offset = e
+            self.next_offset = e
         return res
 
     def writeSamples(self, channel, data, start_pos=None, move_head=True):
-        s = self.last_offset + 1 if start_pos is None else start_pos
+        s = self.next_offset if start_pos is None else start_pos
         e = min(self.length(), s + len(data))
         self.data[s:e,channel % self.channels()] = data[0:e - s]
         if move_head:
-            self.last_offset = e
+            self.next_offset = e
 
     def resample(self, new_beat_sample):
         return WaveForm(resampy.resample(self.data, self.sr, self.sr * (new_beat_sample / self.beat_sample)), self.sr, new_beat_sample)
@@ -212,33 +210,39 @@ class Clip(QObject):
         if self.stretch_mode == "time":
             return self.audio_file.timeStretch(new_beat_sample)
         elif self.stretch_mode == "resample":
+            #wf = self.audio_file.copy()
+            #wf.beat_sample = new_beat_sample
+            #return wf
             return self.audio_file.resample(new_beat_sample)
 
     def changeBeatSample(self, new_beat_sample):
         if self.audio_file_id == 0:
             self.triggerAudioChangeCallbacks(1,"Creating")
             self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
-            self.audio_file_next_id = 1
             self.triggerAudioChangeCallbacks(1,"Next")
+            self.audio_file_next_id = 1
         elif self.audio_file_id == 1:
             self.triggerAudioChangeCallbacks(2,"Creating")
             self.audio_file_b = self.generateNewWaveForm(new_beat_sample)
-            self.audio_file_next_id = 2
             self.triggerAudioChangeCallbacks(2,"Next")
+            self.audio_file_next_id = 2
         elif self.audio_file_id == 2:
             self.triggerAudioChangeCallbacks(1,"Creating")
             self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
-            self.audio_file_next_id = 1
             self.triggerAudioChangeCallbacks(1,"Next")
+            self.audio_file_next_id = 1
 
-    def getSamples(self, channel, length, start_pos=None, fade_in=0, fade_out=0, move_head=True):
-        data = self.getAudio().getSamples(channel,
-                                          length,
+    def getSamples(self, length, start_pos=None, fade_in=0, fade_out=0, move_head=True):
+        data = self.getAudio().getSamples(length,
                                           start_pos,
                                           fade_in,
                                           fade_out,
                                           move_head)
         return data * self.volume
+
+    def remainingSamples(self):
+        wf = self.getAudio()
+        return wf.length() - wf.next_offset
 
     def writeSamples(self, channel, data, start_pos=None):
         if self.audio_file is None:
@@ -258,15 +262,15 @@ class Clip(QObject):
     def triggerAudioChangeCallbacks(self, a_b, msg):
         for c in self.audioChangeCallbacks:
             c(a_b, msg)
-    
+
     # position relative to the clip between 0 and 1
     def getPos(self):
         beat_sample = self.getAudio().beat_sample
         if beat_sample is None:
-            return self.getAudio().last_offset / self.getAudio().length()
+            return self.getAudio().next_offset / self.getAudio().length()
         else:
-            return self.getAudio().last_offset / (self.getAudio().sr * beat_sample * self.beat_diviser)
-                                                  
+            return self.getAudio().next_offset / (self.getAudio().sr * beat_sample * self.beat_diviser)
+
 
 
 
