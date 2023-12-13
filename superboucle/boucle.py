@@ -20,8 +20,6 @@ import argparse
 tps = np.arange(0, 1, 1 / 44100)
 sinusoide = 0.5 * np.sin(2 * np.pi * 440 * tps)
 sinusoide_resampled = resampy.resample(sinusoide, 44100, 48000)
-print(sinusoide_resampled.shape)
-
 
 parser = argparse.ArgumentParser(description='launch superboucle')
 parser.add_argument("songfile", nargs="?", help="load the song specified here")

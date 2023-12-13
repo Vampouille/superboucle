@@ -118,12 +118,16 @@ class EditClipDialog(QDialog, Ui_Dialog):
 
     def onStretchModeDisable(self):
         self.clip.stretch_mode = "disable"
+        self.clip.audio_file_next_id = 0
+        self.setColor(0, "Next")
 
     def onStretchModeResample(self):
         self.clip.stretch_mode = "resample"
+        #self.clip.changeBeatSample(self.clip.getBeatSample())
 
     def onStretchModeTimestretch(self):
         self.clip.stretch_mode = "timestretch"
+        #self.clip.changeBeatSample(self.clip.getBeatSample())
 
     def onOutputChange(self):
         new_port = self.output.currentText()
@@ -202,8 +206,15 @@ class EditClipDialog(QDialog, Ui_Dialog):
             return "-"
         if wf.beat_sample is None:
             return "- BPM"
-        return "%s BPM" % round(self.gui.beat_period_to_bpm(wf.beat_sample), 2)
+        effect = ""
+        if wf.effect == "timestretch":
+            effect = "T/S"
+        elif wf.effect == "resample":
+            effect = "R"
+        return "%s BPM %s" % (round(self.gui.beat_period_to_bpm(wf.beat_sample), 2), effect)
+        
 
+    # TODO : remove ?
     def updateAudioDesc(self, a_b, msg):
         print("updateAudioDesc(%s, %s)..." % (a_b, msg), end="")
         self.audio_0.setText(self.generate_audio_desc(self.clip.audio_file))
@@ -215,6 +226,7 @@ class EditClipDialog(QDialog, Ui_Dialog):
         #labels[a_b].repaint()
         print("OK")
 
+    # TODO : remove ?
     def refreshAudioDesc(self):
         self.audio_0.setText(self.generate_audio_desc(self.clip.audio_file))
         self.audio_a.setText(self.generate_audio_desc(self.clip.audio_file_a))

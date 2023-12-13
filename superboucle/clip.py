@@ -232,28 +232,31 @@ class Clip(QObject):
                 if self.edit_clip:
                     self.edit_clip.setColor(1, "Creating")
                 self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
-                self.audio_file_next_id = 1
-                if self.edit_clip:
-                    self.edit_clip.updateDesc(1)
-                    self.edit_clip.setColor(1, "Next")
+                print("Generating new WaveForm to A %s %s" % (new_beat_sample, self.stretch_mode))
+            self.audio_file_next_id = 1
+            if self.edit_clip:
+                self.edit_clip.updateDesc(1)
+                self.edit_clip.setColor(1, "Next")
         elif self.audio_file_id == 1:
             if self.audio_file_b is None or not self.audio_file_b.sameSetting(new_beat_sample, self.stretch_mode):
                 if self.edit_clip:
                     self.edit_clip.setColor(2, "Creating")
                 self.audio_file_b = self.generateNewWaveForm(new_beat_sample)
-                self.audio_file_next_id = 2
-                if self.edit_clip:
-                    self.edit_clip.updateDesc(2)
-                    self.edit_clip.setColor(2, "Next")
+                print("Generating new WaveForm to B %s %s" % (new_beat_sample, self.stretch_mode))
+            self.audio_file_next_id = 2
+            if self.edit_clip:
+                self.edit_clip.updateDesc(2)
+                self.edit_clip.setColor(2, "Next")
         elif self.audio_file_id == 2:
             if self.audio_file_a is None or not self.audio_file_a.sameSetting(new_beat_sample, self.stretch_mode):
                 if self.edit_clip:
                     self.edit_clip.setColor(1, "Creating")
                 self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
-                self.audio_file_next_id = 1
-                if self.edit_clip:
-                    self.edit_clip.updateDesc(1)
-                    self.edit_clip.setColor(1, "Next")
+                print("Generating new WaveForm to A %s %s" % (new_beat_sample, self.stretch_mode))
+            self.audio_file_next_id = 1
+            if self.edit_clip:
+                self.edit_clip.updateDesc(1)
+                self.edit_clip.setColor(1, "Next")
 
     def getSamples(self, length, start_pos=None, fade_in=0, fade_out=0, move_head=True):
         data = self.getAudio().getSamples(length,

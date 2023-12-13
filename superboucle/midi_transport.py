@@ -104,7 +104,7 @@ class MidiTransport(QObject):
                         if (beat + 1) % clp.beat_diviser == 0:
                             diff = clp.getNextBeatSample() - beat_sample
                             # 40 is sample diff of beat period between 250 and 251 BPM
-                            if abs(diff) > 40:
+                            if abs(diff) > 40 or clp.stretch_mode != clp.getAudio().effect:
                                 #print("---------------------------------------")
                                 #print("(%s) Diff: %s %s -> %s"
                                 #      % (self.gui._jack_client.frame_time,
