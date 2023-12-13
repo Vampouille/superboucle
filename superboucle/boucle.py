@@ -249,7 +249,6 @@ def my_callback(frames):
     except Empty:
         pass
 
-
 def getBuffers(gui, clip):
     output_buffers = {k: v.get_array() for k, v in
             gui.port_by_name.items()}
@@ -286,8 +285,6 @@ def connectMidiDevice(_=None,__=None):
             except jack.JackError:
                 pass
 
-client.set_port_registration_callback(connectMidiDevice)
-
 # activate !
 def start():
     with client: # call activate() ?
@@ -317,6 +314,7 @@ def start():
             # Connect MIDI Devices
             connectMidiDevice()
             
+            # Search for new device every 2sec
             autoConnectTimer = QTimer()
             autoConnectTimer.start(2000)
             autoConnectTimer.timeout.connect(connectMidiDevice)
