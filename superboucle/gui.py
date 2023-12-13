@@ -247,9 +247,9 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.update()
 
     def onEdit(self):
-        clip = self.sender().parent().parent().clip
-        if clip:
-            EditClipDialog(self, self.song, clip)
+        cell = self.sender().parent().parent()
+        if cell.clip:
+            EditClipDialog(self, self.song, cell)
 
     def onAddClipClicked(self):
         cell = self.sender().parent().parent()
@@ -562,7 +562,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         for line in self.btn_matrix:
             for btn in line:
                 if btn.clip and btn.clip.audio_file:
-
                     value = btn.clip.getPos() * 97
                     btn.clip_position.setValue(int(value))
                     btn.clip_position.repaint()
@@ -622,7 +621,7 @@ class Gui(QMainWindow, Ui_MainWindow):
     def portListUpdate(self):
         for l in self.portListCallback:
             l()
-    
+
     def bpm_to_tick_period(self, bpm):
         return (60 * self.sr) / (bpm * 24)
 
@@ -634,4 +633,3 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def beat_period_to_bpm(self, beat_period):
         return (60 * self.sr) / (beat_period)
-

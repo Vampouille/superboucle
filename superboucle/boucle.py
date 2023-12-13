@@ -105,12 +105,16 @@ def my_callback(frames):
     if gui.sync_source == 1: # MIDI
 
         for clip in song.clips:
+            # Skip clip with no audio
             if clip.audio_file is None:
                 continue
+            
+            # Get pointer to the clip buffer
             clip_buffers = getBuffers(gui, clip)
-            clip_loop = None
+
             # Check if end of clip is in the buffer
             # check if a beat is in the buffer
+            clip_loop = None
             if beat is not None:
                 # Check if the beat trigger a clip play
                 if (beat - clip.beat_offset) % clip.beat_diviser == 0:
@@ -122,8 +126,7 @@ def my_callback(frames):
             length = min(rs, client.blocksize if clip_loop is None else clip_loop)
             if clip.state == Clip.START or clip.state == Clip.STOPPING:
                 data = clip.getSamples(length, fade_out=0 if length == client.blocksize else min(10,length))
-                #print(data.shape)
-                addBuffer(clip_buffers, 0, data)
+                addBuffer(clip_buffers, 0, data, clip.name)
             elif clip.state == Clip.RECORDING:
                 clip.writeSamples(inL_buffer[:rs], inR_buffer[:rs])
 
@@ -133,9 +136,10 @@ def my_callback(frames):
             # * play beginning of the clip
             if clip_loop is not None:
                 clip.state = CLIP_TRANSITION[clip.state]
-                clip.triggerAudioChangeCallbacks(clip.audio_file_id,"Inactive")
-                clip.audio_file_id = clip.audio_file_next_id
-                clip.triggerAudioChangeCallbacks(clip.audio_file_id,"Active")
+                if clip.audio_file_next_id != clip.audio_file_id:
+                    if clip.edit_clip:
+                        clip.edit_clip.changeActiveSignal.emit(clip.audio_file_id, clip.audio_file_next_id)
+                    clip.audio_file_id = clip.audio_file_next_id
                 clip.rewind()
                 gui.updateUi.emit()
 
@@ -143,9 +147,13 @@ def my_callback(frames):
                     rs = clip.remainingSamples()
                     length = min(rs, client.blocksize - clip_loop)
                     data = clip.getSamples(length, fade_in=10)
-                    addBuffer(clip_buffers, clip_loop, data)
+                    addBuffer(clip_buffers, clip_loop, data, clip.name)
                 elif clip.state == Clip.RECORDING:
                     clip.writeSamples(inL_buffer, inR_buffer)
+                    if clip.edit_clip:
+                        clip.edit_clip.changeActiveSignal.emit(clip.audio_file_id, clip.audio_file_next_id)
+                        clip.edit_clip.updateAudioDescSignal.emit(0)
+
 
 
     elif ((state == jack.ROLLING
@@ -232,13 +240,9 @@ def my_callback(frames):
                   clip.rewind()
                   gui.updateUi.emit()
 
-        # apply master volume
-        for b in output_buffers.values():
-            b[:] *= song.volume
-
-    elif midi_transport.state == RUNNING:
-        pass
-
+    # apply master volume
+    for b in output_buffers.values():
+        b[:] *= song.volume
 
     try:
         i = 1
@@ -257,7 +261,7 @@ def getBuffers(gui, clip):
                                      channel=base)]
             for base in Song.CHANNEL_NAMES]
 
-def addBuffer(clip_buffers, offset, data):
+def addBuffer(clip_buffers, offset, data, name):
     for ch_id, buffer in enumerate(clip_buffers):
         # Add fade out if clip does not continue on next buffer
         np.add.at(buffer, slice(offset, offset + data.shape[0]), data[:, ch_id % data.shape[1]])

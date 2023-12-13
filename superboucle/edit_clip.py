@@ -1,6 +1,7 @@
 import numpy as np
 import soundfile as sf
 from PyQt5.QtWidgets import QDialog, QMessageBox
+from PyQt5.QtCore import pyqtSignal
 from superboucle.add_port import AddPortDialog
 from superboucle.edit_clip_ui import Ui_Dialog
 from superboucle.clip import verify_ext
@@ -14,40 +15,43 @@ class EditClipDialog(QDialog, Ui_Dialog):
               "Next": "background-color: #df67a6",
               "Active": "background-color: rgb(223, 27, 130)",
               "Inactive": ""}
-    NOT_AVAILABLE = "BPM on original is mandatory, please first set tempo"
+    NOT_AVAILABLE = "BPM on original is mandatory, please first set tempo or record"
 
+    changeActiveSignal = pyqtSignal(int, int)
+    updateAudioDescSignal = pyqtSignal(int)
 
-    def __init__(self, parent, song, clip):
+    def __init__(self, parent, song, cell):
         super(EditClipDialog, self).__init__(parent)
         self.gui = parent
         self.gui.registerPortListUpdateCallback(self.updatePortList)
         self.setupUi(self)
         self.song = song
-        self.clip = clip
-        self.clip.registerAudioChange(self.updateAudioDesc)
-        self.clip_name.setText(clip.name)
+        self.clip = cell.clip
+        self.cell = cell
+        self.clip.edit_clip = self
+        self.clip_name.setText(self.clip.name)
         self.clip_name.textChanged.connect(self.onClipNameChange)
-        self.setWindowTitle(clip.name)
-        self.clip_volume.setValue(int(clip.volume * 256))
+        self.setWindowTitle(self.clip.name)
+        self.clip_volume.setValue(int(self.clip.volume * 256))
         self.clip_volume.knobRadius = 3
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
         self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
-        self.beat_diviser.setValue(clip.beat_diviser)
-        self.frame_offset.setValue(clip.frame_offset)
+        self.beat_diviser.setValue(self.clip.beat_diviser)
+        self.frame_offset.setValue(self.clip.frame_offset)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
-        self.beat_offset.setValue(clip.beat_offset)
+        self.beat_offset.setValue(self.clip.beat_offset)
         self.beat_offset.valueChanged.connect(self.onBeatOffsetChange)
         self.set_tempo.clicked.connect(self.onSetTempo)
-        if clip.audio_file == None or clip.audio_file.beat_sample == None:
+        if self.clip.audio_file == None or self.clip.audio_file.beat_sample == None:
             self.stretch_mode_resample.setEnabled(False)
             self.stretch_mode_timestretch.setEnabled(False)
             self.stretch_mode_resample.setToolTip(EditClipDialog.NOT_AVAILABLE)
             self.stretch_mode_timestretch.setToolTip(EditClipDialog.NOT_AVAILABLE)
-        if clip.stretch_mode == "disable":
+        if self.clip.stretch_mode == "disable":
             self.stretch_mode_disable.setChecked(True)
-        if clip.stretch_mode == "resample":
+        if self.clip.stretch_mode == "resample":
             self.stretch_mode_resample.setChecked(True)
-        if clip.stretch_mode == "timestretch":
+        if self.clip.stretch_mode == "timestretch":
             self.stretch_mode_timestretch.setChecked(True)
         self.stretch_mode_disable.clicked.connect(self.onStretchModeDisable)
         self.stretch_mode_resample.clicked.connect(self.onStretchModeResample)
@@ -55,9 +59,9 @@ class EditClipDialog(QDialog, Ui_Dialog):
         self.output.clear()
         self.output.addItems(song.outputsPorts)
         self.output.addItem(EditClipDialog.ADD_PORT_LABEL)
-        self.output.setCurrentText(clip.output)
+        self.output.setCurrentText(self.clip.output)
         self.output.activated.connect(self.onOutputChange)
-        self.mute_group.setValue(clip.mute_group)
+        self.mute_group.setValue(self.clip.mute_group)
         self.mute_group.valueChanged.connect(self.onMuteGroupChange)
         self.reverseButton.clicked.connect(self.onReverseClip)
         self.normalizeButton.clicked.connect(self.onNormalizeClip)
@@ -66,8 +70,13 @@ class EditClipDialog(QDialog, Ui_Dialog):
         self.save_orig.clicked.connect(self.onSaveOrig)
         self.save_a.clicked.connect(self.onSaveA)
         self.save_b.clicked.connect(self.onSaveB)
+        self.labels = [self.audio_0_label, self.audio_a_label, self.audio_b_label]
         self.refreshAudioDesc()
+        self.changeActiveSignal.connect(self.changeActive)
+        self.updateAudioDescSignal.connect(self.updateDesc)
+
         self.show()
+        self.cell.edit.setEnabled(False)
 
 
     def onSaveOrig(self):
@@ -114,7 +123,7 @@ class EditClipDialog(QDialog, Ui_Dialog):
         self.clip.stretch_mode = "resample"
 
     def onStretchModeTimestretch(self):
-        self.clip.stretch_mode = "time"
+        self.clip.stretch_mode = "timestretch"
 
     def onOutputChange(self):
         new_port = self.output.currentText()
@@ -183,8 +192,10 @@ class EditClipDialog(QDialog, Ui_Dialog):
                 self.gui.initUI(self.song)
                 self.reject()
 
-    def onFinished(self):
+    def closeEvent(self, event):
         self.gui.unregisterPortListUpdateCallback(self.updatePortList)
+        self.cell.edit.setEnabled(True)
+        self.clip.edit_clip = None
 
     def generate_audio_desc(self, wf):
         if wf is None:
@@ -194,20 +205,40 @@ class EditClipDialog(QDialog, Ui_Dialog):
         return "%s BPM" % round(self.gui.beat_period_to_bpm(wf.beat_sample), 2)
 
     def updateAudioDesc(self, a_b, msg):
+        print("updateAudioDesc(%s, %s)..." % (a_b, msg), end="")
         self.audio_0.setText(self.generate_audio_desc(self.clip.audio_file))
         self.audio_a.setText(self.generate_audio_desc(self.clip.audio_file_a))
         self.audio_b.setText(self.generate_audio_desc(self.clip.audio_file_b))
-        labels = [self.audio_0_label, self.audio_a_label, self.audio_b_label]
-        for l in labels:
-            l.setStyleSheet("")
-        labels[a_b].setStyleSheet("background-color: %s" % self.COLORS[msg])
-        labels[a_b].repaint()
+        #for l in labels:
+        #    l.setStyleSheet("")
+        self.labels[a_b].setStyleSheet(self.COLORS[msg])
+        #labels[a_b].repaint()
+        print("OK")
 
     def refreshAudioDesc(self):
         self.audio_0.setText(self.generate_audio_desc(self.clip.audio_file))
         self.audio_a.setText(self.generate_audio_desc(self.clip.audio_file_a))
         self.audio_b.setText(self.generate_audio_desc(self.clip.audio_file_b))
-        labels = [self.audio_0_label, self.audio_a_label, self.audio_b_label]
-        for l in labels:
-            l.setStyleSheet("")
-        labels[self.clip.audio_file_id].setStyleSheet("%s" % self.COLORS['Active'])
+        #for l in labels:
+        #    l.setStyleSheet("")
+        self.labels[self.clip.audio_file_id].setStyleSheet(self.COLORS['Active'])
+    
+    def setColor(self, index, msg):
+        self.labels[index].setStyleSheet(self.COLORS[msg])
+    
+    def updateDesc(self, index):
+        if index == 0:
+            self.audio_0.setText(self.generate_audio_desc(self.clip.audio_file))
+            if self.clip.audio_file is not None and self.clip.audio_file.beat_sample:
+                self.stretch_mode_resample.setEnabled(True)
+                self.stretch_mode_timestretch.setEnabled(True)
+                self.stretch_mode_resample.setToolTip("")
+                self.stretch_mode_timestretch.setToolTip("")
+        elif index == 1:
+            self.audio_a.setText(self.generate_audio_desc(self.clip.audio_file_a))
+        elif index == 2:
+            self.audio_b.setText(self.generate_audio_desc(self.clip.audio_file_b))
+    
+    def changeActive(self, inactive, active):
+        self.labels[inactive].setStyleSheet(self.COLORS["Inactive"])
+        self.labels[active].setStyleSheet(self.COLORS["Active"])

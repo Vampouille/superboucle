@@ -44,11 +44,12 @@ class Communicate(QtCore.QObject):
     updateUI = QtCore.pyqtSignal()
 
 class WaveForm():
-    def __init__(self, data, sr, beat_sample):
+    def __init__(self, data, sr, beat_sample, effect="disable"):
         self.data = data
         self.sr = sr
         # How many sample per beat
         self.beat_sample = beat_sample
+        self.effect = effect # disable, resample, timestretch
         # last sample played
         self.next_offset = 0
 
@@ -91,17 +92,17 @@ class WaveForm():
     def resample(self, new_beat_sample):
         start = time.time()
         new_samplerate = self.sr * (new_beat_sample / self.beat_sample)
-        res = WaveForm(resampy.resample(self.data, self.sr, new_samplerate, axis=0), self.sr, new_beat_sample)
+        res = WaveForm(resampy.resample(self.data, self.sr, new_samplerate, axis=0), self.sr, new_beat_sample, "resample")
         #print("Resample: %s -> %s / %s / %s -> %s"
         #       % (self.beat_sample, new_beat_sample, new_samplerate, self.data.shape, res.data.shape))
         #print("Resample: %s" % round(1000 * (time.time() - start), 2))
         return res
 
     def timeStretch(self, new_beat_sample):
-        return WaveForm(time_stretch(self.data, self.sr, self.beat_sample / new_beat_sample ), self.sr, new_beat_sample)
+        return WaveForm(time_stretch(self.data, self.sr, self.beat_sample / new_beat_sample ), self.sr, new_beat_sample, "timestretch")
 
     def copy(self):
-        return WaveForm(np.copy(self.data), self.sr, self.beat_sample)
+        return WaveForm(np.copy(self.data), self.sr, self.beat_sample, self.effect)
 
     def length(self):
         return self.data.shape[0]
@@ -113,6 +114,9 @@ class WaveForm():
         absolute_val = np.absolute(self.data)
         current_level = np.ndarray.max(absolute_val)
         self.data[:] *= 1 / current_level
+
+    def sameSetting(self, beat_sample, effect):
+        return beat_sample == self.beat_sample and effect == self.effect
 
 
 
@@ -146,7 +150,7 @@ class Clip(QObject):
                          4: "PREPARE_RECORD",
                          5: "RECORDING"}
 
-    updateAudioSignal = pyqtSignal()
+    #updateAudioSignal = pyqtSignal()
     refreshSignal = pyqtSignal()
 
     def __init__(self, audio_file=None, name='',
@@ -179,8 +183,7 @@ class Clip(QObject):
             self.channels = 0
         else:
             self.channels = self.audio_file.channels()
-        self.audioChangeCallbacks = []
-        self.updateAudioSignal.connect(self.triggerAudioChangeCallbacks)
+        self.edit_clip = None
         self.refreshSignal.connect(self.triggerRefreshCallbacks)
 
     def channels(self,):
@@ -218,30 +221,39 @@ class Clip(QObject):
             return self.audio_file_b.beat_sample
 
     def generateNewWaveForm(self,new_beat_sample):
-        if self.stretch_mode == "time":
+        if self.stretch_mode == "timestretch":
             return self.audio_file.timeStretch(new_beat_sample)
         elif self.stretch_mode == "resample":
-            #wf = self.audio_file.copy()
-            #wf.beat_sample = new_beat_sample
-            #return wf
             return self.audio_file.resample(new_beat_sample)
 
     def changeBeatSample(self, new_beat_sample):
         if self.audio_file_id == 0:
-            self.triggerAudioChangeCallbacks(1,"Creating")
-            self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
-            self.triggerAudioChangeCallbacks(1,"Next")
-            self.audio_file_next_id = 1
+            if self.audio_file_a is None or not self.audio_file_a.sameSetting(new_beat_sample, self.stretch_mode):
+                if self.edit_clip:
+                    self.edit_clip.setColor(1, "Creating")
+                self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
+                self.audio_file_next_id = 1
+                if self.edit_clip:
+                    self.edit_clip.updateDesc(1)
+                    self.edit_clip.setColor(1, "Next")
         elif self.audio_file_id == 1:
-            self.triggerAudioChangeCallbacks(2,"Creating")
-            self.audio_file_b = self.generateNewWaveForm(new_beat_sample)
-            self.triggerAudioChangeCallbacks(2,"Next")
-            self.audio_file_next_id = 2
+            if self.audio_file_b is None or not self.audio_file_b.sameSetting(new_beat_sample, self.stretch_mode):
+                if self.edit_clip:
+                    self.edit_clip.setColor(2, "Creating")
+                self.audio_file_b = self.generateNewWaveForm(new_beat_sample)
+                self.audio_file_next_id = 2
+                if self.edit_clip:
+                    self.edit_clip.updateDesc(2)
+                    self.edit_clip.setColor(2, "Next")
         elif self.audio_file_id == 2:
-            self.triggerAudioChangeCallbacks(1,"Creating")
-            self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
-            self.triggerAudioChangeCallbacks(1,"Next")
-            self.audio_file_next_id = 1
+            if self.audio_file_a is None or not self.audio_file_a.sameSetting(new_beat_sample, self.stretch_mode):
+                if self.edit_clip:
+                    self.edit_clip.setColor(1, "Creating")
+                self.audio_file_a = self.generateNewWaveForm(new_beat_sample)
+                self.audio_file_next_id = 1
+                if self.edit_clip:
+                    self.edit_clip.updateDesc(1)
+                    self.edit_clip.setColor(1, "Next")
 
     def getSamples(self, length, start_pos=None, fade_in=0, fade_out=0, move_head=True):
         data = self.getAudio().getSamples(length,
@@ -264,12 +276,6 @@ class Clip(QObject):
     def rewind(self):
         self.getAudio().rewind()
 
-    def registerAudioChange(self, callback):
-        self.audioChangeCallbacks.append(callback)
-
-    def unregisterAudioChange(self, callback):
-        self.audioChangeCallbacks.remove(callback)
-
     def registerRefresh(self, callback):
         self.refreshCallbacks.append(callback)
 
@@ -281,18 +287,9 @@ class Clip(QObject):
         for c in self.refreshCallbacks:
             c()
 
-    # Update only one audio file
-    def triggerAudioChangeCallbacks(self, a_b, msg):
-        for c in self.audioChangeCallbacks:
-            c(a_b, msg)
-
     # position relative to the clip between 0 and 1
     def getPos(self):
-        beat_sample = self.getAudio().beat_sample
-        if beat_sample is None:
-            return self.getAudio().next_offset / self.getAudio().length()
-        else:
-            return self.getAudio().next_offset / (self.getAudio().sr * beat_sample * self.beat_diviser)
+        return self.getAudio().next_offset / self.getAudio().length()
 
 
 
@@ -396,42 +393,8 @@ class Song():
         else:
             return self.data[clip.audio_file].shape[0]
 
-    #def getData(self, clip, channel, offset, length):
-    #    if clip.audio_file is None:
-    #        return []
-
-    #    channel %= self.channels(clip)
-    #    if offset > (self.length(clip) - 1) or offset < 0 or length < 0:
-    #        raise Exception("Invalid length or offset: {0} {1} {2}".
-    #                        format(length, offset, self.length(clip)))
-    #    if (length + offset) > self.length(clip):
-    #        raise Exception("Index out of range : {0} + {1} > {2}".
-    #                        format(length, offset, self.length(clip)))
-    #    if self.channels(clip) == 1:
-    #        res = np.squeeze(self.data[clip.audio_file][offset:offset + length])
-    #    else:
-    #        res = np.squeeze(self.data[clip.audio_file][offset:offset + length, channel])
-    #    return res * clip.volume
-
-    #def writeData(self, clip, channel, offset, data):
-    #    if clip.audio_file is None:
-    #        raise Exception("No audio buffer available")
-
-    #    if offset + data.shape[0] > self.length(clip):
-    #        data = data[0:data.shape[0] - 2]
-    #        # raise Exception(("attempt to write data outside of buffer"
-    #        #                 ": %s + %s > %s ")
-    #        #                % (offset, data.shape[0], self.length(clip)))
-
-    #    self.data[clip.audio_file][offset:offset + data.shape[0],
-    #    channel] = data
-    #    # print("Write %s bytes at offset %s to channel %s" % (data.shape[0],
-    #    # offset,
-    #    # channel))
-
     def init_record_buffer(self, clip, channel, size, samplerate, beat_sample):
-        clip.audio_file = WaveForm(np.zeros((size, channel), dtype=np.float32), samplerate, beat_sample)
-
+        clip.audio_file = WaveForm(np.zeros((size, channel), dtype=np.float32), samplerate, beat_sample, "disable")
 
     def save(self):
         if self.file_name:

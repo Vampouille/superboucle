@@ -13,7 +13,7 @@ MIDI_TICK = b"\xf8"
 
 class MidiTransport(QObject):
 
-    prepareNextBeatSignal = pyqtSignal()
+    prepareNextBeatSignal = pyqtSignal(int)
     updateSyncSignal = pyqtSignal()
     updatePosSignal = pyqtSignal()
 
@@ -53,10 +53,9 @@ class MidiTransport(QObject):
             self.state = RUNNING
             self.ticks = -1
             self.last_tick = None
-            self.periods = deque(maxlen=10)
+            self.periods.clear()
             self.bpm = None
             self.first_tick = None
-            self.prepareNextBeatSignal.emit()
             self.updateSyncSignal.emit()
         elif in_data == MIDI_STOP:
             self.state = STOPPED
@@ -72,7 +71,7 @@ class MidiTransport(QObject):
             # Compute during current beat, Use on next beat
             beat, tick = divmod(self.ticks, 24)
             if tick == 0:
-                self.prepareNextBeatSignal.emit()
+                self.prepareNextBeatSignal.emit(beat)
                 self.updatePosSignal.emit()
                 return beat
         return -1
@@ -85,8 +84,9 @@ class MidiTransport(QObject):
             return None
         return (float(pos - self.last_tick) / (24 * self.periodMean())) + (float(self.ticks) / 24)
 
-    def prepareNextBeat(self):
+    def prepareNextBeat(self, beat):
         if self.wip.acquire(blocking=False):
+            st = time.time()
             # Wait for enough MIDI ticks
             while len(self.periods) < 10:
                 # Wait 10ms
@@ -99,20 +99,27 @@ class MidiTransport(QObject):
                 line = self.gui.song.clips_matrix[x]
                 for y in range(len(line)):
                     clp = line[y]
-                    if clp is not None and clp.stretch_mode != 'disable' and clp.audio_file_id == clp.audio_file_next_id:
-                        diff = clp.getNextBeatSample() - beat_sample
-                        # 5 sample of diff after 16 beat mean ~ 100ms of drift
-                        if abs(diff) > 200:
-                            #print("---------------------------------------")
-                            #print("(%s) Diff: %s %s -> %s" 
-                            #      % (self.gui._jack_client.frame_time,
-                            #         diff,
-                            #         self.period_to_bpm(clp.getNextBeatSample() / 24),
-                            #         self.period_to_bpm(beat_sample / 24)))
-                            #print("id: %s next: %s" %(clp.audio_file_id, clp.audio_file_next_id))
+                    if clp is not None and clp.stretch_mode != 'disable':
+                        # only trigger resample on beat just before clip start
+                        if (beat + 1) % clp.beat_diviser == 0:
+                            diff = clp.getNextBeatSample() - beat_sample
+                            # 40 is sample diff of beat period between 250 and 251 BPM
+                            if abs(diff) > 40:
+                                #print("---------------------------------------")
+                                #print("(%s) Diff: %s %s -> %s"
+                                #      % (self.gui._jack_client.frame_time,
+                                #         diff,
+                                #         self.period_to_bpm(clp.getNextBeatSample() / 24),
+                                #         self.period_to_bpm(beat_sample / 24)))
+                                #print("id: %s next: %s" %(clp.audio_file_id, clp.audio_file_next_id))
 
-                            clp.changeBeatSample(beat_sample)
-                            #print("id: %s next: %s" %(clp.audio_file_id, clp.audio_file_next_id))
+                                clp.changeBeatSample(beat_sample)
+                                #print("id: %s next: %s" %(clp.audio_file_id, clp.audio_file_next_id))
+                                pass
+            beat_duration_sec = beat_sample / self.gui.sr
+            prepare_duration_sec = time.time() - st
+            self.gui.prepare_duration.setValue(int((100 * prepare_duration_sec ) / beat_duration_sec))
+            self.gui.prepare_duration.repaint()
             self.wip.release()
         else:
             print("Process Overlap")
