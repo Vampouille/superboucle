@@ -19,6 +19,8 @@ from superboucle.port_manager import PortManager
 from superboucle.new_song import NewSongDialog
 from superboucle.add_clip import AddClipDialog
 from superboucle.device import Device
+from superboucle.edit_midi import EditMidiDialog
+
 import struct
 from queue import Queue, Empty
 import pickle
@@ -142,6 +144,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.pauseButton.clicked.connect(self._jack_client.transport_stop)
         self.gotoButton.clicked.connect(self.onGotoClicked)
         self.recordButton.clicked.connect(self.onRecord)
+        self.go_midi.clicked.connect(self.goMidi)
 
         self.blktimer = QTimer()
         self.blktimer.state = False
@@ -194,6 +197,9 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.song.loadScene(self.song.initial_scene)
         self.update()
         self.songLoad.emit()
+
+    def goMidi(self):
+        EditMidiDialog(self)
 
     def openSongFromDisk(self, file_name):
         self._jack_client.transport_stop()
