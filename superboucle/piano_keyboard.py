@@ -30,7 +30,7 @@ class PianoKeyboardWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        line_color = QColor(202, 202, 202)
+        line_color = QColor(150, 150, 150)
         black_color = QColor(0, 0, 0)
         painter.setPen(QPen(line_color, 1))
 

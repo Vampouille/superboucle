@@ -36,6 +36,16 @@ class EditMidiDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
 
+        grid_width = 1000
+        # Try to find a size to avoid aliasing 
+        # 7 white keys per octave (to display in the piano keyboard)
+        # 12 keys per octave (to display on the grid)
+        # 7 octaves available
+        vertical_scale = 2
+        grid_height = 7 * 12 *  7 * vertical_scale
+        beat_legend_height = 20
+        keyboard_width = 68
+
         # Root Layout with:
         # * button
         # * body
@@ -51,19 +61,19 @@ class EditMidiDialog(QDialog):
 
         # Note Grid
         self.g_scroll_area = QScrollArea(self)
-        self.g_scroll_area.setWidget(PianoGridWidget(self.g_scroll_area, 1000, 1344))
+        self.g_scroll_area.setWidget(PianoGridWidget(self.g_scroll_area, grid_width, grid_height))
         self.g_scroll_area.setWidgetResizable(True)
         self.g_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.g_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         # Piano Keyboard
         self.p_scroll_area = QScrollArea(self)
-        self.p_scroll_area.setWidget(PianoKeyboardWidget(self.p_scroll_area, 68, 1344))
+        self.p_scroll_area.setWidget(PianoKeyboardWidget(self.p_scroll_area, keyboard_width, grid_height))
         self.p_scroll_area.setWidgetResizable(True)
         self.p_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         # Beat Legend
-        self.beat_legend = BeatLegendWidget(self, 1000, 20, 16)
+        self.beat_legend = BeatLegendWidget(self, grid_width, beat_legend_height, 16)
 
         # Synchronize scroll area
         self.g_scroll_area.verticalScrollBar().valueChanged.connect(self.syncScrollArea)
