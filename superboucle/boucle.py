@@ -291,11 +291,11 @@ def connectMidiDevice(_=None,__=None):
 def start():
     with client: # call activate() ?
         # make connection
-        playback = client.get_ports(is_physical=True, is_input=True)
+        playback = client.get_ports(is_physical=True, is_input=True, is_audio=True)
         if not playback:
             raise RuntimeError("No physical playback ports")
 
-        record = client.get_ports(is_physical=True, is_output=True)
+        record = client.get_ports(is_physical=True, is_output=True, is_audio=True)
         if not record:
             raise RuntimeError("No physical record ports")
 
