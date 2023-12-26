@@ -65,33 +65,20 @@ class EditMidiDialog(QDialog):
         self.g_scroll_area.setWidgetResizable(True)
         self.g_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.g_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.g_scroll_area.verticalScrollBar().valueChanged.connect(self.syncScrollArea)
+        self.g_scroll_area.horizontalScrollBar().valueChanged.connect(self.syncScrollArea)
 
         # Piano Keyboard
-        self.p_scroll_area = QScrollArea(self)
-        self.p_scroll_area.setWidget(PianoKeyboardWidget(self.p_scroll_area, keyboard_width, grid_height))
-        self.p_scroll_area.setWidgetResizable(True)
-        self.p_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.piano_keyboard = PianoKeyboardWidget(self, keyboard_width, grid_height)
+        self.piano_keyboard.connect(self.syncScrollArea)
 
         # Beat Legend
         self.beat_legend = BeatLegendWidget(self, grid_width, beat_legend_height, 16)
-
-        # Synchronize scroll area
-        self.g_scroll_area.verticalScrollBar().valueChanged.connect(self.syncScrollArea)
-        self.p_scroll_area.verticalScrollBar().valueChanged.connect(self.syncScrollArea)
-        self.g_scroll_area.horizontalScrollBar().valueChanged.connect(
-            self.syncScrollArea
-        )
-        self.p_scroll_area.horizontalScrollBar().valueChanged.connect(
-            self.syncScrollArea
-        )
-        self.g_scroll_area.horizontalScrollBar().valueChanged.connect(
-            self.beat_legend.horizontalScrollBar().setValue
-        )
         self.beat_legend.connect(self.syncScrollArea)
 
         # Insert widgets in the dialog
         body_layout.addWidget(self.beat_legend, 0, 1)
-        body_layout.addWidget(self.p_scroll_area, 1, 0)
+        body_layout.addWidget(self.piano_keyboard, 1, 0)
         body_layout.addWidget(self.g_scroll_area, 1, 1)
         body_layout.setColumnStretch(1, 1)
         body_layout.setRowStretch(1, 1)
@@ -106,26 +93,10 @@ class EditMidiDialog(QDialog):
 
     def syncScrollArea(self, value):
         sender = self.sender()
-        print("Sender:", sender)
-        print(
-            "Piano Scroll Value: %s/%s",
-            (
-                self.p_scroll_area.verticalScrollBar().value(),
-                self.p_scroll_area.horizontalScrollBar().value(),
-            ),
-        )
-        print(
-            "Grid Scroll Value: %s/%s",
-            (
-                self.g_scroll_area.verticalScrollBar().value(),
-                self.g_scroll_area.horizontalScrollBar().value(),
-            ),
-        )
-
-        if sender == self.p_scroll_area.verticalScrollBar():
+        if sender == self.piano_keyboard.verticalScrollBar():
             self.g_scroll_area.verticalScrollBar().setValue(value)
         elif sender == self.g_scroll_area.verticalScrollBar():
-            self.p_scroll_area.verticalScrollBar().setValue(value)
+            self.piano_keyboard.verticalScrollBar().setValue(value)
         elif sender == self.beat_legend.horizontalScrollBar():
             self.g_scroll_area.horizontalScrollBar().setValue(value)
         elif sender == self.g_scroll_area.horizontalScrollBar():
@@ -207,9 +178,3 @@ class EditMidiDialog(QDialog):
     def onButtonClick(self):
         self.beat_legend.initView()
         print("OK")
-
-    def resizeEvent(self, event):
-        print("Dialog Geometry:", self.geometry())
-        # print("Vertical Layout Geometry:", self.verticalLayout.geometry())
-        print("Piano Scroll Area Geometry:", self.p_scroll_area.geometry())
-        print("Grid Scroll Area Geometry:", self.g_scroll_area.geometry())

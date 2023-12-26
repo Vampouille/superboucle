@@ -1,10 +1,9 @@
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsTextItem
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
 from PyQt5.QtGui import QFont, QColor, QPen
 from PyQt5.QtCore import Qt
 
 MARGIN = 2
 BEAT_PER_BAR = 4
-
 
 class BeatLegendWidget(QGraphicsView):
 
@@ -48,4 +47,3 @@ class BeatLegendWidget(QGraphicsView):
         
     def connect(self, callback):
         self.horizontalScrollBar().valueChanged.connect(callback)
-        self.verticalScrollBar().valueChanged.connect(callback)

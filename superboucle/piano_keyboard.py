@@ -1,15 +1,19 @@
-from PyQt5.QtWidgets import QWidget
-from PyQt5.QtGui import QPainter, QColor, QPen
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
+from PyQt5.QtGui import QColor, QPen
+from PyQt5.QtCore import Qt
 
-class PianoKeyboardWidget(QWidget):
+class PianoKeyboardWidget(QGraphicsView):
+
     def __init__(self, parent, width, height):
         super().__init__(parent)
 
         self.width = width
         self.height = height
-        self.setFixedSize(width, height)
+        self.setMaximumSize(width, height)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scene = QGraphicsScene(self)
 
-    def paintEvent(self, event):
         # 7 octaves: 7x12=84
         notes = 84
         # number of white keys
@@ -27,21 +31,34 @@ class PianoKeyboardWidget(QWidget):
         # black: 7,8  cm
         black_key_height = white_key_height * 0.57
 
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-
         line_color = QColor(150, 150, 150)
         black_color = QColor(0, 0, 0)
-        painter.setPen(QPen(line_color, 1))
+        white_key_pen = QPen(line_color, 1)
+        black_key_brush = Qt.black
 
         # First draw the white keys
         for i in range(notes_each_color):
             y = i * white_key_width
-            painter.drawRect(1, int(self.height - y - white_key_width) + 1, int(white_key_height) - 1, int(white_key_width) - 1)
+            self.scene.addRect(1,
+                               int(self.height - y - white_key_width) + 1,
+                               int(white_key_height) - 1,
+                               int(white_key_width) - 1,
+                               pen=white_key_pen)
 
         # Then draw black keys
         for i in range(notes_each_color):
             if i % 7 in { 0, 1, 3, 4, 5}:
                 y = (i * white_key_width) + (white_key_width / 2)
-                painter.fillRect(0, int(self.height - y - (1.5 * black_key_width)), int(black_key_height), int(black_key_width), black_color)
+                self.scene.addRect(0,
+                                   int(self.height - y - (1.5 * black_key_width)),
+                                   int(black_key_height),
+                                   int(black_key_width),
+                                   brush=black_key_brush)
+
+        self.setScene(self.scene)
         
+    def initView(self):
+        self.verticalScrollBar().setValue(0)
+
+    def connect(self, callback):
+        self.verticalScrollBar().valueChanged.connect(callback)
