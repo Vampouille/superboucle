@@ -25,6 +25,7 @@ from PyQt5.QtWidgets import (
 from superboucle.piano_grid import PianoGridWidget
 from superboucle.piano_keyboard import PianoKeyboardWidget
 from superboucle.beat_legend import BeatLegendWidget
+from superboucle.midi_velocity import MidiVelocityWidget
 
 
 class CustomScrollBar(QScrollBar):
@@ -36,12 +37,20 @@ class EditMidiDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
 
-        grid_width = 1000
+        beat_legend_height = 20
+        keyboard_width = 40
+        velocity_height = 150
+        beats = 16
+        # the smallest step on x axis should be a midi clock tick
+        # with 24 tick per beat 
+        horizontal_scale = 3
+        grid_width = 24 * beats * horizontal_scale
+        #grid_width = 1000
         # Try to find a size to avoid aliasing 
         # 7 white keys per octave (to display in the piano keyboard)
         # 12 keys per octave (to display on the grid)
         # 7 octaves available
-        vertical_scale = 2
+        vertical_scale = 2 # vertical zoom, note width
         grid_height = 7 * 12 *  7 * vertical_scale
         beat_legend_height = 20
         keyboard_width = 68
@@ -73,13 +82,18 @@ class EditMidiDialog(QDialog):
         self.piano_keyboard.connect(self.syncScrollArea)
 
         # Beat Legend
-        self.beat_legend = BeatLegendWidget(self, grid_width, beat_legend_height, 16)
+        self.beat_legend = BeatLegendWidget(self, grid_width, beat_legend_height, beats)
         self.beat_legend.connect(self.syncScrollArea)
+
+        # Velocity
+        self.velocity = MidiVelocityWidget(self, grid_width, velocity_height, beats)
+        self.velocity.connect(self.syncScrollArea)
 
         # Insert widgets in the dialog
         body_layout.addWidget(self.beat_legend, 0, 1)
         body_layout.addWidget(self.piano_keyboard, 1, 0)
         body_layout.addWidget(self.g_scroll_area, 1, 1)
+        body_layout.addWidget(self.velocity, 2, 1)
         body_layout.setColumnStretch(1, 1)
         body_layout.setRowStretch(1, 1)
 
@@ -99,8 +113,13 @@ class EditMidiDialog(QDialog):
             self.piano_keyboard.verticalScrollBar().setValue(value)
         elif sender == self.beat_legend.horizontalScrollBar():
             self.g_scroll_area.horizontalScrollBar().setValue(value)
+            self.velocity.horizontalScrollBar().setValue(value)
         elif sender == self.g_scroll_area.horizontalScrollBar():
             self.beat_legend.horizontalScrollBar().setValue(value)
+            self.velocity.horizontalScrollBar().setValue(value)
+        elif sender == self.velocity.horizontalScrollBar():
+            self.beat_legend.horizontalScrollBar().setValue(value)
+            self.g_scroll_area.horizontalScrollBar().setValue(value)
 
     def generateButton(self):
         # set font
