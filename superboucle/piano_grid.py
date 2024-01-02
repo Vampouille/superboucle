@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QPainter, QPen, QColor, QBrush
 
+BEAT_PER_BAR = 4
 
 class PianoGridWidget(QWidget):
     def __init__(self, parent, width, height):
@@ -32,7 +33,7 @@ class PianoGridWidget(QWidget):
                 painter.setBrush(QBrush(black_key_color))
             else:
                 painter.setBrush(QBrush(white_key_color))
-            painter.drawRect(0, int(self.height - y - note_height), 1000, note_height)
+            painter.drawRect(0, int(self.height - y - note_height), self.width, note_height)
 
         # Add octave separator
         octave_width = self.height / (notes / 12)
@@ -46,8 +47,11 @@ class PianoGridWidget(QWidget):
         beats = 16
         beat_width = self.width / beats
         beat_line_color = QColor(171, 171, 171)
-        painter.setPen(QPen(beat_line_color, 2))
+        bar_pen = QPen(beat_line_color, 2)
+        beat_pen = QPen(beat_line_color, 1)
 
         for beat in range(beats + 1):
             x = beat * beat_width
-            painter.drawLine(int(x), 0, int(x), self.height)
+            painter.setPen(bar_pen if beat % BEAT_PER_BAR == 0 else beat_pen)
+            painter.drawLine(int(x), 0, 
+                             int(x), self.height)
