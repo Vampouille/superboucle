@@ -20,6 +20,7 @@ from superboucle.new_song import NewSongDialog
 from superboucle.add_clip import AddClipDialog
 from superboucle.device import Device
 from superboucle.edit_midi import EditMidiDialog
+from superboucle.clip_midi import MidiClip, MidiNote
 
 import struct
 from queue import Queue, Empty
@@ -199,7 +200,28 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.songLoad.emit()
 
     def goMidi(self):
-        EditMidiDialog(self)
+        clip: MidiClip = MidiClip(16)
+        melody_notes = [
+            MidiNote(60, 64, 0, 20),    # MI
+            MidiNote(62, 64, 24, 20),   # SOL
+            MidiNote(64, 64, 48, 20),   # DO
+            MidiNote(65, 64, 72, 20),   # RÉ
+            MidiNote(67, 64, 96, 20),   # MI
+            MidiNote(69, 64, 120, 20),  # FA#
+            MidiNote(71, 64, 144, 20),  # SOL#
+            MidiNote(72, 64, 168, 20),  # LA
+            MidiNote(74, 64, 192, 20),  # SI
+            MidiNote(76, 64, 216, 20),  # RÉ
+            MidiNote(77, 64, 240, 20),  # MI
+            MidiNote(79, 64, 264, 20),  # FA#
+            MidiNote(81, 64, 288, 20),  # SOL#
+            MidiNote(83, 64, 312, 20),  # LA#
+            MidiNote(84, 64, 336, 20),  # SI
+            MidiNote(86, 64, 360, 20)   # DO#
+        ]
+        for note in melody_notes:
+            clip.addNote(note)
+        EditMidiDialog(self, clip)
 
     def openSongFromDisk(self, file_name):
         self._jack_client.transport_stop()

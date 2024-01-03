@@ -13,16 +13,17 @@ class PianoGridWidget(ScrollableGraphicsView):
         self.beats: int = beats
         black_key_brush = QBrush(QColor(231, 231, 231))
         white_key_brush = QBrush(QColor(243, 243, 243))
+        self.note_brush = QBrush(QColor(0, 255, 0))
 
         # 7 octaves: 7x12=84
         notes = self.octaves * 12
-        note_height = int(self.height / notes)
+        self.note_height = int(self.height / notes)
 
         # Draw rectangle for notes
         for note in range(0, notes):
-            y = note * note_height
-            rect: QGraphicsRectItem = self.scene.addRect(0, int(self.height - y - note_height), 
-                                                         self.width, note_height)
+            y = note * self.note_height
+            rect: QGraphicsRectItem = self.scene.addRect(0, int(self.height - y - self.note_height), 
+                                                         self.width, self.note_height)
             if note % 12 in {1, 3, 6, 8, 10}:  # Indices of black keys
                 rect.setBrush(black_key_brush)
             else:
@@ -30,7 +31,7 @@ class PianoGridWidget(ScrollableGraphicsView):
 
         # Draw horizontal line
         for note in range(0, notes):
-            y = int(self.height - note * note_height)
+            y = int(self.height - note * self.note_height)
             self.scene.addLine(0,
                                y,
                                self.width, 
@@ -50,3 +51,17 @@ class PianoGridWidget(ScrollableGraphicsView):
     def connect(self, callback):
         self.horizontalScrollBar().valueChanged.connect(callback)
         self.verticalScrollBar().valueChanged.connect(callback)
+    
+    def addNote(self, note: MidiNote) -> None:
+        x = self.ticksToX(note.start_tick)
+        width = self.ticksToX(note.length)
+        y = self.midiPitchToY(note.pitch)
+
+        self.scene.addRect(x, y, width, self.note_height, brush=self.note_brush)
+        
+    def ticksToX(self, ticks: int) -> int:
+        return (ticks * self.width) / (self.beats * 24)
+
+    def midiPitchToY(self, pitch: int) -> int:
+        y = (pitch - 12) * self.note_height
+        return int(self.height - y - self.note_height)

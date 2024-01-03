@@ -25,6 +25,7 @@ from superboucle.piano_grid import PianoGridWidget
 from superboucle.piano_keyboard import PianoKeyboardWidget
 from superboucle.beat_legend import BeatLegendWidget
 from superboucle.midi_velocity import MidiVelocityWidget
+from superboucle.clip_midi import MidiClip
 
 
 class CustomScrollBar(QScrollBar):
@@ -33,9 +34,10 @@ class CustomScrollBar(QScrollBar):
 
 
 class EditMidiDialog(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, clip: MidiClip):
         super().__init__(parent)
 
+        self.clip: MidiClip = clip
         beat_legend_height = 20
         keyboard_width = 40
         keyboard_octaves = 7
@@ -97,6 +99,11 @@ class EditMidiDialog(QDialog):
         self.setGeometry(100, 100, 800, 600)
         self.show()
         self.beat_legend.initView()
+        self.drawNotes()
+
+    def drawNotes(self) -> None:
+        for note in self.clip.notes:
+            self.piano_grid.addNote(note)
 
     def syncScrollArea(self, value):
         sender = self.sender()
