@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
-from PyQt5.QtGui import QColor, QPen
+from PyQt5.QtGui import QColor, QPen, QWheelEvent
 from PyQt5.QtCore import Qt
 
 BEAT_PER_BAR = 4
@@ -22,6 +22,12 @@ class ScrollableGraphicsView(QGraphicsView):
         self.bar_pen: QPen = QPen(self.line_color, 2)
         self.beat_pen: QPen = QPen(self.line_color, 1)
         
+    def wheelEvent(self, event):
+        if event.modifiers() == Qt.ShiftModifier:
+            delta = int(event.angleDelta().y() / 4)
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta)
+        else:
+            super().wheelEvent(event)
 
     def initView(self):
         self.horizontalScrollBar().setValue(0)

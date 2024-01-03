@@ -90,7 +90,7 @@ class EditMidiDialog(QDialog):
         body_layout.addWidget(self.piano_grid, 1, 1)
         body_layout.addWidget(self.velocity, 2, 1, Qt.AlignmentFlag.AlignTop)
         body_layout.setColumnStretch(1, 1)
-        body_layout.setRowStretch(1, 1)
+        body_layout.setRowStretch(1, 4)
 
         root_layout.addWidget(body_widget)
         root_layout.setStretch(1, 1)
