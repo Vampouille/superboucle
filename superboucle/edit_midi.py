@@ -13,7 +13,6 @@ from PyQt5.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QGridLayout,
-    QScrollArea,
     QScrollBar,
     QWidget,
     QLabel,
@@ -39,6 +38,7 @@ class EditMidiDialog(QDialog):
 
         beat_legend_height = 20
         keyboard_width = 40
+        keyboard_octaves = 7
         velocity_height = 150
         beats = 16
         # the smallest step on x axis should be a midi clock tick
@@ -51,9 +51,7 @@ class EditMidiDialog(QDialog):
         # 12 keys per octave (to display on the grid)
         # 7 octaves available
         vertical_scale = 2 # vertical zoom, note width
-        grid_height = 7 * 12 *  7 * vertical_scale
-        beat_legend_height = 20
-        keyboard_width = 68
+        grid_height = 7 * 12 * keyboard_octaves * vertical_scale
 
         # Root Layout with:
         # * button
@@ -69,31 +67,26 @@ class EditMidiDialog(QDialog):
         body_layout.setSpacing(0)
 
         # Note Grid
-        self.g_scroll_area = QScrollArea(self)
-        self.g_scroll_area.setWidget(PianoGridWidget(self.g_scroll_area, grid_width, grid_height))
-        self.g_scroll_area.setWidgetResizable(True)
-        self.g_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.g_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.g_scroll_area.verticalScrollBar().valueChanged.connect(self.syncScrollArea)
-        self.g_scroll_area.horizontalScrollBar().valueChanged.connect(self.syncScrollArea)
+        self.piano_grid: PianoGridWidget = PianoGridWidget(self, grid_width, grid_height, keyboard_octaves, beats)
+        self.piano_grid.connect(self.syncScrollArea)
 
         # Piano Keyboard
-        self.piano_keyboard = PianoKeyboardWidget(self, keyboard_width, grid_height)
+        self.piano_keyboard: PianoKeyboardWidget = PianoKeyboardWidget(self, keyboard_width, grid_height)
         self.piano_keyboard.connect(self.syncScrollArea)
 
         # Beat Legend
-        self.beat_legend = BeatLegendWidget(self, grid_width, beat_legend_height, beats)
+        self.beat_legend: BeatLegendWidget = BeatLegendWidget(self, grid_width, beat_legend_height, beats)
         self.beat_legend.connect(self.syncScrollArea)
 
         # Velocity
-        self.velocity = MidiVelocityWidget(self, grid_width, velocity_height, beats)
+        self.velocity: MidiVelocityWidget = MidiVelocityWidget(self, grid_width, velocity_height, beats)
         self.velocity.connect(self.syncScrollArea)
 
         # Insert widgets in the dialog
-        body_layout.addWidget(self.beat_legend, 0, 1)
-        body_layout.addWidget(self.piano_keyboard, 1, 0)
-        body_layout.addWidget(self.g_scroll_area, 1, 1)
-        body_layout.addWidget(self.velocity, 2, 1)
+        body_layout.addWidget(self.beat_legend, 0, 1, Qt.AlignmentFlag.AlignBottom)
+        body_layout.addWidget(self.piano_keyboard, 1, 0, Qt.AlignmentFlag.AlignRight)
+        body_layout.addWidget(self.piano_grid, 1, 1)
+        body_layout.addWidget(self.velocity, 2, 1, Qt.AlignmentFlag.AlignTop)
         body_layout.setColumnStretch(1, 1)
         body_layout.setRowStretch(1, 1)
 
@@ -108,18 +101,18 @@ class EditMidiDialog(QDialog):
     def syncScrollArea(self, value):
         sender = self.sender()
         if sender == self.piano_keyboard.verticalScrollBar():
-            self.g_scroll_area.verticalScrollBar().setValue(value)
-        elif sender == self.g_scroll_area.verticalScrollBar():
+            self.piano_grid.verticalScrollBar().setValue(value)
+        elif sender == self.piano_grid.verticalScrollBar():
             self.piano_keyboard.verticalScrollBar().setValue(value)
         elif sender == self.beat_legend.horizontalScrollBar():
-            self.g_scroll_area.horizontalScrollBar().setValue(value)
+            self.piano_grid.horizontalScrollBar().setValue(value)
             self.velocity.horizontalScrollBar().setValue(value)
-        elif sender == self.g_scroll_area.horizontalScrollBar():
+        elif sender == self.piano_grid.horizontalScrollBar():
             self.beat_legend.horizontalScrollBar().setValue(value)
             self.velocity.horizontalScrollBar().setValue(value)
         elif sender == self.velocity.horizontalScrollBar():
             self.beat_legend.horizontalScrollBar().setValue(value)
-            self.g_scroll_area.horizontalScrollBar().setValue(value)
+            self.piano_grid.horizontalScrollBar().setValue(value)
 
     def generateButton(self):
         # set font
