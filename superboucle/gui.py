@@ -202,23 +202,24 @@ class Gui(QMainWindow, Ui_MainWindow):
     def goMidi(self):
         clip: MidiClip = MidiClip(16)
         melody_notes = [
-            MidiNote(60, 64, 0, 20),    # MI
-            MidiNote(62, 64, 24, 20),   # SOL
-            MidiNote(64, 64, 48, 20),   # DO
-            MidiNote(65, 64, 72, 20),   # RÉ
-            MidiNote(67, 64, 96, 20),   # MI
-            MidiNote(69, 64, 120, 20),  # FA#
-            MidiNote(71, 64, 144, 20),  # SOL#
-            MidiNote(72, 64, 168, 20),  # LA
-            MidiNote(74, 64, 192, 20),  # SI
-            MidiNote(76, 64, 216, 20),  # RÉ
-            MidiNote(77, 64, 240, 20),  # MI
-            MidiNote(79, 64, 264, 20),  # FA#
-            MidiNote(81, 64, 288, 20),  # SOL#
-            MidiNote(83, 64, 312, 20),  # LA#
-            MidiNote(84, 64, 336, 20),  # SI
-            MidiNote(86, 64, 360, 20)   # DO#
+            MidiNote(60, 64, 0, 20),    # C3 / DO
+            MidiNote(62, 64, 24, 20),   # D3 / RÉ
+            MidiNote(64, 64, 48, 20),   # E3 / MI
+            MidiNote(65, 64, 72, 20),   # F3 / FA
+            MidiNote(67, 64, 96, 20),   # G3 / SOL
+            MidiNote(69, 64, 120, 20),  # A3 / LA
+            MidiNote(71, 64, 144, 20),  # B3 / SI
+            MidiNote(72, 64, 168, 20),  # C4 / DO
+            MidiNote(74, 64, 192, 20),  # D4 / RÉ
+            MidiNote(76, 64, 216, 20),  # E4 / MI
+            MidiNote(77, 64, 240, 20),  # F4 / FA
+            MidiNote(79, 64, 264, 20),  # G4 / SOL
+            MidiNote(81, 64, 288, 20),  # A4 / LA
+            MidiNote(83, 64, 312, 20),  # B4 / SI
+            MidiNote(84, 64, 336, 20),  # C5 / DO
+            MidiNote(86, 64, 360, 20)   # D5 / RÉ
         ]
+
         for note in melody_notes:
             clip.addNote(note)
         EditMidiDialog(self, clip)

@@ -1,13 +1,21 @@
 class MidiNote:
 
+    NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
     def __init__(self, pitch, velocity, start_tick, length) -> None:
-        self.pitch = pitch           # midi pitch 0 --> C-1
+        self.pitch = pitch           # midi pitch 0 --> C-1 send as is to the jack lib
         self.velocity = velocity     # in [0, 127]
         self.start_tick = start_tick # start position in tick with 24 tick per beat
         self.length = length         # note length in tick
 
     def __str__(self) -> str:
-        note = chr(((self.pitch + 2) % 7) + (65))
+        return "%s%s(%s) %s-%s" % (self.noteName(), (self.pitch // 12) - 2, self.pitch, self.humanizeTick(self.start_tick), self.humanizeTick(self.length))
+    
+    def humanizeTick(self, tick: int) -> str:
+        return "%s.%s" % ((tick // 24) + 1, tick % 24)
+
+    def noteName(self) -> str:
+        return MidiNote.NOTES[self.pitch % 12]
 
     def __eq__(self, __value: object) -> bool:
         if not isinstance(__value, MidiNote):
@@ -16,6 +24,9 @@ class MidiNote:
     
     def __hash__(self):
         return hash((self.pitch, self.start_tick))
+    
+    def copy(self):
+        return MidiNote(self.pitch, self.velocity, self.start_tick, self.length)
 
 
 class MidiEvents:

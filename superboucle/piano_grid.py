@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QGraphicsRectItem
 from PyQt5.QtGui import QColor, QBrush
 from superboucle.clip_midi import MidiNote
 from superboucle.scrollable_graphics_view import ScrollableGraphicsView
+from superboucle.midi_note_graphics import MidiNoteItem
 
 BEAT_PER_BAR = 4
 
@@ -53,11 +54,7 @@ class PianoGridWidget(ScrollableGraphicsView):
         self.verticalScrollBar().valueChanged.connect(callback)
     
     def addNote(self, note: MidiNote) -> None:
-        x = self.ticksToX(note.start_tick)
-        width = self.ticksToX(note.length)
-        y = self.midiPitchToY(note.pitch)
-
-        self.scene.addRect(x, y, width, self.note_height, brush=self.note_brush)
+        self.scene.addItem(MidiNoteItem(self.scene, note, self.beats, self.octaves))
         
     def ticksToX(self, ticks: int) -> int:
         return (ticks * self.width) / (self.beats * 24)

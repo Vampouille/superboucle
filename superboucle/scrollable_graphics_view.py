@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
 from PyQt5.QtGui import QColor, QPen, QWheelEvent
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRectF
 
 BEAT_PER_BAR = 4
 
@@ -15,6 +15,7 @@ class ScrollableGraphicsView(QGraphicsView):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scene: QGraphicsScene = QGraphicsScene(self)
+        self.scene.setSceneRect(QRectF(0, 0, width, height))
         self.setScene(self.scene)
         self.bar_line_width: int = 2
         self.beat_line_width: int = 1
