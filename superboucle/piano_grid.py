@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsRectItem
 from PyQt5.QtGui import QColor, QBrush
+from PyQt5.QtCore import Qt, QRectF, QPointF
 from superboucle.clip_midi import MidiNote, MidiClip
 from superboucle.scrollable_graphics_view import ScrollableGraphicsView
 from superboucle.midi_note_graphics import MidiNoteItem
@@ -9,6 +10,7 @@ BEAT_PER_BAR = 4
 class PianoGridWidget(ScrollableGraphicsView):
     def __init__(self, parent, clip: MidiClip, width, height, octaves):
         super().__init__(parent, width, height)
+        self.setMouseTracking(True)
 
         self.octaves: int = octaves
         self.clip: MidiClip = clip
@@ -51,6 +53,28 @@ class PianoGridWidget(ScrollableGraphicsView):
         # Draw notes from clip
         for note in self.clip.notes:
             self.scene.addItem(MidiNoteItem(self.scene, self.clip, note, self.octaves))
+
+    # Customize mouse pointer
+    def mouseMoveEvent(self, event):
+        scene_pos = self.mapToScene(event.pos())
+        items = [i for i in self.scene.items(scene_pos) if isinstance(i, MidiNoteItem)]
+        dialog = self.scene.parent().parent().parent()
+
+        if dialog.getTool() == "edit":
+            if len(items):
+                if items[0].isResizingHandleHovered(scene_pos):
+                    # Change note length
+                    self.setCursor(Qt.CursorShape.SizeHorCursor)
+                else:
+                    # Move note: pitch, timing
+                    self.setCursor(Qt.CursorShape.DragMoveCursor)
+            else:
+                # Draw new note
+                self.setCursor(Qt.CursorShape.CrossCursor)
+        elif dialog.getTool() == "select":
+            # Select note for deletion or velocity edit
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        super().mouseMoveEvent(event)
 
     def connect(self, callback):
         self.horizontalScrollBar().valueChanged.connect(callback)

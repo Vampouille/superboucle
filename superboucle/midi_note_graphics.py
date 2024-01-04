@@ -13,8 +13,8 @@ class MidiNoteItem(QGraphicsRectItem):
         self.note: MidiNote = note
         self.scene_octaves: int = scene_octaves
         self.border:int = 0
-        fill_color:QColor = QColor(0, 0, 255)
-        stroke_color: QColor = QColor(123,17,54)
+        fill_color:QColor = QColor(6, 147, 152) # selected 150, 18, 87
+        stroke_color: QColor = QColor(123, 17, 54)
 
         self.tick_width: int = int(scene.sceneRect().width() / (TICK_PER_BEAT * self.clip.length))
         # horizontal grid is snap to MIDI clock ticks
@@ -28,10 +28,8 @@ class MidiNoteItem(QGraphicsRectItem):
         self.initial_note = None
         self.resize_handle_width = 10
 
-        # Définir les propriétés du déplacement et du redimensionnement
         self.setFlag(QGraphicsRectItem.ItemIsMovable)
-        self.setFlag(QGraphicsRectItem.ItemSendsGeometryChanges)
-        self.setAcceptHoverEvents(True)
+        #self.setFlag(QGraphicsRectItem.ItemIsSelectable)
 
     # Draw Rectangle from note definition
     def generateRect(self) -> QRectF:
@@ -55,16 +53,6 @@ class MidiNoteItem(QGraphicsRectItem):
 
     def _snap_to_grid(self, value, snap_interval):
         return round(value / snap_interval) * snap_interval
-
-    # Customize mouse pointer
-    def hoverMoveEvent(self, event):
-        if self.isResizingHandleHovered(event.pos()):
-            self.setCursor(Qt.CursorShape.SizeHorCursor)
-        else:
-            self.setCursor(Qt.CursorShape.DragMoveCursor)
-
-    def hoverLeaveEvent(self, event):
-        self.setCursor(Qt.CursorShape.ArrowCursor)
 
     # Enter move/resize
     def mousePressEvent(self, event):
@@ -90,10 +78,7 @@ class MidiNoteItem(QGraphicsRectItem):
             self.note.length = max(1, min(new_length, remaining))
             # Change GUI
             self.setRect(self.generateRect())
-            print("Resize in progress: %s" % self.note)
         else:
-            #self.setPos(self.initial_rect.x() + delta.x(), self.initial_rect.y() + delta.y())
-            #self.rect.adjust(delta.x(),delta.y(),delta.x(),delta.y())
             # Change Internal Note 
             latest_start = self.clip.length * TICK_PER_BEAT - self.initial_note.length
             new_start = int(self.initial_note.start_tick + (delta.x() / self.tick_width))
@@ -103,7 +88,6 @@ class MidiNoteItem(QGraphicsRectItem):
             self.note.pitch = max(lowest_note, min(highest_note, int(self.initial_note.pitch - (delta.y() / self.vertical_snap))))
             # Change GUI
             self.setRect(self.generateRect())
-            print("Move in progress: %s" % self.note)
 
     def mouseReleaseEvent(self, event):
         if self.resize_started:

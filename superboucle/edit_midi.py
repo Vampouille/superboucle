@@ -89,6 +89,14 @@ class EditMidiDialog(QDialog):
         self.updateUI()
         self.show()
         self.beat_legend.initView()
+    
+    def getTool(self):
+        if self.buttons.select_tool.isChecked():
+            return "select"
+        elif self.buttons.edit_tool.isChecked():
+            return "edit"
+        else:
+            return None
 
     def syncScrollArea(self, value):
         sender = self.sender()
