@@ -1,17 +1,19 @@
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
 from PyQt5.QtCore import Qt
 from superboucle.scrollable_graphics_view import ScrollableGraphicsView
+from superboucle.clip_midi import MidiClip
 
 BEAT_PER_BAR = 4
 
 class MidiVelocityWidget(ScrollableGraphicsView):
 
-    def __init__(self, parent, width, height, beats):
+    def __init__(self, parent, clip, width, height):
         super().__init__(parent, width, height)
 
-        beat_width = self.width / beats
+        self.clip: MidiClip = clip
+        beat_width = self.width / self.clip.length
 
-        for beat in range(beats):
+        for beat in range(self.clip.length):
             x = beat * beat_width
             self.scene.addLine(int(x),
                                2, 

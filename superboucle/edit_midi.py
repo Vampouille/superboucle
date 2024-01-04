@@ -7,25 +7,20 @@
 # 1/6: 24/6: quantize on 4 tick : 20 pixel
 
 
-from PyQt5.QtCore import Qt, QSize, QRect
-from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QGridLayout,
     QScrollBar,
     QWidget,
-    QLabel,
-    QSpinBox,
-    QComboBox,
-    QAbstractSpinBox,
-    QPushButton,
 )
 from superboucle.piano_grid import PianoGridWidget
 from superboucle.piano_keyboard import PianoKeyboardWidget
 from superboucle.beat_legend import BeatLegendWidget
 from superboucle.midi_velocity import MidiVelocityWidget
 from superboucle.clip_midi import MidiClip
+from superboucle.edit_midi_button import EditMidiButton
 
 
 class CustomScrollBar(QScrollBar):
@@ -38,65 +33,56 @@ class EditMidiDialog(QDialog):
         super().__init__(parent)
 
         self.clip: MidiClip = clip
-        beat_legend_height = 20
+        self.beat_legend_height = 20
         keyboard_width = 40
-        keyboard_octaves = 7
-        velocity_height = 150
-        beats = 16
-        # the smallest step on x axis should be a midi clock tick
-        # with 24 tick per beat 
-        horizontal_scale = 3
-        grid_width = 24 * beats * horizontal_scale
+        self.keyboard_octaves = 7
+        self.velocity_height = 150
         #grid_width = 1000
         # Try to find a size to avoid aliasing 
         # 7 white keys per octave (to display in the piano keyboard)
         # 12 keys per octave (to display on the grid)
         # 7 octaves available
+        self.horizontal_scale = 3 # horizontal zoom
         vertical_scale = 2 # vertical zoom, note width
-        grid_height = 7 * 12 * keyboard_octaves * vertical_scale
+        self.grid_height = 7 * 12 * self.keyboard_octaves * vertical_scale
 
         # Root Layout with:
         # * button
         # * body
         root_layout = QVBoxLayout(self)
-        root_layout.addWidget(self.generateButton())
+        root_layout.addWidget(EditMidiButton(self))
 
         # Body Widget:
         # * piano keyboard
         # * piano grid
         body_widget = QWidget()
-        body_layout = QGridLayout(body_widget)
-        body_layout.setSpacing(0)
+        self.body_layout: QGridLayout = QGridLayout(body_widget)
+        self.body_layout.setSpacing(0)
 
         # Note Grid
-        self.piano_grid: PianoGridWidget = PianoGridWidget(self, self.clip, grid_width, grid_height, keyboard_octaves, beats)
-        self.piano_grid.connect(self.syncScrollArea)
+        self.piano_grid: PianoGridWidget = None
 
         # Piano Keyboard
-        self.piano_keyboard: PianoKeyboardWidget = PianoKeyboardWidget(self, keyboard_width, grid_height)
+        self.piano_keyboard: PianoKeyboardWidget = PianoKeyboardWidget(self, self.keyboard_octaves, keyboard_width, self.grid_height)
         self.piano_keyboard.connect(self.syncScrollArea)
 
         # Beat Legend
-        self.beat_legend: BeatLegendWidget = BeatLegendWidget(self, grid_width, beat_legend_height, beats)
-        self.beat_legend.connect(self.syncScrollArea)
+        self.beat_legend: BeatLegendWidget = None
 
         # Velocity
-        self.velocity: MidiVelocityWidget = MidiVelocityWidget(self, grid_width, velocity_height, beats)
-        self.velocity.connect(self.syncScrollArea)
+        self.velocity: MidiVelocityWidget = None
 
         # Insert widgets in the dialog
-        body_layout.addWidget(self.beat_legend, 0, 1, Qt.AlignmentFlag.AlignBottom)
-        body_layout.addWidget(self.piano_keyboard, 1, 0, Qt.AlignmentFlag.AlignRight)
-        body_layout.addWidget(self.piano_grid, 1, 1)
-        body_layout.addWidget(self.velocity, 2, 1, Qt.AlignmentFlag.AlignTop)
-        body_layout.setColumnStretch(1, 1)
-        body_layout.setRowStretch(1, 4)
+        self.body_layout.addWidget(self.piano_keyboard, 1, 0, Qt.AlignmentFlag.AlignRight)
+        self.body_layout.setColumnStretch(1, 1)
+        self.body_layout.setRowStretch(1, 4)
 
         root_layout.addWidget(body_widget)
         root_layout.setStretch(1, 1)
 
         self.setWindowTitle("Edit MIDI Notes")
         self.setGeometry(100, 100, 800, 600)
+        self.updateUI()
         self.show()
         self.beat_legend.initView()
 
@@ -116,79 +102,28 @@ class EditMidiDialog(QDialog):
             self.beat_legend.horizontalScrollBar().setValue(value)
             self.piano_grid.horizontalScrollBar().setValue(value)
 
-    def generateButton(self):
-        # set font
-        font = QFont()
-        font.setFamily("Lato")
-        font.setPointSize(11)
-        font.setBold(True)
-        font.setWeight(75)
-        font.setKerning(True)
+    def updateUI(self):
+        # the smallest step on x axis should be a midi clock tick
+        # with 24 tick per beat 
+        self.grid_width = 24 * self.clip.length * self.horizontal_scale
+        
+        # Note Grid
+        if self.piano_grid is not None:
+            self.body_layout.removeWidget(self.piano_grid)
+        self.piano_grid = PianoGridWidget(self, self.clip, self.grid_width, self.grid_height, self.keyboard_octaves)
+        self.piano_grid.connect(self.syncScrollArea)
+        self.body_layout.addWidget(self.piano_grid, 1, 1)
 
-        css = "color: rgb(160, 6, 89);"
+        # Beat Legend
+        if self.beat_legend is not None:
+            self.body_layout.removeWidget(self.beat_legend)
+        self.beat_legend: BeatLegendWidget = BeatLegendWidget(self, self.grid_width, self.beat_legend_height, self.clip.length)
+        self.beat_legend.connect(self.syncScrollArea)
+        self.body_layout.addWidget(self.beat_legend, 0, 1, Qt.AlignmentFlag.AlignBottom)
 
-        widget = QWidget()
-        widget.setMinimumSize(QSize(530, 35))
-        widget.setObjectName("buttons")
-
-        # Midi Channel
-        self.midiChannelLabel = QLabel(widget)
-        self.midiChannelLabel.setGeometry(QRect(10, 10, 112, 25))
-        self.midiChannelLabel.setFont(font)
-        self.midiChannelLabel.setStyleSheet(css)
-        self.midiChannelLabel.setAlignment(Qt.AlignCenter)
-        self.midiChannelLabel.setObjectName("midiChannelLabel")
-        self.midiChannelLabel.setText("MIDI Channel")
-        self.midiChannel = QSpinBox(widget)
-        self.midiChannel.setGeometry(QRect(130, 10, 42, 26))
-        self.midiChannel.setFont(font)
-        self.midiChannel.setButtonSymbols(QAbstractSpinBox.PlusMinus)
-        self.midiChannel.setMinimum(1)
-        self.midiChannel.setMaximum(16)
-        self.midiChannel.setObjectName("midiChannel")
-
-        # Quantize
-        self.quantizeLabel = QLabel(widget)
-        self.quantizeLabel.setGeometry(QRect(190, 10, 92, 25))
-        self.quantizeLabel.setFont(font)
-        self.quantizeLabel.setStyleSheet(css)
-        self.quantizeLabel.setAlignment(Qt.AlignCenter)
-        self.quantizeLabel.setObjectName("quantizeLabel")
-        self.quantizeLabel.setText("Quantize")
-        self.quantize = QComboBox(widget)
-        self.quantize.setGeometry(QRect(280, 10, 72, 25))
-        self.quantize.setFont(font)
-        self.quantize.setCurrentText("")
-        self.quantize.setObjectName("quantize")
-        self.quantize.addItem("Off")
-        self.quantize.addItem("1/4")
-        self.quantize.addItem("1/2")
-        self.quantize.addItem("1/3")
-        self.quantize.addItem("1/6")
-
-        # Length
-        self.lengthLabel = QLabel(widget)
-        self.lengthLabel.setGeometry(QRect(380, 10, 61, 25))
-        self.lengthLabel.setFont(font)
-        self.lengthLabel.setStyleSheet(css)
-        self.lengthLabel.setAlignment(Qt.AlignCenter)
-        self.lengthLabel.setObjectName("label_14")
-        self.lengthLabel.setText("Length")
-        self.length = QSpinBox(widget)
-        self.length.setGeometry(QRect(450, 10, 60, 26))
-        self.length.setButtonSymbols(QAbstractSpinBox.PlusMinus)
-        self.length.setFont(font)
-        self.length.setMinimum(1)
-        self.length.setMaximum(99)
-        self.length.setObjectName("length")
-
-        button = QPushButton("Cliquez-moi", widget)
-        button.clicked.connect(
-            self.onButtonClick
-        )
-
-        return widget
-
-    def onButtonClick(self):
-        self.beat_legend.initView()
-        print("OK")
+        # Velocity
+        if self.velocity is not None:
+            self.body_layout.removeWidget(self.velocity)
+        self.velocity: MidiVelocityWidget = MidiVelocityWidget(self, self.clip, self.grid_width, self.velocity_height)
+        self.velocity.connect(self.syncScrollArea)
+        self.body_layout.addWidget(self.velocity, 2, 1, Qt.AlignmentFlag.AlignTop)

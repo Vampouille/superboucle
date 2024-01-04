@@ -9,10 +9,22 @@ class MidiNote:
         self.length = length         # note length in tick
 
     def __str__(self) -> str:
-        return "%s%s(%s) %s-%s" % (self.noteName(), (self.pitch // 12) - 2, self.pitch, self.humanizeTick(self.start_tick), self.humanizeTick(self.length))
+        return "%s%s(%s) %s %s" % (self.noteName(), (self.pitch // 12) - 2, self.pitch, self.humanizeTickPosition(self.start_tick), self.humanizeTickDuration(self.length))
     
-    def humanizeTick(self, tick: int) -> str:
-        return "%s.%s" % ((tick // 24) + 1, tick % 24)
+    def humanizeTickPosition(self, tick: int) -> str:
+        beat = tick // 24
+        remaining_tick = tick % 24
+        bar = beat // 4
+        beat %= 4
+
+        return "%s|%s|%s" % (bar + 1, beat + 1, remaining_tick)
+
+    def humanizeTickDuration(self, tick: int) -> str:
+        beat = tick // 24
+        remaining_tick = tick % 24
+
+        return "%s.%s" % (beat, remaining_tick)
+
 
     def noteName(self) -> str:
         return MidiNote.NOTES[self.pitch % 12]
@@ -32,13 +44,13 @@ class MidiNote:
 class MidiEvents:
 
     def __init__(self) -> None:
-        self.events = dict[int, set]
+        self.events: dict[int, set] = {}
     
     def addEvent(self, tick: int, event: bytes):
         if tick in self.events.keys():
             self.events[tick].add(event)
         else:
-            self.event[tick] = set(event)
+            self.events[tick] = set(event)
 
     def get(self, tick: int):
         if tick in self.events.keys():
@@ -53,8 +65,9 @@ class MidiEvents:
 
 class MidiClip:
 
-    def __init__(self, length: int) -> None:
+    def __init__(self, length: int, channel: int) -> None:
         self.length: int = length # in beats
+        self.channel: int = channel # 0-15 ?w
         self.notes: set[MidiNote] = set()
         self.events: MidiEvents = MidiEvents()
     

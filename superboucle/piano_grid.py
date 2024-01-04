@@ -7,11 +7,10 @@ from superboucle.midi_note_graphics import MidiNoteItem
 BEAT_PER_BAR = 4
 
 class PianoGridWidget(ScrollableGraphicsView):
-    def __init__(self, parent, clip: MidiClip, width, height, octaves, beats):
+    def __init__(self, parent, clip: MidiClip, width, height, octaves):
         super().__init__(parent, width, height)
 
         self.octaves: int = octaves
-        self.beats: int = beats
         self.clip: MidiClip = clip
         black_key_brush = QBrush(QColor(231, 231, 231))
         white_key_brush = QBrush(QColor(243, 243, 243))
@@ -41,8 +40,8 @@ class PianoGridWidget(ScrollableGraphicsView):
                                self.bar_pen if note % 12 == 0 else self.beat_pen)
 
         # Draw vertical line for beats
-        beat_width = self.width / self.beats
-        for beat in range(beats):
+        beat_width = self.width / self.clip.length
+        for beat in range(self.clip.length):
             x = int(beat * beat_width)
             self.scene.addLine(x,
                                2, 
@@ -51,7 +50,7 @@ class PianoGridWidget(ScrollableGraphicsView):
                                self.bar_pen if beat % BEAT_PER_BAR == 0 else self.beat_pen)
         # Draw notes from clip
         for note in self.clip.notes:
-            self.scene.addItem(MidiNoteItem(self.scene, self.clip, note, self.beats, self.octaves))
+            self.scene.addItem(MidiNoteItem(self.scene, self.clip, note, self.clip.length, self.octaves))
 
     def connect(self, callback):
         self.horizontalScrollBar().valueChanged.connect(callback)

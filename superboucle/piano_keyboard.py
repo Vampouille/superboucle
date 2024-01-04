@@ -3,10 +3,11 @@ from PyQt5.QtGui import QColor, QFont, QPen
 from PyQt5.QtCore import Qt
 
 MARGIN = 3
+NOTE_PER_OCTAVE = 12
 
 class PianoKeyboardWidget(QGraphicsView):
 
-    def __init__(self, parent, width, height):
+    def __init__(self, parent, octaves, width, height):
         super().__init__(parent)
 
         self.width = width
@@ -23,9 +24,9 @@ class PianoKeyboardWidget(QGraphicsView):
         font.setPointSize(8)
 
         # 7 octaves: 7x12=84
-        notes = 84
+        notes = octaves * NOTE_PER_OCTAVE
         # number of white keys
-        notes_each_color = int((notes / 12) * 7)
+        notes_each_color = int((notes / 12) * octaves)
         # 7 white key per octave
         # So first count the number of octave
         # Then multiply by 7

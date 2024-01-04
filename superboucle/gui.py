@@ -200,7 +200,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.songLoad.emit()
 
     def goMidi(self):
-        clip: MidiClip = MidiClip(16)
+        clip: MidiClip = MidiClip(16, 0)
         melody_notes = [
             MidiNote(60, 64, 0, 20),    # C3 / DO
             MidiNote(62, 64, 24, 20),   # D3 / RÉ
