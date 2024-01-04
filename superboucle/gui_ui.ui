@@ -312,7 +312,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
            <rect>
             <x>10</x>
             <y>220</y>
-            <width>214</width>
+            <width>225</width>
             <height>91</height>
            </rect>
           </property>

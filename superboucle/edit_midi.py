@@ -50,6 +50,8 @@ class EditMidiDialog(QDialog):
         # * button
         # * body
         root_layout = QVBoxLayout(self)
+        root_layout.setSpacing(0)
+        root_layout.setContentsMargins(0,0,0,0)
         self.buttons = EditMidiButton(self)
         root_layout.addWidget(self.buttons)
 
@@ -59,6 +61,7 @@ class EditMidiDialog(QDialog):
         body_widget = QWidget()
         self.body_layout: QGridLayout = QGridLayout(body_widget)
         self.body_layout.setSpacing(0)
+        self.body_layout.setContentsMargins(10,0,10,10)
 
         # Note Grid
         self.piano_grid: PianoGridWidget = None
