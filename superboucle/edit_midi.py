@@ -69,7 +69,7 @@ class EditMidiDialog(QDialog):
         body_layout.setSpacing(0)
 
         # Note Grid
-        self.piano_grid: PianoGridWidget = PianoGridWidget(self, grid_width, grid_height, keyboard_octaves, beats)
+        self.piano_grid: PianoGridWidget = PianoGridWidget(self, self.clip, grid_width, grid_height, keyboard_octaves, beats)
         self.piano_grid.connect(self.syncScrollArea)
 
         # Piano Keyboard
@@ -99,11 +99,6 @@ class EditMidiDialog(QDialog):
         self.setGeometry(100, 100, 800, 600)
         self.show()
         self.beat_legend.initView()
-        self.drawNotes()
-
-    def drawNotes(self) -> None:
-        for note in self.clip.notes:
-            self.piano_grid.addNote(note)
 
     def syncScrollArea(self, value):
         sender = self.sender()

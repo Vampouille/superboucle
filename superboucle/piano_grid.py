@@ -1,17 +1,18 @@
 from PyQt5.QtWidgets import QGraphicsRectItem
 from PyQt5.QtGui import QColor, QBrush
-from superboucle.clip_midi import MidiNote
+from superboucle.clip_midi import MidiNote, MidiClip
 from superboucle.scrollable_graphics_view import ScrollableGraphicsView
 from superboucle.midi_note_graphics import MidiNoteItem
 
 BEAT_PER_BAR = 4
 
 class PianoGridWidget(ScrollableGraphicsView):
-    def __init__(self, parent, width, height, octaves, beats):
-        super().__init__(parent, width, height, buffer=2)
+    def __init__(self, parent, clip: MidiClip, width, height, octaves, beats):
+        super().__init__(parent, width, height)
 
         self.octaves: int = octaves
         self.beats: int = beats
+        self.clip: MidiClip = clip
         black_key_brush = QBrush(QColor(231, 231, 231))
         white_key_brush = QBrush(QColor(243, 243, 243))
         self.note_brush = QBrush(QColor(0, 255, 0))
@@ -48,17 +49,10 @@ class PianoGridWidget(ScrollableGraphicsView):
                                x, 
                                self.height, 
                                self.bar_pen if beat % BEAT_PER_BAR == 0 else self.beat_pen)
+        # Draw notes from clip
+        for note in self.clip.notes:
+            self.scene.addItem(MidiNoteItem(self.scene, self.clip, note, self.beats, self.octaves))
 
     def connect(self, callback):
         self.horizontalScrollBar().valueChanged.connect(callback)
         self.verticalScrollBar().valueChanged.connect(callback)
-    
-    def addNote(self, note: MidiNote) -> None:
-        self.scene.addItem(MidiNoteItem(self.scene, note, self.beats, self.octaves))
-        
-    def ticksToX(self, ticks: int) -> int:
-        return (ticks * self.width) / (self.beats * 24)
-
-    def midiPitchToY(self, pitch: int) -> int:
-        y = (pitch - 12) * self.note_height
-        return int(self.height - y - self.note_height)

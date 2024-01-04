@@ -1,14 +1,15 @@
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene
 from PyQt5.QtGui import QColor, QPen 
 from PyQt5.QtCore import Qt, QRectF, QPointF
-from superboucle.clip_midi import MidiNote
+from superboucle.clip_midi import MidiNote, MidiClip
 
 TICK_PER_BEAT = 24
 NOTE_PER_OCTAVE = 12
 
 class MidiNoteItem(QGraphicsRectItem):
-    def __init__(self, scene: QGraphicsScene, note: MidiNote, scene_beats: int, scene_octaves: int):
+    def __init__(self, scene: QGraphicsScene, clip: MidiClip, note: MidiNote, scene_beats: int, scene_octaves: int):
         self.scene: QGraphicsScene = scene
+        self.clip: MidiClip = clip
         self.note: MidiNote = note
         self.scene_beats: int = scene_beats
         self.scene_octaves: int = scene_octaves
@@ -94,22 +95,20 @@ class MidiNoteItem(QGraphicsRectItem):
             latest_start = self.scene_beats * TICK_PER_BEAT - self.initial_note.length
             new_start = int(self.initial_note.start_tick + (delta.x() / self.horizontal_snap))
             self.note.start_tick = max(0, min(latest_start, new_start))
-            self.note.pitch = max(24, int(self.initial_note.pitch - (delta.y() / self.vertical_snap)))
+            lowest_note = 24
+            highest_note = 24 + self.scene_octaves * NOTE_PER_OCTAVE - 1
+            self.note.pitch = max(lowest_note, min(highest_note, int(self.initial_note.pitch - (delta.y() / self.vertical_snap))))
             # Change GUI
             self.setRect(self.generateRect())
             print("Move in progress: %s" % self.note)
-
-    def midiPitchToY(self, pitch: int) -> int:
-        y = (pitch - 12) * self.note_height
-        return int(self.height - y - self.note_height)
 
     def mouseReleaseEvent(self, event):
         if self.resize_started:
             self.resize_started = False
         self.drag_origin = None
         self.initial_note = None
-        # TODO trigger compute MIDI events on midi clip
-        #self.parent.clip.compute...
+        # trigger compute of MIDI events on midi clip
+        self.clip.computeEvents()
 
     def isResizingHandleHovered(self, pos):
         right_handle_rect = QRectF(self.rect().right() - self.resize_handle_width, self.rect().top(),

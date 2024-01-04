@@ -6,12 +6,12 @@ BEAT_PER_BAR = 4
 
 class ScrollableGraphicsView(QGraphicsView):
 
-    def __init__(self, parent, width: int, height: int, buffer: int = 0):
+    def __init__(self, parent, width: int, height: int):
         super().__init__(parent)
 
         self.width: int = width
         self.height: int = height
-        self.setMaximumSize(width + buffer, height)
+        self.setMaximumSize(width + 2, height + 2)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scene: QGraphicsScene = QGraphicsScene(self)
