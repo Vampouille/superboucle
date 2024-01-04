@@ -7,18 +7,17 @@ TICK_PER_BEAT = 24
 NOTE_PER_OCTAVE = 12
 
 class MidiNoteItem(QGraphicsRectItem):
-    def __init__(self, scene: QGraphicsScene, clip: MidiClip, note: MidiNote, scene_beats: int, scene_octaves: int):
+    def __init__(self, scene: QGraphicsScene, clip: MidiClip, note: MidiNote, scene_octaves: int):
         self.scene: QGraphicsScene = scene
         self.clip: MidiClip = clip
         self.note: MidiNote = note
-        self.scene_beats: int = scene_beats
         self.scene_octaves: int = scene_octaves
         self.border:int = 0
         fill_color:QColor = QColor(0, 0, 255)
         stroke_color: QColor = QColor(123,17,54)
 
         # horizontal grid is snap to MIDI clock ticks
-        self.horizontal_snap: int = int(scene.sceneRect().width() / (TICK_PER_BEAT * scene_beats))
+        self.horizontal_snap: int = int(scene.sceneRect().width() / (TICK_PER_BEAT * self.clip.length))
         self.vertical_snap: int  = int(scene.sceneRect().height() / (NOTE_PER_OCTAVE * scene_octaves))
         super().__init__(self.generateRect())
         self.setPen(QPen(stroke_color, self.border))
@@ -83,7 +82,7 @@ class MidiNoteItem(QGraphicsRectItem):
         if self.resize_started:
             # Change Internal Note 
             new_length = int(self.initial_note.length + (delta.x() / self.horizontal_snap))
-            remaining = self.scene_beats * TICK_PER_BEAT - self.initial_note.start_tick
+            remaining = self.clip.length * TICK_PER_BEAT - self.initial_note.start_tick
             self.note.length = max(1, min(new_length, remaining))
             # Change GUI
             self.setRect(self.generateRect())
@@ -92,7 +91,7 @@ class MidiNoteItem(QGraphicsRectItem):
             #self.setPos(self.initial_rect.x() + delta.x(), self.initial_rect.y() + delta.y())
             #self.rect.adjust(delta.x(),delta.y(),delta.x(),delta.y())
             # Change Internal Note 
-            latest_start = self.scene_beats * TICK_PER_BEAT - self.initial_note.length
+            latest_start = self.clip.length * TICK_PER_BEAT - self.initial_note.length
             new_start = int(self.initial_note.start_tick + (delta.x() / self.horizontal_snap))
             self.note.start_tick = max(0, min(latest_start, new_start))
             lowest_note = 24

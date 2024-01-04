@@ -9,7 +9,7 @@ BEAT_PER_BAR = 4
 class BeatLegendWidget(ScrollableGraphicsView):
 
     def __init__(self, parent, width, height, beats):
-        super().__init__(parent, width, height, buffer=2)
+        super().__init__(parent, width, height)
 
         beat_width = self.width / beats
         font = QFont()

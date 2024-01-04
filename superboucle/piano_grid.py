@@ -50,7 +50,7 @@ class PianoGridWidget(ScrollableGraphicsView):
                                self.bar_pen if beat % BEAT_PER_BAR == 0 else self.beat_pen)
         # Draw notes from clip
         for note in self.clip.notes:
-            self.scene.addItem(MidiNoteItem(self.scene, self.clip, note, self.clip.length, self.octaves))
+            self.scene.addItem(MidiNoteItem(self.scene, self.clip, note, self.octaves))
 
     def connect(self, callback):
         self.horizontalScrollBar().valueChanged.connect(callback)
