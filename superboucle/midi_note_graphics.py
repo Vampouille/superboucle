@@ -16,6 +16,7 @@ class MidiNoteItem(QGraphicsRectItem):
         fill_color:QColor = QColor(0, 0, 255)
         stroke_color: QColor = QColor(123,17,54)
 
+        self.tick_width: int = int(scene.sceneRect().width() / (TICK_PER_BEAT * self.clip.length))
         # horizontal grid is snap to MIDI clock ticks
         self.horizontal_snap: int = int(scene.sceneRect().width() / (TICK_PER_BEAT * self.clip.length))
         self.vertical_snap: int  = int(scene.sceneRect().height() / (NOTE_PER_OCTAVE * scene_octaves))
@@ -34,11 +35,11 @@ class MidiNoteItem(QGraphicsRectItem):
 
     # Draw Rectangle from note definition
     def generateRect(self) -> QRectF:
-        x = self.horizontal_snap * self.note.start_tick + self.border
+        x = self.tick_width * self.note.start_tick + self.border
         # note pitch start at C-2 but GUI start at C0, this is why there is -24 offset
         y = self.vertical_snap * (self.note.pitch - 24)
         y = self.scene.sceneRect().height() - y - self.vertical_snap
-        width = self.horizontal_snap * self.note.length - self.border
+        width = self.tick_width * self.note.length - self.border
         return QRectF(x, y, width, self.vertical_snap)
 
     # Snap helpers
@@ -70,6 +71,9 @@ class MidiNoteItem(QGraphicsRectItem):
         if event.button() == Qt.LeftButton:
             self.drag_origin = event.pos()
             self.initial_note = self.note.copy()
+            dialog = self.scene.parent().parent().parent()
+            tick_snap = dialog.buttons.getTickSnap()
+            self.horizontal_snap: int = int((self.scene.sceneRect().width() * tick_snap) / (TICK_PER_BEAT * self.clip.length))
             if self.isResizingHandleHovered(event.pos()):
                 self.resize_started = True
 
@@ -81,7 +85,7 @@ class MidiNoteItem(QGraphicsRectItem):
         # For resize only check horizontal delta
         if self.resize_started:
             # Change Internal Note 
-            new_length = int(self.initial_note.length + (delta.x() / self.horizontal_snap))
+            new_length = int(self.initial_note.length + (delta.x() / self.tick_width))
             remaining = self.clip.length * TICK_PER_BEAT - self.initial_note.start_tick
             self.note.length = max(1, min(new_length, remaining))
             # Change GUI
@@ -92,7 +96,7 @@ class MidiNoteItem(QGraphicsRectItem):
             #self.rect.adjust(delta.x(),delta.y(),delta.x(),delta.y())
             # Change Internal Note 
             latest_start = self.clip.length * TICK_PER_BEAT - self.initial_note.length
-            new_start = int(self.initial_note.start_tick + (delta.x() / self.horizontal_snap))
+            new_start = int(self.initial_note.start_tick + (delta.x() / self.tick_width))
             self.note.start_tick = max(0, min(latest_start, new_start))
             lowest_note = 24
             highest_note = 24 + self.scene_octaves * NOTE_PER_OCTAVE - 1

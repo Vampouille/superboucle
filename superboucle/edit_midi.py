@@ -50,7 +50,8 @@ class EditMidiDialog(QDialog):
         # * button
         # * body
         root_layout = QVBoxLayout(self)
-        root_layout.addWidget(EditMidiButton(self))
+        self.buttons = EditMidiButton(self)
+        root_layout.addWidget(self.buttons)
 
         # Body Widget:
         # * piano keyboard
