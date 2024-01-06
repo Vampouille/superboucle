@@ -76,6 +76,9 @@ class MidiClip:
             self.notes.remove(note)
         self.notes.add(note)
 
+    def removeNote(self, note: MidiNote) -> None:
+        self.notes.remove(note)
+
     def computeEvents(self) -> None:
         events = MidiEvents()
         for note in self.notes:

@@ -13,7 +13,9 @@ class MidiNoteItem(QGraphicsRectItem):
         self.note: MidiNote = note
         self.scene_octaves: int = scene_octaves
         self.border:int = 0
-        fill_color:QColor = QColor(6, 147, 152) # selected 150, 18, 87
+        self.fill_color:QColor = QColor(6, 147, 152)
+        #self.fill_color_selected:QColor = QColor(150, 18, 87)
+        self.fill_color_selected:QColor = QColor(247, 42, 151)
         stroke_color: QColor = QColor(123, 17, 54)
 
         self.tick_width: int = int(scene.sceneRect().width() / (TICK_PER_BEAT * self.clip.length))
@@ -22,7 +24,7 @@ class MidiNoteItem(QGraphicsRectItem):
         self.vertical_snap: int  = int(scene.sceneRect().height() / (NOTE_PER_OCTAVE * scene_octaves))
         super().__init__(self.generateRect())
         self.setPen(QPen(stroke_color, self.border))
-        self.setBrush(fill_color)
+        self.applyCssForNotSelected()
         self.drag_origin: QPointF = None
         self.resize_started = False
         self.initial_note = None
@@ -30,8 +32,9 @@ class MidiNoteItem(QGraphicsRectItem):
 
         self.setFlag(QGraphicsRectItem.ItemIsMovable)
         self.setFlag(QGraphicsRectItem.ItemSendsGeometryChanges)
+        self.setFlag(QGraphicsRectItem.ItemIsSelectable)
         # required for focusItemChanged signal to work:
-        #self.rect_item.setFlag(QGraphicsItem.ItemIsFocusable)
+        self.setFlag(QGraphicsRectItem.ItemIsFocusable)
 
     # Draw Rectangle from note definition
     def generateRect(self) -> QRectF:
@@ -41,6 +44,18 @@ class MidiNoteItem(QGraphicsRectItem):
         y = self.scene.sceneRect().height() - y - self.vertical_snap
         width = self.tick_width * self.note.length - self.border
         return QRectF(x, y, width, self.vertical_snap)
+
+    def applyCssForSelected(self):
+        self.setBrush(self.fill_color_selected)
+
+    def applyCssForNotSelected(self):
+        self.setBrush(self.fill_color)
+
+    def getDialog(self):
+        return self.scene.parent().parent().parent()
+        
+    def getTool(self):
+        return self.getDialog().getTool()
 
     # Snap helpers
     def snap_to_xgrid(self, value):
@@ -58,8 +73,8 @@ class MidiNoteItem(QGraphicsRectItem):
 
     # Enter move/resize
     def mousePressEvent(self, event):
-        print("PRESS")
-        if event.button() == Qt.LeftButton:
+        dialog = self.scene.parent().parent().parent()
+        if self.getTool() == "edit" and event.button() == Qt.LeftButton:
             self.drag_origin = event.pos()
             self.initial_note = self.note.copy()
             dialog = self.scene.parent().parent().parent()
@@ -67,40 +82,42 @@ class MidiNoteItem(QGraphicsRectItem):
             self.horizontal_snap: int = int((self.scene.sceneRect().width() * tick_snap) / (TICK_PER_BEAT * self.clip.length))
             if self.isResizingHandleHovered(event.pos()):
                 self.resize_started = True
+        else:
+            super().mousePressEvent(event)
 
     # Move
     def mouseMoveEvent(self, event):
-        print("MOVE")
-        # First snap movement to the grid
-        delta = event.pos() - self.drag_origin
-        self.snap_delta_to_grid(delta)
-        # For resize only check horizontal delta
-        if self.resize_started:
-            # Change Internal Note 
-            new_length = int(self.initial_note.length + (delta.x() / self.tick_width))
-            remaining = self.clip.length * TICK_PER_BEAT - self.initial_note.start_tick
-            self.note.length = max(1, min(new_length, remaining))
-            # Change GUI
-            self.setRect(self.generateRect())
-        else:
-            # Change Internal Note 
-            latest_start = self.clip.length * TICK_PER_BEAT - self.initial_note.length
-            new_start = int(self.initial_note.start_tick + (delta.x() / self.tick_width))
-            self.note.start_tick = max(0, min(latest_start, new_start))
-            lowest_note = 24
-            highest_note = 24 + self.scene_octaves * NOTE_PER_OCTAVE - 1
-            self.note.pitch = max(lowest_note, min(highest_note, int(self.initial_note.pitch - (delta.y() / self.vertical_snap))))
-            # Change GUI
-            self.setRect(self.generateRect())
+        if self.getTool() == "edit" and self.drag_origin is not None:
+            # First snap movement to the grid
+            delta = event.pos() - self.drag_origin
+            self.snap_delta_to_grid(delta)
+            # For resize only check horizontal delta
+            if self.resize_started:
+                # Change Internal Note 
+                new_length = int(self.initial_note.length + (delta.x() / self.tick_width))
+                remaining = self.clip.length * TICK_PER_BEAT - self.initial_note.start_tick
+                self.note.length = max(1, min(new_length, remaining))
+                # Change GUI
+                self.setRect(self.generateRect())
+            else:
+                # Change Internal Note 
+                latest_start = self.clip.length * TICK_PER_BEAT - self.initial_note.length
+                new_start = int(self.initial_note.start_tick + (delta.x() / self.tick_width))
+                self.note.start_tick = max(0, min(latest_start, new_start))
+                lowest_note = 24
+                highest_note = 24 + self.scene_octaves * NOTE_PER_OCTAVE - 1
+                self.note.pitch = max(lowest_note, min(highest_note, int(self.initial_note.pitch - (delta.y() / self.vertical_snap))))
+                # Change GUI
+                self.setRect(self.generateRect())
 
     def mouseReleaseEvent(self, event):
-        print("RELEASE")
-        if self.resize_started:
-            self.resize_started = False
-        self.drag_origin = None
-        self.initial_note = None
-        # trigger compute of MIDI events on midi clip
-        self.clip.computeEvents()
+        if self.getTool() == "edit" and self.drag_origin is not None:
+            if self.resize_started:
+                self.resize_started = False
+            self.drag_origin = None
+            self.initial_note = None
+            # trigger compute of MIDI events on midi clip
+            self.clip.computeEvents()
 
     def isResizingHandleHovered(self, pos):
         right_handle_rect = QRectF(self.rect().right() - self.resize_handle_width, self.rect().top(),

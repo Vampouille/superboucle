@@ -11,6 +11,7 @@ TICK_PER_BEAT = 24
 class PianoGridScene(QGraphicsScene):
     def __init__(self, parent, clip, octaves):
         super().__init__(parent)
+        self.selectionChanged.connect(self.updateNoteColor)
 
         self.clip = clip
         self.octaves: int = octaves
@@ -29,14 +30,12 @@ class PianoGridScene(QGraphicsScene):
         return items[0] if len(items) else None
 
     def event(self, event):
-        print("Scene: %s" % event)
         if event.type() == QEvent.GraphicsSceneMouseMove:
             self.handleMouseMoveEvent(event)
         return super().event(event)
 
     # Customize mouse pointer
     def handleMouseMoveEvent(self, event):
-        print("mouse Hoover scene")
         item = self.getNoteItem(event.scenePos())
 
         if self.getTool() == "edit":
@@ -73,7 +72,24 @@ class PianoGridScene(QGraphicsScene):
         noteItem = MidiNoteItem(self, self.clip, note, self.octaves)
         self.addItem(noteItem)
 
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+            selected_items = self.selectedItems()
+            for item in selected_items:
+                if isinstance(item, MidiNoteItem):
+                    self.clip.removeNote(item.note)
+                    self.removeItem(item)
 
+        super().keyPressEvent(event)
+
+    def updateNoteColor(self):
+        selected_items = self.selectedItems()
+        for item in self.items():
+            if isinstance(item, MidiNoteItem):
+                if item in selected_items:
+                    item.applyCssForSelected()
+                else:
+                    item.applyCssForNotSelected()
 
 class PianoGridWidget(ScrollableGraphicsView):
     def __init__(self, parent, clip: MidiClip, width, height, octaves):
