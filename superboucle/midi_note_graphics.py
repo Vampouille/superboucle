@@ -29,7 +29,9 @@ class MidiNoteItem(QGraphicsRectItem):
         self.resize_handle_width = 10
 
         self.setFlag(QGraphicsRectItem.ItemIsMovable)
-        #self.setFlag(QGraphicsRectItem.ItemIsSelectable)
+        self.setFlag(QGraphicsRectItem.ItemSendsGeometryChanges)
+        # required for focusItemChanged signal to work:
+        #self.rect_item.setFlag(QGraphicsItem.ItemIsFocusable)
 
     # Draw Rectangle from note definition
     def generateRect(self) -> QRectF:
@@ -56,6 +58,7 @@ class MidiNoteItem(QGraphicsRectItem):
 
     # Enter move/resize
     def mousePressEvent(self, event):
+        print("PRESS")
         if event.button() == Qt.LeftButton:
             self.drag_origin = event.pos()
             self.initial_note = self.note.copy()
@@ -67,6 +70,7 @@ class MidiNoteItem(QGraphicsRectItem):
 
     # Move
     def mouseMoveEvent(self, event):
+        print("MOVE")
         # First snap movement to the grid
         delta = event.pos() - self.drag_origin
         self.snap_delta_to_grid(delta)
@@ -90,6 +94,7 @@ class MidiNoteItem(QGraphicsRectItem):
             self.setRect(self.generateRect())
 
     def mouseReleaseEvent(self, event):
+        print("RELEASE")
         if self.resize_started:
             self.resize_started = False
         self.drag_origin = None
