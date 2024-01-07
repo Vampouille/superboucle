@@ -1,16 +1,78 @@
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRectF, QEvent
 from superboucle.scrollable_graphics_view import ScrollableGraphicsView
 from superboucle.clip_midi import MidiClip
+from superboucle.midi_note_graphics import MidiVelocityItem
 
 BEAT_PER_BAR = 4
+
+class MidiVelocityScene(QGraphicsScene):
+    def __init__(self, parent, clip):
+        super().__init__(parent)
+        self.clip = clip
+        self.drag_origin = None
+        self.initial_note = None
+
+    
+    def snap_delta_to_grid(self, delta):
+        snap_interval = int(self.sceneRect().height() / 128)
+        y = round(delta.y() / snap_interval) * snap_interval
+        delta.setY(y)
+
+    def getDialog(self):
+        return self.parent().parent().parent()
+        
+    def getTool(self):
+        return self.getDialog().getTool()
+
+    def getSelectedItem(self):
+        items = self.selectedItems()
+        items = [i for i in items if isinstance(i, MidiVelocityItem)]
+        return items[0] if len(items) else None
+
+    # Enter move/resize
+    def mousePressEvent(self, event):
+        #print("PRESS %s" % event.scenePos().y())
+        if (self.getTool() == "select" and
+            event.button() == Qt.LeftButton and
+            self.getSelectedItem()):
+            self.drag_origin = event.scenePos()
+            self.initial_note = self.getSelectedItem().note.copy()
+
+    # Move
+    def mouseMoveEvent(self, event):
+        if self.drag_origin is not None:
+            #print("MOVE %s->%s" % (self.drag_origin.y(), event.scenePos().y()))
+            # First snap movement to the grid
+            delta = event.scenePos() - self.drag_origin
+            self.snap_delta_to_grid(delta)
+            # Change Internal Note 
+            snap_interval = int(self.sceneRect().height() / 128)
+            new_velocity = int(self.initial_note.velocity - (delta.y() / snap_interval))
+            item = self.getSelectedItem()
+            item.note.velocity = max(0, min(new_velocity, 127))
+            # Change GUI
+            print(item.note)
+            print(delta.y())
+            item.setRect(item.generateRect())
+
+    def mouseReleaseEvent(self, event):
+        if self.drag_origin is not None:
+            self.drag_origin = None
+            self.initial_note = None
+            # trigger compute of MIDI events on midi clip
+            self.clip.computeEvents()
 
 class MidiVelocityWidget(ScrollableGraphicsView):
 
     def __init__(self, parent, clip, width, height):
         super().__init__(parent, width, height)
-
+        # use custom scene
+        self.scene = MidiVelocityScene(self, clip)
+        self.scene.setSceneRect(QRectF(0, 0, width, height))
+        self.setScene(self.scene)
         self.clip: MidiClip = clip
+        self.setCursor(Qt.CursorShape.SizeVerCursor)
         beat_width = self.width / self.clip.length
 
         for beat in range(self.clip.length):
@@ -35,34 +97,3 @@ class MidiVelocityWidget(ScrollableGraphicsView):
 
     def connect(self, callback):
         self.horizontalScrollBar().valueChanged.connect(callback)
-
-    # Enter move/resize
-    def mousePressEvent(self, event):
-        if (self.getTool() == "select" and
-            event.button() == Qt.LeftButton and
-            self.isSelected()):
-            self.drag_origin = event.pos()
-            self.initial_note = self.note.copy()
-        else:
-            super().mousePressEvent(event)
-
-    # Move
-    def mouseMoveEvent(self, event):
-        if self.drag_origin is not None:
-            # First snap movement to the grid
-            delta = event.pos() - self.drag_origin
-            self.snap_delta_to_grid(delta)
-            # Change Internal Note 
-            new_velocity = int(self.initial_note.velocity - (delta.y() / self.vertical_snap))
-            self.note.velocity = max(0, min(new_velocity, 127))
-            # Change GUI
-            print(self.note)
-            self.setRect(self.generateRect())
-
-    def mouseReleaseEvent(self, event):
-        if self.drag_origin is not None:
-            self.drag_origin = None
-            self.initial_note = None
-            # trigger compute of MIDI events on midi clip
-            self.clip.computeEvents()
-

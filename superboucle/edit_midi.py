@@ -53,6 +53,7 @@ class EditMidiDialog(QDialog):
         root_layout.setSpacing(0)
         root_layout.setContentsMargins(0,0,0,0)
         self.buttons = EditMidiButton(self)
+        self.buttons.edit_tool.clicked.connect(self.onEditToolSelected)
         root_layout.addWidget(self.buttons)
 
         # Body Widget:
@@ -90,6 +91,11 @@ class EditMidiDialog(QDialog):
         self.show()
         self.beat_legend.initView()
     
+    def onEditToolSelected(self):
+        for item in self.piano_grid.scene.selectedItems():
+            item.setSelected(False)
+            item.velocity.setSelected(False)
+
     def getTool(self):
         if self.buttons.select_tool.isChecked():
             return "select"

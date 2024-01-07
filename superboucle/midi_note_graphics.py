@@ -63,6 +63,7 @@ class MidiNoteItem(QGraphicsRectItem):
     def applyCssForNotSelected(self):
         self.setBrush(self.fill_color)
         self.velocity.applyCssForNotSelected()
+        self.velocity.setSelected(False)
 
     def getDialog(self):
         return self.scene.parent().parent().parent()
