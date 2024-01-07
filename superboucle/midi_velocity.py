@@ -36,3 +36,33 @@ class MidiVelocityWidget(ScrollableGraphicsView):
     def connect(self, callback):
         self.horizontalScrollBar().valueChanged.connect(callback)
 
+    # Enter move/resize
+    def mousePressEvent(self, event):
+        if (self.getTool() == "select" and
+            event.button() == Qt.LeftButton and
+            self.isSelected()):
+            self.drag_origin = event.pos()
+            self.initial_note = self.note.copy()
+        else:
+            super().mousePressEvent(event)
+
+    # Move
+    def mouseMoveEvent(self, event):
+        if self.drag_origin is not None:
+            # First snap movement to the grid
+            delta = event.pos() - self.drag_origin
+            self.snap_delta_to_grid(delta)
+            # Change Internal Note 
+            new_velocity = int(self.initial_note.velocity - (delta.y() / self.vertical_snap))
+            self.note.velocity = max(0, min(new_velocity, 127))
+            # Change GUI
+            print(self.note)
+            self.setRect(self.generateRect())
+
+    def mouseReleaseEvent(self, event):
+        if self.drag_origin is not None:
+            self.drag_origin = None
+            self.initial_note = None
+            # trigger compute of MIDI events on midi clip
+            self.clip.computeEvents()
+

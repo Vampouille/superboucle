@@ -9,7 +9,7 @@ class MidiNote:
         self.length = length         # note length in tick
 
     def __str__(self) -> str:
-        return "%s%s(%s) %s %s" % (self.noteName(), (self.pitch // 12) - 2, self.pitch, self.humanizeTickPosition(self.start_tick), self.humanizeTickDuration(self.length))
+        return "%s%s(%s)/%s %s %s" % (self.noteName(), (self.pitch // 12) - 2, self.pitch, self.velocity, self.humanizeTickPosition(self.start_tick), self.humanizeTickDuration(self.length))
     
     def humanizeTickPosition(self, tick: int) -> str:
         beat = tick // 24

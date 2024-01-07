@@ -12,7 +12,6 @@ class PianoGridScene(QGraphicsScene):
     def __init__(self, parent, clip, octaves):
         super().__init__(parent)
         self.selectionChanged.connect(self.updateNoteColor)
-
         self.clip = clip
         self.octaves: int = octaves
         # 7 octaves: 7x12=84
@@ -69,7 +68,7 @@ class PianoGridScene(QGraphicsScene):
         pitch = int(((self.sceneRect().height() - scene_pos.y()) / note_height) + 24)
         start = int(scene_pos.x() / tick_width)
         note = MidiNote(pitch, 100, start, 24)
-        noteItem = MidiNoteItem(self, self.clip, note, self.octaves)
+        noteItem = MidiNoteItem(self, self.parent().velocityScene, self.clip, note, self.octaves)
         self.addItem(noteItem)
 
     def keyPressEvent(self, event):
@@ -78,6 +77,7 @@ class PianoGridScene(QGraphicsScene):
             for item in selected_items:
                 if isinstance(item, MidiNoteItem):
                     self.clip.removeNote(item.note)
+                    item.velocityScene.removeItem(item.velocity)
                     self.removeItem(item)
 
         super().keyPressEvent(event)
@@ -92,9 +92,10 @@ class PianoGridScene(QGraphicsScene):
                     item.applyCssForNotSelected()
 
 class PianoGridWidget(ScrollableGraphicsView):
-    def __init__(self, parent, clip: MidiClip, width, height, octaves):
+    def __init__(self, parent, velocityScene: QGraphicsScene, clip: MidiClip, width, height, octaves):
         super().__init__(parent, width, height)
         self.setMouseTracking(True)
+        self.velocityScene = velocityScene
 
         self.drag_origin = None
         self.drawing_note = False
@@ -144,7 +145,7 @@ class PianoGridWidget(ScrollableGraphicsView):
                                self.bar_pen if beat % BEAT_PER_BAR == 0 else self.beat_pen)
         # Draw notes from clip
         for note in self.clip.notes:
-            self.scene.addItem(MidiNoteItem(self.scene, self.clip, note, self.octaves))
+            self.scene.addItem(MidiNoteItem(self.scene, self.velocityScene, self.clip, note, self.octaves))
 
 
     def connect(self, callback):
