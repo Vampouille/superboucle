@@ -94,7 +94,6 @@ class EditMidiDialog(QDialog):
     def onEditToolSelected(self):
         for item in self.piano_grid.scene.selectedItems():
             item.setSelected(False)
-            item.velocity.setSelected(False)
 
     def getTool(self):
         if self.buttons.select_tool.isChecked():

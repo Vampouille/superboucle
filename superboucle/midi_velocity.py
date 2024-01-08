@@ -33,9 +33,7 @@ class MidiVelocityScene(QGraphicsScene):
     # Enter move/resize
     def mousePressEvent(self, event):
         #print("PRESS %s" % event.scenePos().y())
-        if (self.getTool() == "select" and
-            event.button() == Qt.LeftButton and
-            self.getSelectedItem()):
+        if event.button() == Qt.LeftButton and self.getSelectedItem():
             self.drag_origin = event.scenePos()
             self.initial_note = self.getSelectedItem().note.copy()
 

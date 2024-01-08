@@ -153,7 +153,7 @@ class EditMidiButton(QWidget):
         for item in grid.items():
             if isinstance(item, MidiNoteItem):
                 print(type(item))
-                item.setRect(item.generateRect())
+                item.reDraw()
     
     def getTickSnap(self):
         self.quantize.currentIndex()

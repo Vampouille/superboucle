@@ -28,6 +28,11 @@ class PianoGridScene(QGraphicsScene):
         items = [i for i in items if isinstance(i, MidiNoteItem)]
         return items[0] if len(items) else None
 
+    def getSelectedNoteItem(self):
+        items = self.selectedItems()
+        items = [i for i in items if isinstance(i, MidiNoteItem)]
+        return items[0] if len(items) else None
+
     def event(self, event):
         if event.type() == QEvent.GraphicsSceneMouseMove:
             self.handleMouseMoveEvent(event)
@@ -37,26 +42,22 @@ class PianoGridScene(QGraphicsScene):
     def handleMouseMoveEvent(self, event):
         item = self.getNoteItem(event.scenePos())
 
-        if self.getTool() == "edit":
-            if item is not None:
-                if item.isResizingHandleHovered(event.scenePos()):
-                    # Change note length
-                    self.parent().setCursor(Qt.CursorShape.SizeHorCursor)
-                else:
-                    # Move note: pitch, timing
-                    self.parent().setCursor(Qt.CursorShape.DragMoveCursor)
+        if item is not None:
+            if item.isResizingHandleHovered(event.scenePos()):
+                # Change note length
+                self.parent().setCursor(Qt.CursorShape.SizeHorCursor)
             else:
-                # Draw new note
-                self.parent().setCursor(Qt.CursorShape.CrossCursor)
-        elif self.getTool() == "select":
-            # Select note for deletion or velocity edit
-            self.parent().setCursor(Qt.CursorShape.ArrowCursor)
+                # Move note: pitch, timing
+                self.parent().setCursor(Qt.CursorShape.DragMoveCursor)
+        else:
+            # Draw new note
+            self.parent().setCursor(Qt.CursorShape.CrossCursor)
 
     def mousePressEvent(self, event):
         item = self.getNoteItem(event.scenePos())
         if (event.button() == Qt.LeftButton and
             item is None and
-            self.getTool() == "edit"):
+            self.getSelectedNoteItem() is None):
 
             self.drawNewNote(event.scenePos())
         else:
