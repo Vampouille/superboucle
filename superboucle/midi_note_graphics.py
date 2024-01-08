@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsScene
 from PyQt5.QtGui import QColor, QPen 
 from PyQt5.QtCore import Qt, QRectF, QPointF
 from superboucle.clip_midi import MidiNote, MidiClip
@@ -41,6 +41,16 @@ class MidiNoteItem(QGraphicsRectItem):
         # required for focusItemChanged signal to work:
         self.setFlag(QGraphicsRectItem.ItemIsFocusable)
         self.applyCssForNotSelected()
+    
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSelectedChange:
+            print("Note %s Value %s" % (self.note, value))
+            self.velocity.setSelected(bool(value))
+        return super().itemChange(change, value)
+
+    #def setSelected(self, selected):
+    #    super().setSelected(selected)
+    #    self.velocity.setSelected(selected)
 
     # Draw Rectangle from note definition
     def generateRect(self) -> QRectF:
@@ -58,12 +68,10 @@ class MidiNoteItem(QGraphicsRectItem):
     def applyCssForSelected(self):
         self.setBrush(self.fill_color_selected)
         self.velocity.applyCssForSelected()
-        self.velocity.setSelected(True)
 
     def applyCssForNotSelected(self):
         self.setBrush(self.fill_color)
         self.velocity.applyCssForNotSelected()
-        self.velocity.setSelected(False)
 
     def getDialog(self):
         return self.scene.parent().parent().parent()
@@ -87,21 +95,21 @@ class MidiNoteItem(QGraphicsRectItem):
 
     # Enter move/resize
     def mousePressEvent(self, event):
-        dialog = self.scene.parent().parent().parent()
-        if self.getTool() == "edit" and event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton:
             self.drag_origin = event.pos()
             self.initial_note = self.note.copy()
-            dialog = self.scene.parent().parent().parent()
-            tick_snap = dialog.buttons.getTickSnap()
+            tick_snap = self.getDialog().buttons.getTickSnap()
             self.horizontal_snap: int = int((self.scene.sceneRect().width() * tick_snap) / (TICK_PER_BEAT * self.clip.length))
             if self.isResizingHandleHovered(event.pos()):
                 self.resize_started = True
-        else:
-            super().mousePressEvent(event)
+        for item in self.getDialog().piano_grid.scene.selectedItems():
+            item.setSelected(False)
+        self.setSelected(True)
+        super().mousePressEvent(event)
 
     # Move
     def mouseMoveEvent(self, event):
-        if self.getTool() == "edit" and self.drag_origin is not None:
+        if self.drag_origin is not None:
             # First snap movement to the grid
             delta = event.pos() - self.drag_origin
             self.snap_delta_to_grid(delta)
@@ -122,11 +130,12 @@ class MidiNoteItem(QGraphicsRectItem):
             self.reDraw()
 
     def mouseReleaseEvent(self, event):
-        if self.getTool() == "edit" and self.drag_origin is not None:
+        if self.drag_origin is not None:
             if self.resize_started:
                 self.resize_started = False
             self.drag_origin = None
             self.initial_note = None
+            #self.setSelected(False)
             # trigger compute of MIDI events on midi clip
             self.clip.computeEvents()
 
@@ -178,53 +187,3 @@ class MidiVelocityItem(QGraphicsRectItem):
 
     def applyCssForNotSelected(self):
         self.setBrush(self.fill_color)
-
-    def getDialog(self):
-        return self.scene.parent().parent().parent()
-        
-    def getTool(self):
-        return self.getDialog().getTool()
-
-    # Snap helpers
-    def snap_to_xgrid(self, value):
-        return self._snap_to_grid(value, self.horizontal_snap)
-
-    def snap_to_ygrid(self, value):
-        return self._snap_to_grid(value, self.vertical_snap)
-    
-    def snap_delta_to_grid(self, delta):
-        delta.setX(self.snap_to_xgrid(delta.x()))
-        delta.setY(self.snap_to_ygrid(delta.y()))
-
-    def _snap_to_grid(self, value, snap_interval):
-        return round(value / snap_interval) * snap_interval
-
-    # Enter move/resize
-    def mousePressEvent(self, event):
-        if (self.getTool() == "select" and
-            event.button() == Qt.LeftButton and
-            self.isSelected()):
-            self.drag_origin = event.pos()
-            self.initial_note = self.note.copy()
-        else:
-            super().mousePressEvent(event)
-
-    # Move
-    def mouseMoveEvent(self, event):
-        if self.drag_origin is not None:
-            # First snap movement to the grid
-            delta = event.pos() - self.drag_origin
-            self.snap_delta_to_grid(delta)
-            # Change Internal Note 
-            new_velocity = int(self.initial_note.velocity - (delta.y() / self.vertical_snap))
-            self.note.velocity = max(0, min(new_velocity, 127))
-            # Change GUI
-            print(self.note)
-            self.setRect(self.generateRect())
-
-    def mouseReleaseEvent(self, event):
-        if self.drag_origin is not None:
-            self.drag_origin = None
-            self.initial_note = None
-            # trigger compute of MIDI events on midi clip
-            self.clip.computeEvents()

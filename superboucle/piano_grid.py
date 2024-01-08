@@ -12,7 +12,7 @@ class PianoGridScene(QGraphicsScene):
     def __init__(self, parent, clip, octaves):
         super().__init__(parent)
         self.selectionChanged.connect(self.updateNoteColor)
-        self.clip = clip
+        self.clip: MidiClip = clip
         self.octaves: int = octaves
         # 7 octaves: 7x12=84
         self.notes = self.octaves * 12
@@ -70,6 +70,7 @@ class PianoGridScene(QGraphicsScene):
         start = int(scene_pos.x() / tick_width)
         note = MidiNote(pitch, 100, start, 24)
         noteItem = MidiNoteItem(self, self.parent().velocityScene, self.clip, note, self.octaves)
+        self.clip.addNote(note)
         self.addItem(noteItem)
 
     def keyPressEvent(self, event):

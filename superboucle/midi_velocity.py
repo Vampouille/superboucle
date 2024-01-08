@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene
-from PyQt5.QtCore import Qt, QRectF, QEvent
+from PyQt5.QtWidgets import QGraphicsScene
+from PyQt5.QtCore import Qt, QRectF
 from superboucle.scrollable_graphics_view import ScrollableGraphicsView
 from superboucle.clip_midi import MidiClip
 from superboucle.midi_note_graphics import MidiVelocityItem
@@ -13,18 +13,6 @@ class MidiVelocityScene(QGraphicsScene):
         self.drag_origin = None
         self.initial_note = None
 
-    
-    def snap_delta_to_grid(self, delta):
-        snap_interval = int(self.sceneRect().height() / 128)
-        y = round(delta.y() / snap_interval) * snap_interval
-        delta.setY(y)
-
-    def getDialog(self):
-        return self.parent().parent().parent()
-        
-    def getTool(self):
-        return self.getDialog().getTool()
-
     def getSelectedItem(self):
         items = self.selectedItems()
         items = [i for i in items if isinstance(i, MidiVelocityItem)]
@@ -32,7 +20,6 @@ class MidiVelocityScene(QGraphicsScene):
 
     # Enter move/resize
     def mousePressEvent(self, event):
-        #print("PRESS %s" % event.scenePos().y())
         if event.button() == Qt.LeftButton and self.getSelectedItem():
             self.drag_origin = event.scenePos()
             self.initial_note = self.getSelectedItem().note.copy()
@@ -40,19 +27,19 @@ class MidiVelocityScene(QGraphicsScene):
     # Move
     def mouseMoveEvent(self, event):
         if self.drag_origin is not None:
-            #print("MOVE %s->%s" % (self.drag_origin.y(), event.scenePos().y()))
             # First snap movement to the grid
             delta = event.scenePos() - self.drag_origin
-            self.snap_delta_to_grid(delta)
-            # Change Internal Note 
             snap_interval = int(self.sceneRect().height() / 128)
-            new_velocity = int(self.initial_note.velocity - (delta.y() / snap_interval))
+            y = round(delta.y() / snap_interval) 
+            # Change Internal Note 
+            new_velocity = self.initial_note.velocity - y
             item = self.getSelectedItem()
             item.note.velocity = max(0, min(new_velocity, 127))
             # Change GUI
-            print(item.note)
-            print(delta.y())
             item.setRect(item.generateRect())
+            # Debug
+            print(item.note)
+            print(y)
 
     def mouseReleaseEvent(self, event):
         if self.drag_origin is not None:
