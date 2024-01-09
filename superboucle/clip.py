@@ -11,6 +11,9 @@ import resampy
 from pyrubberband import time_stretch
 import unicodedata
 
+from superboucle.clip_midi import MidiClip
+from superboucle.abstract_clip import AbstractClip
+
 
 class OrderedDict(OrderedDict_):
     def insert(self, key, value, index=-1):
@@ -121,48 +124,14 @@ class WaveForm():
 
 
 
-class Clip(QObject):
-    DEFAULT_OUTPUT = "Main"
-
-    STOP = 0
-    STARTING = 1
-    START = 2
-    STOPPING = 3
-    PREPARE_RECORD = 4
-    RECORDING = 5
-
-    TRANSITION = {STOP: STARTING,
-                  STARTING: STOP,
-                  START: STOPPING,
-                  STOPPING: START,
-                  PREPARE_RECORD: RECORDING,
-                  RECORDING: PREPARE_RECORD}
-    RECORD_TRANSITION = {STOP: PREPARE_RECORD,
-                         PREPARE_RECORD: STOP,
-                         STARTING: STOP,
-                         START: STOP,
-                         STOPPING: STOP,
-                         RECORDING: STOP}
-    STATE_DESCRIPTION = {0: "STOP",
-                         1: "STARTING",
-                         2: "START",
-                         3: "STOPPING",
-                         4: "PREPARE_RECORD",
-                         5: "RECORDING"}
-
-    #updateAudioSignal = pyqtSignal()
-    refreshSignal = pyqtSignal()
-
+class Clip(AbstractClip):
     def __init__(self, audio_file=None, name='',
                  volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=8,
-                 stretch_mode='disable', output=DEFAULT_OUTPUT, mute_group=0):
-        QObject.__init__(self)
-        self.name = name
-        self.volume = volume
+                 stretch_mode='disable', output=AbstractClip.DEFAULT_OUTPUT, mute_group=0):
+        super().__init__(name, volume, output, mute_group)
         self.frame_offset = frame_offset
         self.beat_offset = beat_offset
         self.beat_diviser = beat_diviser
-        self.state = Clip.STOP
         # Original audio file
         self.audio_file = audio_file
         # set the audio_file attribute to use :
@@ -177,27 +146,14 @@ class Clip(QObject):
         self.audio_file_next_id = 0
         # Last bytes played for this clip
         self.stretch_mode = stretch_mode
-        self.output = output
-        self.mute_group = mute_group
         if self.audio_file is None:
             self.channels = 0
         else:
             self.channels = self.audio_file.channels()
         self.edit_clip = None
-        self.refreshSignal.connect(self.triggerRefreshCallbacks)
 
     def channels(self,):
         '''Return channel count for specified clip'''
-
-    def stop(self):
-        self.state = Clip.STOPPING if self.state == Clip.START \
-            else Clip.STOP if self.state == Clip.STARTING \
-            else self.state
-
-    def start(self):
-        self.state = Clip.STARTING if self.state == Clip.STOP \
-            else Clip.START if self.state == Clip.STOPPING \
-            else self.state
 
     def getAudio(self):
         if self.audio_file_id == 0:
@@ -279,20 +235,12 @@ class Clip(QObject):
     def rewind(self):
         self.getAudio().rewind()
 
-    def registerRefresh(self, callback):
-        self.refreshCallbacks.append(callback)
-
-    def unregisterRefreshChange(self, callback):
-        self.refreshCallbacks.remove(callback)
-
-    # Re-draw everything
-    def triggerRefreshCallbacks(self):
-        for c in self.refreshCallbacks:
-            c()
-
     # position relative to the clip between 0 and 1
     def getPos(self):
-        return self.getAudio().next_offset / self.getAudio().length()
+        if not self.audio_file:
+            return 0
+        else:
+            return self.getAudio().next_offset / self.getAudio().length()
 
 
 
@@ -315,6 +263,8 @@ class Song():
         self.is_record = False
         self.outputsPorts = set()
         self.outputsPorts.add(Clip.DEFAULT_OUTPUT)
+        self.outputsMidiPorts = set()
+        self.outputsMidiPorts.add(Clip.DEFAULT_OUTPUT)
         self.scenes = OrderedDict()
         self.initial_scene = None
 
@@ -354,12 +304,15 @@ class Song():
             self.clips.remove(self.clips_matrix[x][y])
         self.clips_matrix[x][y] = clip
         self.clips.append(clip)
-        self.outputsPorts.add(clip.output)
+        if isinstance(clip, MidiClip):
+            self.outputsMidiPorts.add(clip.output)
+        else:
+            self.outputsPorts.add(clip.output)
         clip.x = x
         clip.y = y
 
     def removeClip(self, clip):
-        if clip.audio_file is not None:
+        if isinstance(clip, MidiClip) and clip.audio_file is not None:
             current_audio_file = clip.audio_file
             clip.audio_file = None
             if current_audio_file not in [c.audio_file for c in self.clips]:

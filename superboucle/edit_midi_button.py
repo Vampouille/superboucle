@@ -3,6 +3,8 @@ from PyQt5.QtGui import QFont, QIcon, QPixmap
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget, QLabel, QSpinBox, QComboBox, QAbstractSpinBox, QGraphicsScene, QToolButton, QHBoxLayout
 from superboucle.midi_note_graphics import MidiNoteItem
+ 
+QUANTIZE_DIVISERS = [24, 2, 4, 3, 6, 12]
 
 class EditMidiButton(QWidget):
         
@@ -61,12 +63,11 @@ class EditMidiButton(QWidget):
         self.quantize.setFont(font)
         self.quantize.setCurrentText("")
         self.quantize.setObjectName("quantize")
-        self.quantize.addItem("Off")
-        self.quantize.addItem("1/2")
-        self.quantize.addItem("1/4")
-        self.quantize.addItem("1/3")
-        self.quantize.addItem("1/6")
-        self.quantize.addItem("1/12")
+        for div in QUANTIZE_DIVISERS:
+            if div == 24:
+                self.quantize.addItem("Off")
+            else:
+                self.quantize.addItem("1/%s" % div)
         self.quantize.currentIndexChanged.connect(self.onQuantizeChange)
         layout.addWidget(quantizeLabel)
         layout.addWidget(self.quantize)
@@ -93,47 +94,6 @@ class EditMidiButton(QWidget):
         layout.addWidget(length)
         layout.addSpacing(20)
 
-        # Select Tool
-        select_icon = QIcon()
-        select_icon.addPixmap(QPixmap(":/icons/icons/select-delete-icon-16.png"), QIcon.Normal, QIcon.Off)
-        self.select_tool = QToolButton()
-        self.select_tool.setIcon(select_icon)
-        self.select_tool.setIconSize(QSize(32, 16))
-        self.select_tool.setToolTip('This tool allow to select note for velocity edit and deletion with \'Del\' key')
-        self.select_tool.clicked.connect(lambda: self.buttonClicked(self.select_tool))
-        layout.addWidget(self.select_tool)
-
-        # Edit tool
-        edit_icon = QIcon()
-        edit_icon.addPixmap(QPixmap(":/icons/icons/edit-icon-16.png"), QIcon.Normal, QIcon.Off)
-        self.edit_tool = QToolButton()
-        self.edit_tool.setIcon(edit_icon)
-        self.edit_tool.setIconSize(QSize(16, 16))
-        self.edit_tool.setToolTip('This tool allow note edition and creation')
-        self.edit_tool.clicked.connect(lambda: self.buttonClicked(self.edit_tool))
-        self.buttonClicked(self.edit_tool)
-        layout.addWidget(self.edit_tool)
-
-    def buttonClicked(self, clicked_button):
-        for tool in [self.select_tool, self.edit_tool]:
-            tool.setCheckable(True)
-            if tool is clicked_button:
-                tool.setChecked(True)
-                self.setButtonBackground(tool, 'rgb(247, 42, 151)')
-            else:
-                tool.setChecked(False)
-                tool.setStyleSheet('')
-
-    def setButtonBackground(self, button, color):
-        button.setStyleSheet(f'''
-            QToolButton {{
-                background-color: {color};
-            }}
-            QToolButton::menu-indicator {{
-                background-color: window; 
-            }}
-        ''')
-
     def onMidiChannelChange(self, channel):
         self.parent.clip.channel = channel - 1
 
@@ -144,18 +104,18 @@ class EditMidiButton(QWidget):
         self.parent.updateUI()
     
     def onQuantizeChange(self, quantize):
-        tick_round_counts = [1, 24/2, 24/4, 24/3, 24/6, 24/12]
-        tick_round = int(tick_round_counts[quantize])
+        #tick_round_counts = [1, 24/2, 24/4, 24/3, 24/6, 24/12]
+        tick_round = int(24/QUANTIZE_DIVISERS[quantize])
         for note in self.parent.clip.notes:
             note.start_tick = round(note.start_tick / tick_round) * tick_round
             note.length = round(note.length / tick_round) * tick_round
         grid: QGraphicsScene = self.parent.piano_grid.scene
         for item in grid.items():
             if isinstance(item, MidiNoteItem):
-                print(type(item))
                 item.reDraw()
     
+    # Return Quantization step in tick
     def getTickSnap(self):
-        self.quantize.currentIndex()
-        tick_round_counts = [1, 24/2, 24/4, 24/3, 24/6, 24/12]
-        return int(tick_round_counts[self.quantize.currentIndex()])
+        #tick_round_counts = [1, 24/2, 24/4, 24/3, 24/6, 24/12]
+        tick_round_counts = [int(24/i) for i in QUANTIZE_DIVISERS]
+        return tick_round_counts[self.quantize.currentIndex()]

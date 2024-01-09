@@ -1,3 +1,6 @@
+from superboucle.abstract_clip import AbstractClip
+
+
 class MidiNote:
 
     NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
@@ -61,13 +64,17 @@ class MidiEvents:
             print("tick %s: %s" % (tick, self.get(tick).join(", ")))
         
 
-class MidiClip:
+TICK_PER_BEAT = 24
 
-    def __init__(self, length: int, channel: int) -> None:
+class MidiClip(AbstractClip):
+
+    def __init__(self, name: str, length: int, channel: int, volume=1, output=AbstractClip.DEFAULT_OUTPUT, mute_group=0) -> None:
+        super().__init__(name, volume, output, mute_group)
         self.length: int = length # in beats
-        self.channel: int = channel # 0-15 ?w
+        self.channel: int = channel # 0-15
         self.notes: list[MidiNote] = list()
         self.events: MidiEvents = MidiEvents()
+        self.last_tick: int = 0
     
     def addNote(self, note: MidiNote) -> None:
         self.notes.append(note)
@@ -84,6 +91,13 @@ class MidiClip:
 
     def getEvent(self, tick: int):
         return self.events.get(tick)
+    
+    def rewind(self):
+        self.last_tick = 0
+
+    # position relative to the clip between 0 and 1
+    def getPos(self):
+        return (self.last_tick / TICK_PER_BEAT) / self.length
         
     def __str__(self) -> str:
         res = "MIDI Events:"

@@ -145,7 +145,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.pauseButton.clicked.connect(self._jack_client.transport_stop)
         self.gotoButton.clicked.connect(self.onGotoClicked)
         self.recordButton.clicked.connect(self.onRecord)
-        self.go_midi.clicked.connect(self.goMidi)
 
         self.blktimer = QTimer()
         self.blktimer.state = False
@@ -198,31 +197,6 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.song.loadScene(self.song.initial_scene)
         self.update()
         self.songLoad.emit()
-
-    def goMidi(self):
-        clip: MidiClip = MidiClip(16, 0)
-        melody_notes = [
-            MidiNote(60, 64, 1, 20),    # C3 / DO
-            MidiNote(62, 64, 25, 20),   # D3 / RÉ
-            MidiNote(64, 64, 50, 20),   # E3 / MI
-            MidiNote(65, 64, 73, 20),   # F3 / FA
-            MidiNote(67, 64, 99, 20),   # G3 / SOL
-            MidiNote(69, 64, 121, 20),  # A3 / LA
-            MidiNote(71, 64, 146, 20),  # B3 / SI
-            MidiNote(72, 64, 170, 20),  # C4 / DO
-            MidiNote(74, 64, 194, 20),  # D4 / RÉ
-            MidiNote(76, 64, 217, 20),  # E4 / MI
-            MidiNote(77, 64, 243, 20),  # F4 / FA
-            MidiNote(79, 64, 265, 20),  # G4 / SOL
-            MidiNote(81, 64, 290, 20),  # A4 / LA
-            MidiNote(83, 64, 314, 20),  # B4 / SI
-            MidiNote(84, 64, 338, 20),  # C5 / DO
-            MidiNote(86, 64, 361, 20)   # D5 / RÉ
-        ]
-
-        for note in melody_notes:
-            clip.addNote(note)
-        EditMidiDialog(self, clip)
 
     def openSongFromDisk(self, file_name):
         self._jack_client.transport_stop()
@@ -278,7 +252,10 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onEdit(self):
         cell = self.sender().parent().parent()
         if cell.clip:
-            EditClipDialog(self, self.song, cell)
+            if isinstance(cell.clip, MidiClip):
+                EditMidiDialog(self, cell.clip)
+            else:
+                EditClipDialog(self, self.song, cell)
 
     def onAddClipClicked(self):
         cell = self.sender().parent().parent()
@@ -590,7 +567,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.bbtLabel.setText("%s\n%s" % (bbt, time))
         for line in self.btn_matrix:
             for btn in line:
-                if btn.clip and btn.clip.audio_file:
+                if btn.clip:
                     value = btn.clip.getPos() * 97
                     btn.clip_position.setValue(int(value))
                     btn.clip_position.repaint()

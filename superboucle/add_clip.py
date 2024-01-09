@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog, QButtonGroup
 from superboucle.add_clip_ui import Ui_Dialog
 from superboucle.clip import Clip, basename
+from superboucle.clip_midi import MidiClip
 
 
 class AddClipDialog(QDialog, Ui_Dialog):
@@ -10,40 +11,23 @@ class AddClipDialog(QDialog, Ui_Dialog):
         self.cell = cell
         self.type = None
         self.setupUi(self)
-
-        self.newButton.clicked.connect(self.onNew)
-        self.useButton.clicked.connect(self.onUse)
-        self.emptyButton.clicked.connect(self.onEmpty)
+        group = QButtonGroup(self)
+        group.addButton(self.audioLoadButton)
+        group.addButton(self.audioNewButton)
+        group.addButton(self.midiLoadButton)
+        group.addButton(self.midiNewButton)
         self.accepted.connect(self.onOk)
-
-        for wav_id in self.gui.song.data:
-            self.fileList.addItem(wav_id)
-
         self.show()
-
-    def onNew(self):
-        self.type = 'new'
-
-    def onUse(self):
-        self.type = 'use'
-
-    def onEmpty(self):
-        self.type = 'empty'
 
     def onOk(self):
 
         new_clip = None
-
-        if self.type == 'new':
+        if self.audioLoadButton.isChecked():
             new_clip = self.cell.openClip()
-
-        elif self.type == 'use':
-            wav_id = self.fileList.currentText()
-            new_clip = Clip(basename(wav_id))
-
-        elif self.type == 'empty':
-            new_clip = Clip(audio_file=None,
-                            name='audio-%02d' % len(self.gui.song.clips))
+        elif self.audioNewButton.isChecked():
+            new_clip = Clip(audio_file=None, name='audio-%02d' % len(self.gui.song.clips))
+        elif self.midiNewButton.isChecked():
+            new_clip = MidiClip('midi-%02d' % len(self.gui.song.clips), 16, 0)
 
         if new_clip:
             self.cell.setClip(new_clip)

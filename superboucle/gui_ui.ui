@@ -597,19 +597,6 @@ QProgressBar {
            <bool>false</bool>
           </property>
          </widget>
-         <widget class="QPushButton" name="go_midi">
-          <property name="geometry">
-           <rect>
-            <x>30</x>
-            <y>440</y>
-            <width>171</width>
-            <height>111</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>Go Midi !</string>
-          </property>
-         </widget>
         </widget>
        </widget>
       </item>
