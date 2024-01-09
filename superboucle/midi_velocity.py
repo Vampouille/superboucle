@@ -7,9 +7,10 @@ from superboucle.midi_note_graphics import MidiVelocityItem
 BEAT_PER_BAR = 4
 
 class MidiVelocityScene(QGraphicsScene):
-    def __init__(self, parent, clip):
+    def __init__(self, parent, clip, tick_width):
         super().__init__(parent)
         self.clip = clip
+        self.tick_width = tick_width
         self.drag_origin = None
         self.initial_note = None
 
@@ -35,11 +36,9 @@ class MidiVelocityScene(QGraphicsScene):
             new_velocity = self.initial_note.velocity - y
             item = self.getSelectedItem()
             item.note.velocity = max(0, min(new_velocity, 127))
+            print(item.note)
             # Change GUI
             item.setRect(item.generateRect())
-            # Debug
-            print(item.note)
-            print(y)
 
     def mouseReleaseEvent(self, event):
         if self.drag_origin is not None:
@@ -50,10 +49,10 @@ class MidiVelocityScene(QGraphicsScene):
 
 class MidiVelocityWidget(ScrollableGraphicsView):
 
-    def __init__(self, parent, clip, width, height):
+    def __init__(self, parent, clip, width, height, tick_width):
         super().__init__(parent, width, height)
         # use custom scene
-        self.scene = MidiVelocityScene(self, clip)
+        self.scene = MidiVelocityScene(self, clip, tick_width)
         self.scene.setSceneRect(QRectF(0, 0, width, height))
         self.setScene(self.scene)
         self.clip: MidiClip = clip

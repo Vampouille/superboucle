@@ -16,7 +16,6 @@ class MidiNote:
         remaining_tick = tick % 24
         bar = beat // 4
         beat %= 4
-
         return "%s|%s|%s" % (bar + 1, beat + 1, remaining_tick)
 
     def humanizeTickDuration(self, tick: int) -> str:
@@ -24,7 +23,6 @@ class MidiNote:
         remaining_tick = tick % 24
 
         return "%s.%s" % (beat, remaining_tick)
-
 
     def noteName(self) -> str:
         return MidiNote.NOTES[self.pitch % 12]
@@ -68,13 +66,11 @@ class MidiClip:
     def __init__(self, length: int, channel: int) -> None:
         self.length: int = length # in beats
         self.channel: int = channel # 0-15 ?w
-        self.notes: set[MidiNote] = set()
+        self.notes: list[MidiNote] = list()
         self.events: MidiEvents = MidiEvents()
     
     def addNote(self, note: MidiNote) -> None:
-        if note in self.notes:
-            self.notes.remove(note)
-        self.notes.add(note)
+        self.notes.append(note)
 
     def removeNote(self, note: MidiNote) -> None:
         self.notes.remove(note)

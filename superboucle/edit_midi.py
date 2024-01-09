@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QGridLayout,
-    QScrollBar,
+    QApplication,
     QWidget,
 )
 from superboucle.piano_grid import PianoGridWidget
@@ -23,9 +23,7 @@ from superboucle.clip_midi import MidiClip
 from superboucle.edit_midi_button import EditMidiButton
 
 
-class CustomScrollBar(QScrollBar):
-    def __init__(self, orientation, parent):
-        super().__init__(orientation, parent)
+TICK_PER_BEAT = 24
 
 
 class EditMidiDialog(QDialog):
@@ -42,9 +40,10 @@ class EditMidiDialog(QDialog):
         # 7 white keys per octave (to display in the piano keyboard)
         # 12 keys per octave (to display on the grid)
         # 7 octaves available
-        self.horizontal_scale = 3 # horizontal zoom
+        self.horizontal_scale = 3 # horizontal zoom: pixel per MIDI Clock Tick
         vertical_scale = 2 # vertical zoom, note width
         self.grid_height = 7 * 12 * self.keyboard_octaves * vertical_scale
+        self.grid_width = 24 * self.clip.length * self.horizontal_scale
 
         # Root Layout with:
         # * button
@@ -85,13 +84,23 @@ class EditMidiDialog(QDialog):
         root_layout.setStretch(1, 1)
 
         self.setWindowTitle("Edit MIDI Notes")
+         # Positionner le dialogue sur le même écran que la fenêtre principale
         self.setGeometry(100, 100, 800, 600)
+        if self.parent():
+            parent_geometry = self.parent().geometry()
+            desktop = QApplication.desktop()
+            screen_number = desktop.screenNumber(parent_geometry.center())
+            screen_geometry = desktop.screenGeometry(screen_number)
+
+            # Ajuster la position du dialogue en fonction de la fenêtre principale
+            self.move(screen_geometry.center() - self.rect().center())
+
         self.updateUI()
         self.show()
-        self.beat_legend.initView()
+        #self.beat_legend.initView()
     
-    def getTickSnap(self):
-        return self.buttons.getTickSnap()
+    def getHorizontalSnap(self) -> int:
+        return self.buttons.getTickSnap() * self.horizontal_scale
 
     def syncScrollArea(self, value):
         sender = self.sender()
@@ -124,7 +133,7 @@ class EditMidiDialog(QDialog):
         # Velocity
         if self.velocity is not None:
             self.body_layout.removeWidget(self.velocity)
-        self.velocity: MidiVelocityWidget = MidiVelocityWidget(self, self.clip, self.grid_width, self.velocity_height)
+        self.velocity: MidiVelocityWidget = MidiVelocityWidget(self, self.clip, self.grid_width, self.velocity_height, self.horizontal_scale)
         self.velocity.connect(self.syncScrollArea)
         self.body_layout.addWidget(self.velocity, 2, 1, Qt.AlignmentFlag.AlignTop)
 

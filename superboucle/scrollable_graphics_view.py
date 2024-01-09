@@ -29,7 +29,3 @@ class ScrollableGraphicsView(QGraphicsView):
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta)
         else:
             super().wheelEvent(event)
-
-    def initView(self):
-        self.horizontalScrollBar().setValue(0)
-        self.verticalScrollBar().setValue(0)

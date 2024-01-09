@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene
 from PyQt5.QtGui import QColor, QBrush
-from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtCore import Qt, QEvent, QRectF
 from superboucle.clip_midi import MidiNote, MidiClip
 from superboucle.scrollable_graphics_view import ScrollableGraphicsView
 from superboucle.midi_note_graphics import MidiNoteItem
@@ -20,9 +20,6 @@ class PianoGridScene(QGraphicsScene):
     def getDialog(self):
         return self.parent().parent().parent()
         
-    def getTool(self):
-        return self.getDialog().getTool()
-
     def getNoteItem(self, pos):
         items = self.items(pos)
         items = [i for i in items if isinstance(i, MidiNoteItem)]
@@ -61,13 +58,16 @@ class PianoGridScene(QGraphicsScene):
 
             self.drawNewNote(event.scenePos())
         else:
+            # Select or unselect item 
             super().mousePressEvent(event)
 
     def drawNewNote(self, scene_pos):
         note_height = int(self.sceneRect().height() / self.notes)
         tick_width = self.sceneRect().width() / (self.clip.length * TICK_PER_BEAT)
         pitch = int(((self.sceneRect().height() - scene_pos.y()) / note_height) + 24)
-        start = int(scene_pos.x() / tick_width)
+        horizontal_snap = self.getDialog().getHorizontalSnap()
+        x = round(scene_pos.x() / horizontal_snap) * horizontal_snap
+        start = int(x / tick_width)
         note = MidiNote(pitch, 100, start, 24)
         noteItem = MidiNoteItem(self, self.parent().velocityScene, self.clip, note, self.octaves)
         self.clip.addNote(note)
@@ -110,8 +110,8 @@ class PianoGridWidget(ScrollableGraphicsView):
 
         # Replace scene with a custom one 
         self.scene = PianoGridScene(self, self.clip, self.octaves)
+        self.scene.setSceneRect(QRectF(0, 0, width, height))
         self.setScene(self.scene)
-
         # 7 octaves: 7x12=84
         notes = self.octaves * 12
         self.note_height = int(self.height / notes)

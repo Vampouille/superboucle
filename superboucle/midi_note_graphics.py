@@ -15,13 +15,12 @@ class MidiNoteItem(QGraphicsRectItem):
         self.scene_octaves: int = scene_octaves
         self.border:int = 0
         self.fill_color:QColor = QColor(6, 147, 152)
-        #self.fill_color_selected:QColor = QColor(150, 18, 87)
         self.fill_color_selected:QColor = QColor(247, 42, 151)
         stroke_color: QColor = QColor(123, 17, 54)
 
         self.tick_width: int = int(scene.sceneRect().width() / (TICK_PER_BEAT * self.clip.length))
         # horizontal grid is snap to MIDI clock ticks
-        self.horizontal_snap: int = int(scene.sceneRect().width() / (TICK_PER_BEAT * self.clip.length))
+        self.horizontal_snap: int = None
         self.vertical_snap: int  = int(scene.sceneRect().height() / (NOTE_PER_OCTAVE * scene_octaves))
         super().__init__(self.generateRect())
         self.setPen(QPen(stroke_color, self.border))
@@ -39,18 +38,15 @@ class MidiNoteItem(QGraphicsRectItem):
         self.setFlag(QGraphicsRectItem.ItemSendsGeometryChanges)
         self.setFlag(QGraphicsRectItem.ItemIsSelectable)
         # required for focusItemChanged signal to work:
-        self.setFlag(QGraphicsRectItem.ItemIsFocusable)
+        #self.setFlag(QGraphicsRectItem.ItemIsFocusable)
         self.applyCssForNotSelected()
     
+    # Synchronize selection of note and velocity items
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedChange:
-            print("Note %s Value %s" % (self.note, value))
+            #print("Note %s Value %s" % (self.note, value))
             self.velocity.setSelected(bool(value))
         return super().itemChange(change, value)
-
-    #def setSelected(self, selected):
-    #    super().setSelected(selected)
-    #    self.velocity.setSelected(selected)
 
     # Draw Rectangle from note definition
     def generateRect(self) -> QRectF:
@@ -76,9 +72,6 @@ class MidiNoteItem(QGraphicsRectItem):
     def getDialog(self):
         return self.scene.parent().parent().parent()
         
-    def getTool(self):
-        return self.getDialog().getTool()
-
     # Snap helpers
     def snap_to_xgrid(self, value):
         return self._snap_to_grid(value, self.horizontal_snap)
@@ -98,8 +91,7 @@ class MidiNoteItem(QGraphicsRectItem):
         if event.button() == Qt.LeftButton:
             self.drag_origin = event.pos()
             self.initial_note = self.note.copy()
-            tick_snap = self.getDialog().buttons.getTickSnap()
-            self.horizontal_snap: int = int((self.scene.sceneRect().width() * tick_snap) / (TICK_PER_BEAT * self.clip.length))
+            self.horizontal_snap: int = self.getDialog().getHorizontalSnap()
             if self.isResizingHandleHovered(event.pos()):
                 self.resize_started = True
         for item in self.getDialog().piano_grid.scene.selectedItems():
@@ -135,7 +127,6 @@ class MidiNoteItem(QGraphicsRectItem):
                 self.resize_started = False
             self.drag_origin = None
             self.initial_note = None
-            #self.setSelected(False)
             # trigger compute of MIDI events on midi clip
             self.clip.computeEvents()
 
@@ -154,17 +145,11 @@ class MidiVelocityItem(QGraphicsRectItem):
         self.fill_color_selected:QColor = QColor(247, 42, 151)
         stroke_color: QColor = QColor(123, 17, 54, 50)
 
-        self.tick_width: int = int(scene.sceneRect().width() / (TICK_PER_BEAT * self.clip.length))
         # horizontal grid is snap to MIDI clock ticks
-        self.horizontal_snap: int = int(scene.sceneRect().width() / (TICK_PER_BEAT * self.clip.length))
         self.vertical_snap: int  = int(scene.sceneRect().height() / 128)
         super().__init__(self.generateRect())
         self.setPen(QPen(stroke_color, self.border))
         self.applyCssForNotSelected()
-        self.drag_origin: QPointF = None
-        self.resize_started = False
-        self.initial_note = None
-        self.resize_handle_width = 20
 
         self.setFlag(QGraphicsRectItem.ItemIsMovable)
         self.setFlag(QGraphicsRectItem.ItemSendsGeometryChanges)
@@ -174,11 +159,11 @@ class MidiVelocityItem(QGraphicsRectItem):
 
     # Draw Rectangle from note velocity
     def generateRect(self) -> QRectF:
-        x = self.tick_width * self.note.start_tick + self.border
+        x = self.scene.tick_width * self.note.start_tick + self.border
         # note pitch start at C-2 but GUI start at C0, this is why there is -24 offset
-        y = max(2, self.vertical_snap * self.note.velocity)
+        y = max(0, self.vertical_snap * self.note.velocity)
         y = self.scene.sceneRect().height() - y
-        width = self.tick_width * self.note.length - self.border
+        width = self.scene.tick_width * self.note.length - self.border
         height = self.scene.sceneRect().height() - y
         return QRectF(x, y, width, height)
 
