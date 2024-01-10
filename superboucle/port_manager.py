@@ -1,8 +1,10 @@
 from PyQt5.QtWidgets import QDialog, QListWidgetItem
 from superboucle.port_manager_ui import Ui_Dialog
 from superboucle.add_port import AddPortDialog
-from superboucle.clip import verify_ext, Clip
+from superboucle.clip import Clip
 import json
+
+from superboucle.song import verify_ext
 
 
 class PortManager(QDialog, Ui_Dialog):

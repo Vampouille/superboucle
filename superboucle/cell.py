@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QWidget
 from superboucle.cell_ui import Ui_Cell
-from superboucle.clip import WaveForm, basename, Clip
+from superboucle.clip import WaveForm, Clip
+from superboucle.song import basename
 import numpy as np
 import soundfile as sf
 

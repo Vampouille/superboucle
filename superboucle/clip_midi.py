@@ -1,3 +1,4 @@
+import json
 from superboucle.abstract_clip import AbstractClip
 
 
@@ -10,6 +11,9 @@ class MidiNote:
         self.velocity = velocity     # in [0, 127]
         self.start_tick = start_tick # start position in tick with 24 tick per beat
         self.length = length         # note length in tick
+    
+    def toArray(self):
+        return [self.pitch, self.velocity, self.start_tick, self.length]
 
     def __str__(self) -> str:
         return "%s%s(%s)/%s %s %s" % (self.noteName(), (self.pitch // 12) - 2, self.pitch, self.velocity, self.humanizeTickPosition(self.start_tick), self.humanizeTickDuration(self.length))
@@ -75,6 +79,20 @@ class MidiClip(AbstractClip):
         self.notes: list[MidiNote] = list()
         self.events: MidiEvents = MidiEvents()
         self.last_tick: int = 0
+
+    def serialize(self):
+        return {'type': 'midi',
+                'name': self.name,
+                'length': self.length,
+                'volume': str(self.volume),
+                'channel': str(self.channel),
+                'output': self.output,
+                'mute_group': str(self.mute_group),
+                'notes': json.dumps(self.serializeNotes())
+               }
+
+    def serializeNotes(self):
+        return [note.toArray() for note in self.notes]
     
     def addNote(self, note: MidiNote) -> None:
         self.notes.append(note)

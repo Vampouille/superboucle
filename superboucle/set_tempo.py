@@ -1,6 +1,5 @@
 from PyQt5.QtWidgets import QDialog, QMessageBox
 from superboucle.set_tempo_ui import Ui_Dialog
-from superboucle.clip import verify_ext
 
 
 class SetTempoDialog(QDialog, Ui_Dialog):

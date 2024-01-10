@@ -1,9 +1,9 @@
+import json
 from PyQt5.QtWidgets import QDialog
 from superboucle.device_manager_ui import Ui_Dialog
 from superboucle.learn import LearnDialog
 from superboucle.device import Device
-from superboucle.clip import verify_ext
-import json
+from superboucle.song import verify_ext
 
 
 class ManageDialog(QDialog, Ui_Dialog):

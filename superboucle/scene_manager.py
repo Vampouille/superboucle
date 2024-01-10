@@ -3,13 +3,13 @@ from PyQt5.QtGui import QColor
 from PyQt5.QtCore import QSize
 from superboucle.scene_manager_ui import Ui_Dialog
 from superboucle.add_scene import AddSceneDialog
-from superboucle.clip import load_song_from_file
+from superboucle.song import Song
 
 def getScenes(file_names):
     r = []
     for f in file_names:
         try:
-            r.append(load_song_from_file(f))
+            r.append(Song(file=f))
         except Exception as e:
             print("could not load File {}.\nError: {}".format(f, e))
     return r

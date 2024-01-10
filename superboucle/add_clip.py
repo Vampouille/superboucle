@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QButtonGroup
 from superboucle.add_clip_ui import Ui_Dialog
-from superboucle.clip import Clip, basename
+from superboucle.clip import Clip
 from superboucle.clip_midi import MidiClip
 
 

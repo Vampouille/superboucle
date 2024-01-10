@@ -1,4 +1,5 @@
-from superboucle.clip import Clip, Song, load_song_from_file
+from superboucle.jack_client import client
+from superboucle.clip import Clip
 from superboucle.gui import Gui
 #from superboucle.cell import cell_ui
 #import jack

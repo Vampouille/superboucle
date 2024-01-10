@@ -7,7 +7,7 @@ Gui
 from PyQt5.QtWidgets import (QMainWindow, QFileDialog,
                              QAction, QActionGroup, QMessageBox, QApplication)
 from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings, Qt
-from superboucle.clip import Clip, load_song_from_file, verify_ext, Song
+from superboucle.clip import Clip
 from superboucle.edit_clip import EditClipDialog
 from superboucle.gui_ui import Ui_MainWindow
 from superboucle.cell import Cell
@@ -27,11 +27,10 @@ from queue import Queue, Empty
 import pickle
 from os.path import expanduser, dirname, isfile
 
-BAR_START_TICK = 0.0
-#BEATS_PER_BAR = 4.0
-BEAT_TYPE = 4.0
-TICKS_PER_BEAT = 960.0
+from superboucle.song import Song, verify_ext
 
+SYNC_SOURCE_JACK = 0
+SYNC_SOURCE_MIDI = 1
 
 class Gui(QMainWindow, Ui_MainWindow):
     NOTEON = 0x9
@@ -95,7 +94,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.current_vol_block = 0
         self.last_clip = None
         self.portListCallback = set()
-        self.sync_source = 0 # Jack
+        self.sync_source = SYNC_SOURCE_JACK
 
         # Load devices
         self.deviceGroup = QActionGroup(self.menuDevice)
@@ -136,7 +135,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionManage_Devices.triggered.connect(self.onManageDevice)
         self.actionPlaylist_Editor.triggered.connect(self.onPlaylistEditor)
         self.actionScene_Manager.triggered.connect(self.onSceneManager)
-        self.actionPort_Manager.triggered.connect(self.onPortManager)
+        self.actionPort_Manager.triggered.connect(PortManager.__init__)
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
         self.bpm.valueChanged.connect(self.onBpmChange)
@@ -156,7 +155,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.disptimer.start(self.PROGRESS_PERIOD)
         self.disptimer.timeout.connect(self.updateProgress)
 
-        self._jack_client.set_timebase_callback(self.timebase_callback)
         self.show()
 
     def initUI(self, song):
@@ -208,7 +206,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         message.setWindowTitle("Loading ....")
         message.setText("Reading Files, please wait ...")
         message.show()
-        self.initUI(load_song_from_file(file_name))
+        self.initUI(Song(file=file_name))
         message.close()
         self.setEnabled(True)
 
@@ -233,10 +231,10 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.song.is_record = False
             self.updateRecordBtn()
             # calculate buffer size
-            if self.sync_source == 0:
+            if self.sync_source == SYNC_SOURCE_JACK:
                 _, position = self._jack_client.transport_query()
                 bpm = position['beats_per_minute']
-            elif self.sync_source == 1:
+            elif self.sync_source == SYNC_SOURCE_MIDI:
                 bpm = self.bpm.value()
             beat_sample = self.bpm_to_beat_period(bpm)
             print("FPS: %s BPM: %s BS: %s" % (self.sr, bpm, beat_sample))
@@ -300,7 +298,6 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onRewindClicked(self):
         self._jack_client.transport_locate(0)
 
-
     def removePort(self, name):
         if name != Clip.DEFAULT_OUTPUT:
             self.song.outputsPorts.remove(name)
@@ -314,62 +311,18 @@ class Gui(QMainWindow, Ui_MainWindow):
         '''Update jack port based on clip output settings
         update dict containing ports with shortname as key'''
 
-        # First manage Audio ports 
-        current_ports = set()
-        for port in self._jack_client.outports:
-            current_ports.add(port.shortname)
-
-        wanted_ports = set()
-        for port_basename in song.outputsPorts:
-            for ch in Song.CHANNEL_NAMES:
-                port = Song.CHANNEL_NAME_PATTERN.format(port=port_basename,
-                                                        channel=ch)
-                wanted_ports.add(port)
-
-        # Remove unwanted ports
-        if remove_ports:
-            port_to_remove = []
-            for port in self._jack_client.outports:
-                if port.shortname not in wanted_ports:
-                    current_ports.remove(port.shortname)
-                    port_to_remove.append(port)
-            for port in port_to_remove:
-                port.unregister()
-
-        # Create new ports
-        for new_port_name in wanted_ports - current_ports:
-            self._jack_client.outports.register(new_port_name)
-
-        self.port_by_name = {port.shortname: port
-                             for port in self._jack_client.outports}
-
-        # Manage Midi Ports
-        current_ports = set()
-        for port in self._jack_client.midi_outports:
-            current_ports.add(port.shortname)
-
-        wanted_midi_ports = set()
-        for port in song.outputsMidiPorts:
-                wanted_ports.add(port)
-
-        # Remove unwanted ports
-        if remove_ports:
-            port_to_remove = []
-            for port in self._jack_client.midi_outports:
-                if port.shortname not in wanted_midi_ports:
-                    current_ports.remove(port.shortname)
-                    port_to_remove.append(port)
-            for port in port_to_remove:
-                port.unregister()
-
-        # Create new ports
-        for new_port_name in wanted_midi_ports - current_ports:
-            self._jack_client.midi_outports.register(new_port_name)
-
-        self.midi_port_by_name = {port.shortname: port
-                                 for port in self._jack_client.midi_outports}
-        
+        song.updateJackPorts(remove_ports)
         self.updatePorts.emit()
+
+    def registerPortListUpdateCallback(self, callback):
+        self.portListCallback.add(callback)
+
+    def unregisterPortListUpdateCallback(self, callback):
+        self.portListCallback.remove(callback)
+
+    def portListUpdate(self):
+        for l in self.portListCallback:
+            l()
 
     def onActionNew(self):
         NewSongDialog(self)
@@ -582,7 +535,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.blktimer.state = not self.blktimer.state
 
     def updateProgress(self):
-        if self.sync_source == 0:
+        if self.sync_source == SYNC_SOURCE_JACK:
             state, pos = self._jack_client.transport_query()
             if 'bar' in pos:
                 bbt = "%d|%d|%03d" % (pos['bar'], pos['beat'], pos['tick'])
@@ -626,35 +579,6 @@ class Gui(QMainWindow, Ui_MainWindow):
                     self.queue_out.put(note)
             self.redraw()
 
-    def timebase_callback(self, state, nframes, pos, new_pos):
-        if self.sync_source == 1:
-            return None
-        if pos.frame_rate == 0:
-            return None
-        pos.valid = 0x10
-        pos.bar_start_tick = BAR_START_TICK
-        pos.beats_per_bar = self.beat_per_bar.value()
-        pos.beat_type = BEAT_TYPE
-        pos.ticks_per_beat = TICKS_PER_BEAT
-        pos.beats_per_minute = self.bpm.value()
-        ticks_per_second = (pos.beats_per_minute *
-                            pos.ticks_per_beat) / 60
-        ticks = (ticks_per_second * pos.frame) / pos.frame_rate
-        (beats, pos.tick) = divmod(int(round(ticks, 0)),
-                                   int(round(pos.ticks_per_beat, 0)))
-        (bar, beat) = divmod(beats, int(round(pos.beats_per_bar, 0)))
-        (pos.bar, pos.beat) = (bar + 1, beat + 1)
-        return None
-
-    def registerPortListUpdateCallback(self, callback):
-        self.portListCallback.add(callback)
-
-    def unregisterPortListUpdateCallback(self, callback):
-        self.portListCallback.remove(callback)
-
-    def portListUpdate(self):
-        for l in self.portListCallback:
-            l()
 
     def bpm_to_tick_period(self, bpm):
         return (60 * self.sr) / (bpm * 24)

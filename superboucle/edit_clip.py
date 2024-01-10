@@ -4,8 +4,8 @@ from PyQt5.QtWidgets import QDialog, QMessageBox
 from PyQt5.QtCore import pyqtSignal
 from superboucle.add_port import AddPortDialog
 from superboucle.edit_clip_ui import Ui_Dialog
-from superboucle.clip import verify_ext
 from superboucle.set_tempo import SetTempoDialog
+from superboucle.song import verify_ext
 
 
 class EditClipDialog(QDialog, Ui_Dialog):

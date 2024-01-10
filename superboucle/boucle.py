@@ -8,10 +8,12 @@ import jack
 import sys, os.path
 import numpy as np
 import resampy
-from superboucle.clip import Clip, Song, load_song_from_file
+from superboucle.clip import Clip
+from superboucle.song import Song
 from superboucle.clip_midi import MidiClip
 from superboucle.gui import Gui
 from superboucle.midi_transport import MidiTransport, STOPPED, RUNNING
+from superboucle.jack_client import client
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QTimer
 from queue import Empty
@@ -29,13 +31,12 @@ args = parser.parse_args()
 song = None
 if args.songfile:
     if os.path.isfile(args.songfile):
-        song = load_song_from_file(args.songfile)
+        song = Song(file=args.songfile)
     else:
         sys.exit("File {} does not exist.".format(args.songfile))
 else:
     song = Song(8, 8)
 
-client = jack.Client("Super Boucle")
 sync_midi_in = client.midi_inports.register("sync")
 cmd_midi_in = client.midi_inports.register("cmd_in")
 cmd_midi_out = client.midi_outports.register("cmd_feedback")
@@ -44,9 +45,6 @@ inR = client.inports.register("input_R")
 app = QApplication(sys.argv)
 gui = Gui(song, client, app)
 midi_transport = MidiTransport(gui)
-
-# Debug
-gui.old_hex_data = "iuy"
 
 CLIP_TRANSITION = {Clip.STARTING: Clip.START,
                    Clip.STOPPING: Clip.STOP,
@@ -282,6 +280,30 @@ def addBuffer(clip_buffers, offset, data, name):
         # Add fade out if clip does not continue on next buffer
         np.add.at(buffer, slice(offset, offset + data.shape[0]), data[:, ch_id % data.shape[1]])
 
+def timebase_callback(state, nframes, pos, new_pos):
+    BAR_START_TICK = 0.0
+    BEAT_TYPE = 4.0
+    TICKS_PER_BEAT = 960.0
+
+    if gui.sync_source == 1:
+        return None
+    if pos.frame_rate == 0:
+        return None
+    pos.valid = 0x10
+    pos.bar_start_tick = BAR_START_TICK
+    pos.beats_per_bar = gui.beat_per_bar.value()
+    pos.beat_type = BEAT_TYPE
+    pos.ticks_per_beat = TICKS_PER_BEAT
+    pos.beats_per_minute = gui.bpm.value()
+    ticks_per_second = (pos.beats_per_minute *
+                        pos.ticks_per_beat) / 60
+    ticks = (ticks_per_second * pos.frame) / pos.frame_rate
+    (beats, pos.tick) = divmod(int(round(ticks, 0)),
+                                int(round(pos.ticks_per_beat, 0)))
+    (bar, beat) = divmod(beats, int(round(pos.beats_per_bar, 0)))
+    (pos.bar, pos.beat) = (bar + 1, beat + 1)
+    return None
+
 def connectMidiDevice(_=None,__=None):
     # Try to connect any MIDI Compatible device
     # For tempo:
@@ -313,7 +335,7 @@ def start():
         if not playback:
             raise RuntimeError("No physical playback ports")
 
-        record = client.get_ports(is_physical=True, is_output=True, is_audio=True)
+        record = client.get_ports(name_pattern="^Scarlett", is_physical=True, is_output=True, is_audio=True)
         if not record:
             raise RuntimeError("No physical record ports")
 
@@ -323,14 +345,6 @@ def start():
             client.connect(record[0], inL)
             client.connect(record[1], inR)
 
-            # Connect outputs
-            for ch_name, pl_port in zip([my_format(port=Clip.DEFAULT_OUTPUT,
-                                                   channel=ch)
-                                         for ch in Song.CHANNEL_NAMES],
-                                        playback):
-                sb_out = gui.port_by_name[ch_name]
-                client.connect(sb_out, pl_port)
-            
             # Connect MIDI Devices
             connectMidiDevice()
             
@@ -338,6 +352,8 @@ def start():
             autoConnectTimer = QTimer()
             autoConnectTimer.start(2000)
             autoConnectTimer.timeout.connect(connectMidiDevice)
+
+        client.set_timebase_callback(timebase_callback)
 
 
         app.exec_()
