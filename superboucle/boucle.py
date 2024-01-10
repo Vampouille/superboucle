@@ -9,6 +9,7 @@ import sys, os.path
 import numpy as np
 import resampy
 from superboucle.clip import Clip, Song, load_song_from_file
+from superboucle.clip_midi import MidiClip
 from superboucle.gui import Gui
 from superboucle.midi_transport import MidiTransport, STOPPED, RUNNING
 from PyQt5.QtWidgets import QApplication
@@ -75,6 +76,7 @@ def my_callback(frames):
     # None for no beat in buffer
     beat = None
     beat_offset = None
+    tick = {}
     if gui.is_learn_device_mode:
         for offset, indata in cmd_midi_in.incoming_midi_events():
             gui.learn_device.queue.put(indata)
@@ -85,9 +87,12 @@ def my_callback(frames):
         gui.readQueueIn.emit()
     for offset, indata in sync_midi_in.incoming_midi_events():
         res = midi_transport.notify(client.last_frame_time + offset, bytes(indata))
-        if res != -1:
-            beat = res
-            beat_offset = offset
+        if res is not None:
+            if res % 24 == 0:
+                beat = res // 24
+                beat_offset = offset
+            tick[offset] = res
+
     cmd_midi_out.clear_buffer()
 
     # Démarrage:
@@ -103,54 +108,63 @@ def my_callback(frames):
     if gui.sync_source == 1: # MIDI
 
         for clip in song.clips:
-            # Skip clip with no audio
-            if clip.audio_file is None:
-                continue
-            
-            # Get pointer to the clip buffer
-            clip_buffers = getBuffers(gui, clip)
+            if isinstance(clip, MidiClip):
+                if len(tick):
+                    for offset in tick.keys():
+                        events = clip.getMidiEvents(tick[offset])
+                        for ev in events:
+                           port = gui.port_by_name[clip.output]
+                           port.write_midi_event(offset, ev)
 
-            # Check if end of clip is in the buffer
-            # check if a beat is in the buffer
-            clip_loop = None
-            if beat is not None:
-                # Check if the beat trigger a clip play
-                if (beat - clip.beat_offset) % clip.beat_diviser == 0:
-                    clip_loop = beat_offset
+            else:
+                # Skip clip with no audio
+                if clip.audio_file is None:
+                    continue
+                
+                # Get pointer to the clip buffer
+                clip_buffers = getBuffers(gui, clip)
 
-            # Add sample from already playing clip
-            # Write samples until end of buffer or available sample from clip
-            rs = clip.remainingSamples()
-            length = min(rs, client.blocksize if clip_loop is None else clip_loop)
-            if clip.state == Clip.START or clip.state == Clip.STOPPING:
-                data = clip.getSamples(length, fade_out=0 if length == client.blocksize else min(10,length))
-                addBuffer(clip_buffers, 0, data, clip.name)
-            elif clip.state == Clip.RECORDING:
-                clip.writeSamples(inL_buffer[:rs], inR_buffer[:rs])
+                # Check if end of clip is in the buffer
+                # check if a beat is in the buffer
+                clip_loop = None
+                if beat is not None:
+                    # Check if the beat trigger a clip play
+                    if (beat - clip.beat_offset) % clip.beat_diviser == 0:
+                        clip_loop = beat_offset
 
-            # Trigger clip loop
-            # * rewind
-            # * switch clip audio a/b
-            # * play beginning of the clip
-            if clip_loop is not None:
-                clip.state = CLIP_TRANSITION[clip.state]
-                if clip.audio_file_next_id != clip.audio_file_id:
-                    if clip.edit_clip:
-                        clip.edit_clip.changeActiveSignal.emit(clip.audio_file_id, clip.audio_file_next_id)
-                    clip.audio_file_id = clip.audio_file_next_id
-                clip.rewind()
-                gui.updateUi.emit()
-
+                # Add sample from already playing clip
+                # Write samples until end of buffer or available sample from clip
+                rs = clip.remainingSamples()
+                length = min(rs, client.blocksize if clip_loop is None else clip_loop)
                 if clip.state == Clip.START or clip.state == Clip.STOPPING:
-                    rs = clip.remainingSamples()
-                    length = min(rs, client.blocksize - clip_loop)
-                    data = clip.getSamples(length, fade_in=10)
-                    addBuffer(clip_buffers, clip_loop, data, clip.name)
+                    data = clip.getSamples(length, fade_out=0 if length == client.blocksize else min(10,length))
+                    addBuffer(clip_buffers, 0, data, clip.name)
                 elif clip.state == Clip.RECORDING:
-                    clip.writeSamples(inL_buffer, inR_buffer)
-                    if clip.edit_clip:
-                        clip.edit_clip.changeActiveSignal.emit(clip.audio_file_id, clip.audio_file_next_id)
-                        clip.edit_clip.updateAudioDescSignal.emit(0)
+                    clip.writeSamples(inL_buffer[:rs], inR_buffer[:rs])
+
+                # Trigger clip loop
+                # * rewind
+                # * switch clip audio a/b
+                # * play beginning of the clip
+                if clip_loop is not None:
+                    clip.state = CLIP_TRANSITION[clip.state]
+                    if clip.audio_file_next_id != clip.audio_file_id:
+                        if clip.edit_clip:
+                            clip.edit_clip.changeActiveSignal.emit(clip.audio_file_id, clip.audio_file_next_id)
+                        clip.audio_file_id = clip.audio_file_next_id
+                    clip.rewind()
+                    gui.updateUi.emit()
+
+                    if clip.state == Clip.START or clip.state == Clip.STOPPING:
+                        rs = clip.remainingSamples()
+                        length = min(rs, client.blocksize - clip_loop)
+                        data = clip.getSamples(length, fade_in=10)
+                        addBuffer(clip_buffers, clip_loop, data, clip.name)
+                    elif clip.state == Clip.RECORDING:
+                        clip.writeSamples(inL_buffer, inR_buffer)
+                        if clip.edit_clip:
+                            clip.edit_clip.changeActiveSignal.emit(clip.audio_file_id, clip.audio_file_next_id)
+                            clip.edit_clip.updateAudioDescSignal.emit(0)
 
 
 
@@ -166,77 +180,81 @@ def my_callback(frames):
 
         for clip in song.clips:
 
-            if clip.audio_file is None:
-                continue
-
-            # get pointer to the buffer where to write clip data (ex: Main_R, Main_L)
-            clip_buffers = getBuffers(gui, clip)
-
-            clip_period = (
-                fpm * clip.beat_diviser) / bpm  # length of the clip in frames
-            total_frame_offset = clip.frame_offset + (
-                clip.beat_offset * frame_per_beat)
-            # frame_beat: how many times the clip hast been played already
-            # clip_offset: position in the clip about to be played
-            frame_beat, clip_offset = divmod(
-                (frame - total_frame_offset) * bpm, fpm * clip.beat_diviser)
-            clip_offset = round(clip_offset / bpm)
-
-            # buffer is larger than remaining sample from clip
-            if (clip_offset + blocksize) > clip_period:
-                next_clip_offset = (clip_offset + blocksize) - clip_period
-                next_clip_offset = round(blocksize - next_clip_offset)
-                # print("new beat in block : {}".format(next_clip_offset))
+            if isinstance(clip, MidiClip):
+                # Playing MIDI clip in jack transport mode is not implemented
+                pass
             else:
-                next_clip_offset = None
+                if clip.audio_file is None:
+                    continue
 
-            if clip.state == Clip.START or clip.state == Clip.STOPPING:
-                # is there enough audio data ?
-                if clip_offset < clip.getAudio().length():
-                    length = min(clip.getAudio().length() - clip_offset, frames)
-                    data = clip.getSamples(length, start_pos=clip_offset, fade_out=10 if len(data) < frames else 0)
-                    addBuffer(clip_buffers, 0, data)
+                # get pointer to the buffer where to write clip data (ex: Main_R, Main_L)
+                clip_buffers = getBuffers(gui, clip)
 
-            if clip.state == Clip.RECORDING:
-                if next_clip_offset:
-                    clip.writeSamples(0,
-                                      inL_buffer[:next_clip_offset],
-                                      start_pos=clip_offset)
-                    clip.writeSamples(1,
-                                      inL_buffer[:next_clip_offset],
-                                      start_pos=clip_offset)
+                clip_period = (
+                    fpm * clip.beat_diviser) / bpm  # length of the clip in frames
+                total_frame_offset = clip.frame_offset + (
+                    clip.beat_offset * frame_per_beat)
+                # frame_beat: how many times the clip hast been played already
+                # clip_offset: position in the clip about to be played
+                frame_beat, clip_offset = divmod(
+                    (frame - total_frame_offset) * bpm, fpm * clip.beat_diviser)
+                clip_offset = round(clip_offset / bpm)
+
+                # buffer is larger than remaining sample from clip
+                if (clip_offset + blocksize) > clip_period:
+                    next_clip_offset = (clip_offset + blocksize) - clip_period
+                    next_clip_offset = round(blocksize - next_clip_offset)
+                    # print("new beat in block : {}".format(next_clip_offset))
                 else:
-                    clip.writeSamples(0,
-                                      inL_buffer,
-                                      start_pos=clip_offset)
-                    clip.writeSamples(1,
-                                      inL_buffer,
-                                      start_pos=clip_offset)
-                clip.last_offset = clip_offset
+                    next_clip_offset = None
 
-            if next_clip_offset and (clip.state == Clip.START
-                                     or clip.state == Clip.STARTING):
-                length = min(clip.getAudio().length(), blocksize - next_clip_offset)
-                if length:
-                    data = clip.getSamples(length, start_pos=0, fade_in=10)
-                    addBuffer(clip_buffers, next_clip_offset, data)
+                if clip.state == Clip.START or clip.state == Clip.STOPPING:
+                    # is there enough audio data ?
+                    if clip_offset < clip.getAudio().length():
+                        length = min(clip.getAudio().length() - clip_offset, frames)
+                        data = clip.getSamples(length, start_pos=clip_offset, fade_out=10 if len(data) < frames else 0)
+                        addBuffer(clip_buffers, 0, data)
 
-                clip.last_offset = 0
-                # print("buffer[{0}:] = sample[:{1}]".
-                # format(next_clip_offset, length))
+                if clip.state == Clip.RECORDING:
+                    if next_clip_offset:
+                        clip.writeSamples(0,
+                                        inL_buffer[:next_clip_offset],
+                                        start_pos=clip_offset)
+                        clip.writeSamples(1,
+                                        inL_buffer[:next_clip_offset],
+                                        start_pos=clip_offset)
+                    else:
+                        clip.writeSamples(0,
+                                        inL_buffer,
+                                        start_pos=clip_offset)
+                        clip.writeSamples(1,
+                                        inL_buffer,
+                                        start_pos=clip_offset)
+                    clip.last_offset = clip_offset
 
-            if next_clip_offset and clip.state == Clip.PREPARE_RECORD:
-                clip.writeSamples(0, inL_buffer[next_clip_offset:])
-                clip.writeSamples(1, inR_buffer[next_clip_offset:])
+                if next_clip_offset and (clip.state == Clip.START
+                                        or clip.state == Clip.STARTING):
+                    length = min(clip.getAudio().length(), blocksize - next_clip_offset)
+                    if length:
+                        data = clip.getSamples(length, start_pos=0, fade_in=10)
+                        addBuffer(clip_buffers, next_clip_offset, data)
 
-            # starting or stopping clip
-            if clip_offset == 0 or next_clip_offset:
-                  # reset record offset
-                  if clip.state == Clip.RECORDING:
-                      clip.frame_offset = 0
-                  clip.state = CLIP_TRANSITION[clip.state]
-                  clip.rewind()
-                  gui.updateUi.emit()
+                    clip.last_offset = 0
+                    # print("buffer[{0}:] = sample[:{1}]".
+                    # format(next_clip_offset, length))
+
+                if next_clip_offset and clip.state == Clip.PREPARE_RECORD:
+                    clip.writeSamples(0, inL_buffer[next_clip_offset:])
+                    clip.writeSamples(1, inR_buffer[next_clip_offset:])
+
+                # starting or stopping clip
+                if clip_offset == 0 or next_clip_offset:
+                    # reset record offset
+                    if clip.state == Clip.RECORDING:
+                        clip.frame_offset = 0
+                    clip.state = CLIP_TRANSITION[clip.state]
+                    clip.rewind()
+                    gui.updateUi.emit()
 
     # apply master volume
     for b in output_buffers.values():

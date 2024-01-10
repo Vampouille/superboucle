@@ -89,8 +89,30 @@ class MidiClip(AbstractClip):
             events.addEvent(note.start_tick + note.length, bytes([0x80, note.pitch, 0]))
         self.events = events
 
+    # tick: clip relative tick count 
     def getEvent(self, tick: int):
-        return self.events.get(tick)
+        res = self.events.get(tick)
+        for note in res:
+            if note[0] == 0x90: # Note ON
+                self.openNote.add(note[1]) # Add pitch 
+            elif note[0] == 0x80: # Note OFF
+                self.openNote.remove(note[1])
+        return res
+
+    # tick: absolute tick count 
+    def getMidiEvents(self, tick: int):
+        tick = tick % (self.length * TICK_PER_BEAT)
+        res = []
+        # If we are at the end of the clip (and also at the beginning)
+        # we need to close every note with Note On but no Note Off
+        if tick == 0:
+            res.extend(self.closeOpenNote())
+        res.extend(self.getEvent(tick))
+    
+    def closeOpenNote(self):
+        res = []
+        for pitch in self.self.openNote:
+            res.append(bytes([0x80, pitch, 0]))
     
     def rewind(self):
         self.last_tick = 0

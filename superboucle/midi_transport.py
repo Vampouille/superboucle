@@ -4,6 +4,8 @@ from threading import Thread
 from collections import deque
 from PyQt5.QtCore import pyqtSignal, QObject
 
+from superboucle.clip_midi import MidiClip
+
 STOPPED = 0
 RUNNING = 1
 MIDI_START = b"\xfa"
@@ -44,7 +46,7 @@ class MidiTransport(QObject):
     def notify(self, frame_time, in_data):
         # Call in a realtime context
         #
-        # return True for a tick correpsonding to a beat
+        # return the index and offset of a tick
         #
         # offset: Time (in samples) relative to the beginning of the current audio block.
         # client.last_frame_time: The precise time at the start of the current process cycle.
@@ -73,8 +75,8 @@ class MidiTransport(QObject):
             if tick == 0:
                 self.prepareNextBeatSignal.emit(beat)
                 self.updatePosSignal.emit()
-                return beat
-        return -1
+            return self.ticks
+        return None
 
     def position_sample(self, pos):
         return pos - self.first_tick
@@ -99,7 +101,7 @@ class MidiTransport(QObject):
                 line = self.gui.song.clips_matrix[x]
                 for y in range(len(line)):
                     clp = line[y]
-                    if clp is not None and clp.stretch_mode != 'disable':
+                    if clp is not None and not isinstance(clp, MidiClip) and clp.stretch_mode != 'disable':
                         # only trigger resample on beat just before clip start
                         if (beat + 1) % clp.beat_diviser == 0:
                             diff = clp.getNextBeatSample() - beat_sample

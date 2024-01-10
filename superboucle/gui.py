@@ -124,6 +124,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         # Load song
         self.port_by_name = {}
+        self.midi_port_by_name = {}
         self.initUI(song)
 
         self.actionNew.triggered.connect(self.onActionNew)
@@ -313,6 +314,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         '''Update jack port based on clip output settings
         update dict containing ports with shortname as key'''
 
+        # First manage Audio ports 
         current_ports = set()
         for port in self._jack_client.outports:
             current_ports.add(port.shortname)
@@ -324,7 +326,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                                                         channel=ch)
                 wanted_ports.add(port)
 
-        # remove unwanted ports
+        # Remove unwanted ports
         if remove_ports:
             port_to_remove = []
             for port in self._jack_client.outports:
@@ -334,13 +336,39 @@ class Gui(QMainWindow, Ui_MainWindow):
             for port in port_to_remove:
                 port.unregister()
 
-        # create new ports
+        # Create new ports
         for new_port_name in wanted_ports - current_ports:
             self._jack_client.outports.register(new_port_name)
 
         self.port_by_name = {port.shortname: port
                              for port in self._jack_client.outports}
 
+        # Manage Midi Ports
+        current_ports = set()
+        for port in self._jack_client.midi_outports:
+            current_ports.add(port.shortname)
+
+        wanted_midi_ports = set()
+        for port in song.outputsMidiPorts:
+                wanted_ports.add(port)
+
+        # Remove unwanted ports
+        if remove_ports:
+            port_to_remove = []
+            for port in self._jack_client.midi_outports:
+                if port.shortname not in wanted_midi_ports:
+                    current_ports.remove(port.shortname)
+                    port_to_remove.append(port)
+            for port in port_to_remove:
+                port.unregister()
+
+        # Create new ports
+        for new_port_name in wanted_midi_ports - current_ports:
+            self._jack_client.midi_outports.register(new_port_name)
+
+        self.midi_port_by_name = {port.shortname: port
+                                 for port in self._jack_client.midi_outports}
+        
         self.updatePorts.emit()
 
     def onActionNew(self):
