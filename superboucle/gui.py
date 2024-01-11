@@ -135,7 +135,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionManage_Devices.triggered.connect(self.onManageDevice)
         self.actionPlaylist_Editor.triggered.connect(self.onPlaylistEditor)
         self.actionScene_Manager.triggered.connect(self.onSceneManager)
-        self.actionPort_Manager.triggered.connect(PortManager.__init__)
+        self.actionPort_Manager.triggered.connect(self.onPortManager)
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
         self.bpm.valueChanged.connect(self.onBpmChange)
@@ -298,14 +298,6 @@ class Gui(QMainWindow, Ui_MainWindow):
     def onRewindClicked(self):
         self._jack_client.transport_locate(0)
 
-    def removePort(self, name):
-        if name != Clip.DEFAULT_OUTPUT:
-            self.song.outputsPorts.remove(name)
-            for c in self.song.clips:
-                if c.output == name:
-                    c.output = Clip.DEFAULT_OUTPUT
-            self.updateJackPorts(self.song)
-            self.portListUpdate()
 
     def updateJackPorts(self, song, remove_ports=True):
         '''Update jack port based on clip output settings

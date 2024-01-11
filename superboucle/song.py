@@ -202,10 +202,27 @@ class Song():
     def init_record_buffer(self, clip, channel, size, samplerate, beat_sample):
         clip.audio_file = WaveForm(np.zeros((size, channel), dtype=np.float32), samplerate, beat_sample, "disable")
 
+    def removeAudioPort(self, port):
+        if port.name != Clip.DEFAULT_OUTPUT:
+            self.outputsPorts.remove(port)
+            for c in self.clips:
+                if isinstance(c, Clip) and c.output == port.name:
+                    c.output = Clip.DEFAULT_OUTPUT
+            self.updateJackPorts()
+
+    def removeMidiPort(self, port):
+        if port.name != Clip.DEFAULT_OUTPUT:
+            self.outputsMidiPorts.remove(port)
+            for c in self.clips:
+                if isinstance(c, MidiClip) and c.output == port.name:
+                    c.output = Clip.DEFAULT_OUTPUT
+            self.updateJackPorts()
+
     def updateJackPorts(self, remove_ports=True):
         '''Update jack port based on song outputs
         * create missing port
-        * remove port not used by this song if remove_ports is True'''
+        * remove port not used by this song if remove_ports is True
+        * trigger auto-connect'''
 
         # First manage Audio ports 
         current_ports = set([p.shortname for p in client.outports])
