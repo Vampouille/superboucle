@@ -18,7 +18,7 @@ class MidiTransport(QObject):
     prepareNextBeatSignal = pyqtSignal(int)
     updateSyncSignal = pyqtSignal()
     updatePosSignal = pyqtSignal()
-
+    updateClockSignal = pyqtSignal()
 
     def __init__(self, gui):
         QObject.__init__(self)
@@ -32,6 +32,7 @@ class MidiTransport(QObject):
         self.prepareNextBeatSignal.connect(self.prepareNextBeat)
         self.updateSyncSignal.connect(self.updateSync)
         self.updatePosSignal.connect(self.updatePos)
+        self.updateClockSignal.connect(self.updateClock)
         self.wip = threading.Lock()
 
     def getBPM(self):
@@ -72,6 +73,7 @@ class MidiTransport(QObject):
             # trigger resample or timestratch every beat for the next beat
             # Compute during current beat, Use on next beat
             beat, tick = divmod(self.ticks, 24)
+            self.updateClockSignal.emit()
             if tick == 0:
                 self.prepareNextBeatSignal.emit(beat)
                 self.updatePosSignal.emit()
@@ -146,3 +148,7 @@ class MidiTransport(QObject):
         time = "%d:%02d:%02d" % (hour, minute, second)
         self.gui.bbtLabel.setText("%s\n%s" % (bbt, time))
         self.gui.bpm.setValue(self.getBPM())
+
+    def updateClock(self):
+        self.gui.clock.tick = self.ticks
+        self.gui.clock.update()

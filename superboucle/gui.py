@@ -6,7 +6,7 @@ Gui
 """
 from PyQt5.QtWidgets import (QMainWindow, QFileDialog,
                              QAction, QActionGroup, QMessageBox, QApplication)
-from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings, Qt
+from PyQt5.QtCore import QTimer, QObject, pyqtSignal, QSettings, Qt, QRect
 from superboucle.clip import Clip
 from superboucle.edit_clip import EditClipDialog
 from superboucle.gui_ui import Ui_MainWindow
@@ -21,8 +21,9 @@ from superboucle.new_song import NewSongDialog
 from superboucle.add_clip import AddClipDialog
 from superboucle.device import Device
 from superboucle.edit_midi import EditMidiDialog
-from superboucle.clip_midi import MidiClip, MidiNote
+from superboucle.clip_midi import MidiClip
 from superboucle.midi_transport import MidiTransport
+from superboucle.beat_clock import BeatClockWidget
 
 import struct
 from queue import Queue, Empty
@@ -164,7 +165,14 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.disptimer.start(self.PROGRESS_PERIOD)
         self.disptimer.timeout.connect(self.updateProgress)
 
+        # Setup Clock
+        self.setupClock()
         self.show()
+
+    def setupClock(self):
+        self.clock = BeatClockWidget(self.frame_out)
+        self.clock.setGeometry(QRect(3, 79, 230, 230))
+        self.clock.setObjectName("clock")
 
     def loadSong(self, song):
         self.song = song
@@ -183,11 +191,11 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.updateJackPorts()
 
         # Create with Super boucle port name as key and jack ports list as value
-        self.port_by_name = { p.name : [ j
-                                         for j in self._jack_client.outports
-                                         if j.shortname in p.getShortNames()]
+        self.port_by_name = { p.name : sorted([ j
+                                                for j in self._jack_client.outports
+                                                if j.shortname in p.getShortNames()],
+                                              key=lambda x: x.name)
                               for p in self.song.outputsPorts }
-
         self.midi_port_by_name = {}
         for p in self.song.outputsMidiPorts:
             for j in self._jack_client.midi_outports:
@@ -272,7 +280,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         for j in port.getShortNames():
             jack_ports.append(self._jack_client.outports.register(j))
         self.song.outputsPorts.add(port)
-        self.port_by_name[name] = jack_ports
+        self.port_by_name[name] = sorted(jack_ports, key=lambda x: x.name)
         self.portChangeSignal.emit()
 
     def addMidiPort(self, name):
@@ -281,7 +289,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         for j in port.getShortNames():
             jack_ports.append(self._jack_client.midi_outports.register(j))
         self.song.outputsMidiPorts.add(port)
-        self.midi_port_by_name[name] = jack_ports
+        self.midi_port_by_name[name] = sorted(jack_ports, key=lambda x: x.name)
         self.portChangeSignal.emit()
 
     def removeAudioPort(self, port):
@@ -330,12 +338,12 @@ class Gui(QMainWindow, Ui_MainWindow):
                 # Search for jack ports using regexp
                 jack_ports = self._find_output_audio_ports(self.song.audioRecordRegexp)
                 # Check if we have enough ports
-                if len(jack_ports) == 2:
+                if len(jack_ports) in [1,2]:
                     # fetch pointer to superboucle ports
-                    if not self.inL.is_connected_to(jack_ports[0]):
-                        self._jack_client.connect(jack_ports[0], self.inL)
-                    if not self.inR.is_connected_to(jack_ports[1]):
-                        self._jack_client.connect(jack_ports[1], self.inR)
+                    if not self.inL.is_connected_to(jack_ports[0 % len(jack_ports)]):
+                        self._jack_client.connect(jack_ports[0 % len(jack_ports)], self.inL)
+                    if not self.inR.is_connected_to(jack_ports[1 % len(jack_ports)]):
+                        self._jack_client.connect(jack_ports[1 % len(jack_ports)], self.inR)
 
             if self.song.midiClockRegexp:
                 # Search for jack ports using regexp
@@ -739,11 +747,11 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.redraw()
 
 
-    #def bpm_to_tick_period(self, bpm):
-    #    return (60 * self.sr) / (bpm * 24)
+    def bpm_to_tick_period(self, bpm):
+        return (60 * self.sr) / (bpm * 24)
 
-    #def tick_period_to_bpm(self, period):
-    #    return (60 * self.sr) / (period * 24)
+    def tick_period_to_bpm(self, period):
+        return (60 * self.sr) / (period * 24)
 
     def bpm_to_beat_period(self, bpm):
         return (60 * self.sr) / (bpm)

@@ -61,7 +61,7 @@ class Ui_MainWindow(object):
         self.label_7.setAlignment(QtCore.Qt.AlignCenter)
         self.label_7.setObjectName("label_7")
         self.frame_in = QtWidgets.QFrame(self.frame_out)
-        self.frame_in.setGeometry(QtCore.QRect(0, 90, 236, 776))
+        self.frame_in.setGeometry(QtCore.QRect(0, 315, 236, 551))
         self.frame_in.setStyleSheet("#frame_in {\n"
 "background-color: rgb(175, 178, 178);}")
         self.frame_in.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -267,6 +267,9 @@ class Ui_MainWindow(object):
         self.prepare_duration.setOrientation(QtCore.Qt.Vertical)
         self.prepare_duration.setInvertedAppearance(False)
         self.prepare_duration.setObjectName("prepare_duration")
+        self.clock = QtWidgets.QWidget(self.frame_out)
+        self.clock.setGeometry(QtCore.QRect(3, 79, 230, 230))
+        self.clock.setObjectName("clock")
         self.verticalLayout.addWidget(self.frame_out)
         self.horizontalLayout.addLayout(self.verticalLayout)
         self.gridLayout_out = QtWidgets.QGridLayout()

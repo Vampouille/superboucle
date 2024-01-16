@@ -78,7 +78,7 @@ def super_callback(frames):
                     continue
                 
                 # Get pointer to the clip buffer
-                clip_buffers = [p.get_array() for p in gui.ports_by_name[clip.output]]
+                clip_buffers = [p.get_array() for p in gui.port_by_name[clip.output]]
 
                 # Check if end of clip is in the buffer
                 # check if a beat is in the buffer

@@ -97,9 +97,9 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>90</y>
+           <y>315</y>
            <width>236</width>
-           <height>776</height>
+           <height>551</height>
           </rect>
          </property>
          <property name="styleSheet">
@@ -597,6 +597,16 @@ QProgressBar {
            <bool>false</bool>
           </property>
          </widget>
+        </widget>
+        <widget class="QWidget" name="clock" native="true">
+         <property name="geometry">
+          <rect>
+           <x>3</x>
+           <y>79</y>
+           <width>230</width>
+           <height>230</height>
+          </rect>
+         </property>
         </widget>
        </widget>
       </item>
