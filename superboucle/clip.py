@@ -1,11 +1,8 @@
 import time
 import numpy as np
-from PyQt5 import QtCore
-from PyQt5.QtCore import QObject, pyqtSignal
 import resampy
 from pyrubberband import time_stretch
 
-from superboucle.clip_midi import MidiClip
 from superboucle.abstract_clip import AbstractClip
 
 class WaveForm():

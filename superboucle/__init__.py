@@ -1,7 +1,10 @@
-from superboucle.jack_client import client
-from superboucle.clip import Clip
+import jack
+import sys
+
+from PyQt5.QtWidgets import QApplication
+
 from superboucle.gui import Gui
-#from superboucle.cell import cell_ui
-#import jack
-import superboucle.cell_ui as cell_ui
-import superboucle.qsuperdial
+
+client = jack.Client("Super Boucle")
+app = QApplication(sys.argv)
+gui = Gui(client, app)

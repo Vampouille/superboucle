@@ -5,8 +5,6 @@ from PyQt5.QtCore import pyqtSignal
 from superboucle.add_port import AddPortDialog
 from superboucle.edit_clip_ui import Ui_Dialog
 from superboucle.set_tempo import SetTempoDialog
-from superboucle.song import verify_ext
-
 
 class EditClipDialog(QDialog, Ui_Dialog):
     ADD_PORT_LABEL = "Add new Port..."
@@ -23,7 +21,7 @@ class EditClipDialog(QDialog, Ui_Dialog):
     def __init__(self, parent, song, cell):
         super(EditClipDialog, self).__init__(parent)
         self.gui = parent
-        self.gui.registerPortListUpdateCallback(self.updatePortList)
+        self.gui.portChangeSignal.connect(self.updatePortList)
         self.setupUi(self)
         self.song = song
         self.clip = cell.clip
@@ -56,10 +54,7 @@ class EditClipDialog(QDialog, Ui_Dialog):
         self.stretch_mode_disable.clicked.connect(self.onStretchModeDisable)
         self.stretch_mode_resample.clicked.connect(self.onStretchModeResample)
         self.stretch_mode_timestretch.clicked.connect(self.onStretchModeTimestretch)
-        self.output.clear()
-        self.output.addItems(song.outputsPorts)
-        self.output.addItem(EditClipDialog.ADD_PORT_LABEL)
-        self.output.setCurrentText(self.clip.output)
+        self.updatePortList()
         self.output.activated.connect(self.onOutputChange)
         self.mute_group.setValue(self.clip.mute_group)
         self.mute_group.valueChanged.connect(self.onMuteGroupChange)
@@ -131,24 +126,11 @@ class EditClipDialog(QDialog, Ui_Dialog):
 
     def onOutputChange(self):
         new_port = self.output.currentText()
-        if new_port == EditClipDialog.ADD_PORT_LABEL:
-            AddPortDialog(self, self.addPortOkCallback, self.addPortCancelCallback)
-        else:
-            self.clip.output = new_port
+        self.clip.output = new_port
 
     def updatePortList(self):
         self.output.clear()
-        self.output.addItems(self.song.outputsPorts)
-        self.output.addItem(EditClipDialog.ADD_PORT_LABEL)
-        self.output.setCurrentText(self.clip.output)
-
-    def addPortOkCallback(self, name):
-        self.song.outputsPorts.add(name)
-        self.clip.output = name
-        self.gui.updateJackPorts(self.song)
-        self.gui.portListUpdate()
-
-    def addPortCancelCallback(self):
+        self.output.addItems([p.name for p in self.song.outputsPorts])
         self.output.setCurrentText(self.clip.output)
 
     def onMuteGroupChange(self):
@@ -193,11 +175,10 @@ class EditClipDialog(QDialog, Ui_Dialog):
             )
             if response == QMessageBox.Yes:
                 self.song.removeClip(self.clip)
-                self.gui.initUI(self.song)
+                self.gui.loadSong(self.song)
                 self.reject()
 
     def closeEvent(self, event):
-        self.gui.unregisterPortListUpdateCallback(self.updatePortList)
         self.cell.edit.setEnabled(True)
         self.clip.edit_clip = None
 
@@ -215,16 +196,16 @@ class EditClipDialog(QDialog, Ui_Dialog):
         
 
     # TODO : remove ?
-    def updateAudioDesc(self, a_b, msg):
-        print("updateAudioDesc(%s, %s)..." % (a_b, msg), end="")
-        self.audio_0.setText(self.generate_audio_desc(self.clip.audio_file))
-        self.audio_a.setText(self.generate_audio_desc(self.clip.audio_file_a))
-        self.audio_b.setText(self.generate_audio_desc(self.clip.audio_file_b))
-        #for l in labels:
-        #    l.setStyleSheet("")
-        self.labels[a_b].setStyleSheet(self.COLORS[msg])
-        #labels[a_b].repaint()
-        print("OK")
+    #def updateAudioDesc(self, a_b, msg):
+    #    print("updateAudioDesc(%s, %s)..." % (a_b, msg), end="")
+    #    self.audio_0.setText(self.generate_audio_desc(self.clip.audio_file))
+    #    self.audio_a.setText(self.generate_audio_desc(self.clip.audio_file_a))
+    #    self.audio_b.setText(self.generate_audio_desc(self.clip.audio_file_b))
+    #    #for l in labels:
+    #    #    l.setStyleSheet("")
+    #    self.labels[a_b].setStyleSheet(self.COLORS[msg])
+    #    #labels[a_b].repaint()
+    #    print("OK")
 
     # TODO : remove ?
     def refreshAudioDesc(self):
@@ -254,3 +235,9 @@ class EditClipDialog(QDialog, Ui_Dialog):
     def changeActive(self, inactive, active):
         self.labels[inactive].setStyleSheet(self.COLORS["Inactive"])
         self.labels[active].setStyleSheet(self.COLORS["Active"])
+
+def verify_ext(file, ext):
+    if file[-4:] == (".%s" % ext):
+        return file
+    else:
+        return "%s.%s" % (file, ext)

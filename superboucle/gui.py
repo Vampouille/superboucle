@@ -14,6 +14,7 @@ from superboucle.cell import Cell
 from superboucle.learn import LearnDialog
 from superboucle.device_manager import ManageDialog
 from superboucle.playlist import PlaylistDialog
+from superboucle.port import AudioPort, MidiPort
 from superboucle.scene_manager import SceneManager
 from superboucle.port_manager import PortManager
 from superboucle.new_song import NewSongDialog
@@ -21,6 +22,7 @@ from superboucle.add_clip import AddClipDialog
 from superboucle.device import Device
 from superboucle.edit_midi import EditMidiDialog
 from superboucle.clip_midi import MidiClip, MidiNote
+from superboucle.midi_transport import MidiTransport
 
 import struct
 from queue import Queue, Empty
@@ -74,18 +76,22 @@ class Gui(QMainWindow, Ui_MainWindow):
     BLINK_DURATION = 200
     PROGRESS_PERIOD = 300
 
+    superboucleConnectionChangeSignal = pyqtSignal()
+    jackConnectionChangeSignal = pyqtSignal()
+    portChangeSignal = pyqtSignal()
 
     updateUi = pyqtSignal()
     readQueueIn = pyqtSignal()
-    updatePorts = pyqtSignal()
     songLoad = pyqtSignal()
 
-    def __init__(self, song, jack_client, app):
+    def __init__(self, jack_client, app):
         QObject.__init__(self)
         super(Gui, self).__init__()
         self._jack_client = jack_client
         self.sr = jack_client.samplerate
         self.app = app
+        self.song = None
+        self.btn_matrix = []
         self.setupUi(self)
         self.is_learn_device_mode = False
         self.queue_out, self.queue_in = Queue(), Queue()
@@ -93,8 +99,18 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.readQueueIn.connect(self.readQueue)
         self.current_vol_block = 0
         self.last_clip = None
-        self.portListCallback = set()
+        #self.portListCallback = set()
         self.sync_source = SYNC_SOURCE_JACK
+        self.midi_transport = MidiTransport(self)
+        self.port_by_name = {}
+        self.midi_port_by_name = {}
+
+        # Create Default Ports
+        self.sync_midi_in = self._jack_client.midi_inports.register("sync")
+        self.cmd_midi_in = self._jack_client.midi_inports.register("cmd_in")
+        self.cmd_midi_out = self._jack_client.midi_outports.register("cmd_feedback")
+        self.inL = self._jack_client.inports.register("input_L")
+        self.inR = self._jack_client.inports.register("input_R")
 
         # Load devices
         self.deviceGroup = QActionGroup(self.menuDevice)
@@ -118,14 +134,6 @@ class Gui(QMainWindow, Ui_MainWindow):
         # Load paths
         self.paths_used = self.settings.value('paths_used', {})
 
-        self.auto_connect = self.settings.value('auto_connect',
-                                                'true') == "true"
-
-        # Load song
-        self.port_by_name = {}
-        self.midi_port_by_name = {}
-        self.initUI(song)
-
         self.actionNew.triggered.connect(self.onActionNew)
         self.actionOpen.triggered.connect(self.onActionOpen)
         self.actionSave.triggered.connect(self.onActionSave)
@@ -145,6 +153,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.pauseButton.clicked.connect(self._jack_client.transport_stop)
         self.gotoButton.clicked.connect(self.onGotoClicked)
         self.recordButton.clicked.connect(self.onRecord)
+        self.jackConnectionChangeSignal.connect(self.autoConnectPorts)
 
         self.blktimer = QTimer()
         self.blktimer.state = False
@@ -157,7 +166,8 @@ class Gui(QMainWindow, Ui_MainWindow):
 
         self.show()
 
-    def initUI(self, song):
+    def loadSong(self, song):
+        self.song = song
 
         # remove old buttons
         self.btn_matrix = [[None for y in range(song.height)]
@@ -169,11 +179,24 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.gridLayout.itemAt(i).widget().close()
             self.gridLayout.itemAt(i).widget().setParent(None)
 
-        # first pass without removing old ports
-        self.updateJackPorts(song, remove_ports=False)
-        self.song = song
-        # second pass with removing
-        self.updateJackPorts(song, remove_ports=True)
+        # Create port on jack client
+        self.updateJackPorts()
+
+        # Create with Super boucle port name as key and jack ports list as value
+        self.port_by_name = { p.name : [ j
+                                         for j in self._jack_client.outports
+                                         if j.shortname in p.getShortNames()]
+                              for p in self.song.outputsPorts }
+
+        self.midi_port_by_name = {}
+        for p in self.song.outputsMidiPorts:
+            for j in self._jack_client.midi_outports:
+                if j.shortname == p.name:
+                    self.midi_port_by_name[p.name] = j
+                    break
+
+        # Trigger auto connect
+        self.autoConnectPorts()
 
         self.master_volume.setValue(int(song.volume * 256))
         self.bpm.setValue(song.bpm)
@@ -197,6 +220,167 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.update()
         self.songLoad.emit()
 
+    def updateJackPorts(self, remove_ports=True):
+        '''Update jack port based on song outputs
+        * create missing port
+        * remove port not used by this song if remove_ports is True
+        * trigger auto-connect'''
+        change = False
+
+        # First manage Audio ports 
+        current_ports = set([p.shortname for p in self._jack_client.outports])
+        wanted_ports = []
+        for p in self.song.outputsPorts:
+            wanted_ports.extend(p.getShortNames())
+        wanted_ports = set(wanted_ports)
+
+        if remove_ports:
+            for p_to_remove in current_ports - wanted_ports:
+                for jack_port in self._jack_client.outports:
+                    if jack_port.shortname == p_to_remove:
+                        jack_port.unregister() # Remove unwanted port
+                        change = True
+
+        for p_to_add in wanted_ports - current_ports:
+            self._jack_client.outports.register(p_to_add)
+            change = True
+
+        # Manage Midi Ports
+        current_ports = set([p.shortname for p in self._jack_client.midi_outports])
+        wanted_ports = []
+        for p in self.song.outputsMidiPorts:
+            wanted_ports.extend(p.getShortNames())
+        wanted_ports = set(wanted_ports)
+
+        if remove_ports:
+            for p_to_remove in current_ports - wanted_ports:
+                for jack_port in self._jack_client.midi_outports:
+                    if jack_port.shortname == p:
+                        jack_port.unregister() # Remove unwanted port
+                        change = True
+
+        for p_to_add in wanted_ports - current_ports:
+            self._jack_client.midi_outports.register(p_to_add)
+            change = True
+
+        if change:
+            self.portChangeSignal.emit()
+
+    def addAudioPort(self, name):
+        port = AudioPort(name=name)
+        jack_ports = []
+        for j in port.getShortNames():
+            jack_ports.append(self._jack_client.outports.register(j))
+        self.song.outputsPorts.add(port)
+        self.port_by_name[name] = jack_ports
+        self.portChangeSignal.emit()
+
+    def addMidiPort(self, name):
+        port = MidiPort(name=name)
+        jack_ports = []
+        for j in port.getShortNames():
+            jack_ports.append(self._jack_client.midi_outports.register(j))
+        self.song.outputsMidiPorts.add(port)
+        self.midi_port_by_name[name] = jack_ports
+        self.portChangeSignal.emit()
+
+    def removeAudioPort(self, port):
+        self.song.removeAudioPort(port)
+        self.port_by_name[port.name].unregister()   
+        del self.port_by_name[port.name]
+        self.portChangeSignal.emit()
+
+    def removeMidiPort(self, port):
+        self.song.removeMidiPort(port)
+        self.midi_port_by_name[port.name].unregister()
+        del self.midi_port_by_name[port.name]
+        self.portChangeSignal.emit()
+
+    def autoConnectPorts(self):
+        if self.song is not None:
+            # Iterate on output audio ports
+            for p in self.song.outputsPorts:
+                # if auto-connect is enable
+                if p.regexp:
+                    # Search for jack ports using regexp
+                    jack_ports = self._find_input_audio_ports(p.regexp)
+                    # Check if we have enough ports
+                    if len(jack_ports) == 2:
+                        # fetch pointer to superboucle ports
+                        own_ports = self.port_by_name[p.name]
+                        for i in range(2):
+                            if not own_ports[i].is_connected_to(jack_ports[i]):
+                                own_ports[i].connect(jack_ports[i])
+            # and midi ports
+            for p in self.song.outputsMidiPorts:
+                # if auto-connect is enable
+                if p.regexp:
+                    # Search for jack ports using regexp
+                    jack_ports = self._find_input_midi_ports(p.regexp)
+                    # Check if we have enough ports
+                    if len(jack_ports) == 1:
+                        jack_port = jack_ports[0]
+                        # fetch pointer to superboucle ports
+                        own_port = self.midi_port_by_name[p.name]
+                        if not own_port.is_connected_to(jack_port):
+                            own_port.connect(jack_port)
+
+            # Connect Default ports
+            if self.song.audioRecordRegexp:
+                # Search for jack ports using regexp
+                jack_ports = self._find_output_audio_ports(self.song.audioRecordRegexp)
+                # Check if we have enough ports
+                if len(jack_ports) == 2:
+                    # fetch pointer to superboucle ports
+                    if not self.inL.is_connected_to(jack_ports[0]):
+                        self._jack_client.connect(jack_ports[0], self.inL)
+                    if not self.inR.is_connected_to(jack_ports[1]):
+                        self._jack_client.connect(jack_ports[1], self.inR)
+
+            if self.song.midiClockRegexp:
+                # Search for jack ports using regexp
+                jack_ports = self._find_output_midi_ports(self.song.midiClockRegexp)
+                # Check if we have enough ports
+                if len(jack_ports) == 1:
+                    jack_port = jack_ports[0]
+                    if not self.sync_midi_in.is_connected_to(jack_port):
+                        self._jack_client.connect(jack_port, self.sync_midi_in)
+
+            if self.song.midiControlInputRegexp:
+                # Search for jack ports using regexp
+                jack_ports = self._find_output_midi_ports(self.song.midiControlInputRegexp)
+                # Check if we have enough ports
+                if len(jack_ports) == 1:
+                    jack_port = jack_ports[0]
+                    if not self.cmd_midi_in.is_connected_to(jack_port):
+                        self._jack_client.connect(jack_port, self.cmd_midi_in)
+
+            if self.song.midiControlOutputRegexp:
+                # Search for jack ports using regexp
+                jack_ports = self._find_input_midi_ports(self.song.midiControlOutputRegexp)
+                # Check if we have enough ports
+                if len(jack_ports) == 1:
+                    jack_port = jack_ports[0]
+                    if not self.cmd_midi_out.is_connected_to(jack_port):
+                        self._jack_client.connect(self.cmd_midi_out, jack_port)
+
+
+    def _find_input_audio_ports(self, regexp):
+        jack_ports = self._jack_client.get_ports(name_pattern=regexp, is_physical=True, is_input=True, is_audio=True, is_midi=False)
+        return sorted(jack_ports, key=lambda x: x.name)
+
+    def _find_input_midi_ports(self, regexp):
+        jack_ports = self._jack_client.get_ports(name_pattern=regexp, is_physical=True, is_input=True, is_audio=False, is_midi=True)
+        return sorted(jack_ports, key=lambda x: x.name)
+    
+    def _find_output_audio_ports(self, regexp):
+        jack_ports = self._jack_client.get_ports(name_pattern=regexp, is_physical=True, is_output=True, is_audio=True, is_midi=False)
+        return sorted(jack_ports, key=lambda x: x.name)
+
+    def _find_output_midi_ports(self, regexp):
+        jack_ports = self._jack_client.get_ports(name_pattern=regexp, is_physical=True, is_output=True, is_audio=False, is_midi=True)
+        return sorted(jack_ports, key=lambda x: x.name)
+
     def openSongFromDisk(self, file_name):
         self._jack_client.transport_stop()
         self._jack_client.transport_locate(0)
@@ -206,7 +390,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         message.setWindowTitle("Loading ....")
         message.setText("Reading Files, please wait ...")
         message.show()
-        self.initUI(Song(file=file_name))
+        self.loadSong(Song(file=file_name))
         message.close()
         self.setEnabled(True)
 
@@ -297,24 +481,6 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onRewindClicked(self):
         self._jack_client.transport_locate(0)
-
-
-    def updateJackPorts(self, song, remove_ports=True):
-        '''Update jack port based on clip output settings
-        update dict containing ports with shortname as key'''
-
-        song.updateJackPorts(remove_ports)
-        self.updatePorts.emit()
-
-    def registerPortListUpdateCallback(self, callback):
-        self.portListCallback.add(callback)
-
-    def unregisterPortListUpdateCallback(self, callback):
-        self.portListCallback.remove(callback)
-
-    def portListUpdate(self):
-        for l in self.portListCallback:
-            l()
 
     def onActionNew(self):
         NewSongDialog(self)
@@ -518,7 +684,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                         btn.setStyleSheet(btn.color)
                     else:
                         btn.setStyleSheet(self.DEFAULT)
-        if self.song.is_record:
+        if self.song is not None and self.song.is_record:
             if self.blktimer.state:
                 self.recordButton.setStyleSheet(self.RECORD_BLINK)
             else:
@@ -527,23 +693,24 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.blktimer.state = not self.blktimer.state
 
     def updateProgress(self):
-        if self.sync_source == SYNC_SOURCE_JACK:
-            state, pos = self._jack_client.transport_query()
-            if 'bar' in pos:
-                bbt = "%d|%d|%03d" % (pos['bar'], pos['beat'], pos['tick'])
-            else:
-                bbt = "-|-|-"
-            seconds = int(pos['frame'] / pos['frame_rate'])
-            (minutes, second) = divmod(seconds, 60)
-            (hour, minute) = divmod(minutes, 60)
-            time = "%d:%02d:%02d" % (hour, minute, second)
-            self.bbtLabel.setText("%s\n%s" % (bbt, time))
-        for line in self.btn_matrix:
-            for btn in line:
-                if btn.clip:
-                    value = btn.clip.getPos() * 97
-                    btn.clip_position.setValue(int(value))
-                    btn.clip_position.repaint()
+        if self.song is not None:
+            if self.sync_source == SYNC_SOURCE_JACK:
+                state, pos = self._jack_client.transport_query()
+                if 'bar' in pos:
+                    bbt = "%d|%d|%03d" % (pos['bar'], pos['beat'], pos['tick'])
+                else:
+                    bbt = "-|-|-"
+                seconds = int(pos['frame'] / pos['frame_rate'])
+                (minutes, second) = divmod(seconds, 60)
+                (hour, minute) = divmod(minutes, 60)
+                time = "%d:%02d:%02d" % (hour, minute, second)
+                self.bbtLabel.setText("%s\n%s" % (bbt, time))
+            for line in self.btn_matrix:
+                for btn in line:
+                    if btn.clip:
+                        value = btn.clip.getPos() * 97
+                        btn.clip_position.setValue(int(value))
+                        btn.clip_position.repaint()
 
     def updateDevices(self):
         for action in self.deviceGroup.actions():
@@ -572,14 +739,14 @@ class Gui(QMainWindow, Ui_MainWindow):
             self.redraw()
 
 
-    def bpm_to_tick_period(self, bpm):
-        return (60 * self.sr) / (bpm * 24)
+    #def bpm_to_tick_period(self, bpm):
+    #    return (60 * self.sr) / (bpm * 24)
 
-    def tick_period_to_bpm(self, period):
-        return (60 * self.sr) / (period * 24)
+    #def tick_period_to_bpm(self, period):
+    #    return (60 * self.sr) / (period * 24)
 
     def bpm_to_beat_period(self, bpm):
         return (60 * self.sr) / (bpm)
 
-    def beat_period_to_bpm(self, beat_period):
-        return (60 * self.sr) / (beat_period)
+    #def beat_period_to_bpm(self, beat_period):
+    #    return (60 * self.sr) / (beat_period)

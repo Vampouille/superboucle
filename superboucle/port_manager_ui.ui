@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>554</width>
+    <width>680</width>
     <height>679</height>
    </rect>
   </property>
@@ -74,7 +74,7 @@
     <rect>
      <x>30</x>
      <y>40</y>
-     <width>411</width>
+     <width>541</width>
      <height>192</height>
     </rect>
    </property>
@@ -84,7 +84,7 @@
     <rect>
      <x>30</x>
      <y>280</y>
-     <width>411</width>
+     <width>541</width>
      <height>192</height>
     </rect>
    </property>
@@ -92,7 +92,7 @@
   <widget class="QPushButton" name="addAudioPort">
    <property name="geometry">
     <rect>
-     <x>450</x>
+     <x>580</x>
      <y>40</y>
      <width>91</width>
      <height>25</height>
@@ -105,7 +105,7 @@
   <widget class="QPushButton" name="removeAudioPort">
    <property name="geometry">
     <rect>
-     <x>450</x>
+     <x>580</x>
      <y>80</y>
      <width>91</width>
      <height>25</height>
@@ -118,7 +118,7 @@
   <widget class="QPushButton" name="addMidiPort">
    <property name="geometry">
     <rect>
-     <x>450</x>
+     <x>580</x>
      <y>280</y>
      <width>91</width>
      <height>25</height>
@@ -131,7 +131,7 @@
   <widget class="QPushButton" name="removeMidiPort">
    <property name="geometry">
     <rect>
-     <x>450</x>
+     <x>580</x>
      <y>320</y>
      <width>91</width>
      <height>25</height>
@@ -174,7 +174,7 @@
     <rect>
      <x>30</x>
      <y>600</y>
-     <width>131</width>
+     <width>141</width>
      <height>25</height>
     </rect>
    </property>
@@ -191,7 +191,7 @@
     <string notr="true">color: rgb(160, 6, 89);</string>
    </property>
    <property name="text">
-    <string>Control MIDI Input</string>
+    <string>MIDI Control Input</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -200,9 +200,9 @@
   <widget class="QLineEdit" name="audioRecord">
    <property name="geometry">
     <rect>
-     <x>170</x>
+     <x>180</x>
      <y>520</y>
-     <width>271</width>
+     <width>261</width>
      <height>25</height>
     </rect>
    </property>
@@ -212,7 +212,7 @@
     <rect>
      <x>30</x>
      <y>560</y>
-     <width>131</width>
+     <width>141</width>
      <height>25</height>
     </rect>
    </property>
@@ -238,9 +238,9 @@
   <widget class="QLineEdit" name="midiClock">
    <property name="geometry">
     <rect>
-     <x>170</x>
+     <x>180</x>
      <y>560</y>
-     <width>271</width>
+     <width>261</width>
      <height>25</height>
     </rect>
    </property>
@@ -250,7 +250,7 @@
     <rect>
      <x>30</x>
      <y>520</y>
-     <width>131</width>
+     <width>141</width>
      <height>25</height>
     </rect>
    </property>
@@ -273,12 +273,12 @@
     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QLineEdit" name="midiControl">
+  <widget class="QLineEdit" name="midiControlInput">
    <property name="geometry">
     <rect>
-     <x>170</x>
+     <x>180</x>
      <y>600</y>
-     <width>271</width>
+     <width>261</width>
      <height>25</height>
     </rect>
    </property>
@@ -286,7 +286,7 @@
   <widget class="QPushButton" name="editAudioRecord">
    <property name="geometry">
     <rect>
-     <x>450</x>
+     <x>580</x>
      <y>520</y>
      <width>91</width>
      <height>25</height>
@@ -299,7 +299,7 @@
   <widget class="QPushButton" name="editMidiClock">
    <property name="geometry">
     <rect>
-     <x>450</x>
+     <x>580</x>
      <y>560</y>
      <width>91</width>
      <height>25</height>
@@ -309,10 +309,10 @@
     <string>Edit</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="editMidiControl">
+  <widget class="QPushButton" name="editMidiControlInput">
    <property name="geometry">
     <rect>
-     <x>450</x>
+     <x>580</x>
      <y>600</y>
      <width>91</width>
      <height>25</height>
@@ -320,6 +320,169 @@
    </property>
    <property name="text">
     <string>Edit</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="midiControlOutput">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>640</y>
+     <width>261</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_18">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>640</y>
+     <width>141</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Lato</family>
+     <pointsize>9</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+     <kerning>true</kerning>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color: rgb(160, 6, 89);</string>
+   </property>
+   <property name="text">
+    <string>MIDI Control Output</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="editMidiControlOutput">
+   <property name="geometry">
+    <rect>
+     <x>580</x>
+     <y>640</y>
+     <width>91</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Edit</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="audioRecordConnections">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>520</y>
+     <width>121</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Lato</family>
+     <pointsize>9</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+     <kerning>true</kerning>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color: rgb(160, 6, 89);</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="midiClockConnections">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>560</y>
+     <width>121</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Lato</family>
+     <pointsize>9</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+     <kerning>true</kerning>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color: rgb(160, 6, 89);</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="midiControlInputConnections">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>600</y>
+     <width>121</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Lato</family>
+     <pointsize>9</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+     <kerning>true</kerning>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color: rgb(160, 6, 89);</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="midiControlOutputConnections">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>640</y>
+     <width>121</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Lato</family>
+     <pointsize>9</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+     <kerning>true</kerning>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color: rgb(160, 6, 89);</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
    </property>
   </widget>
  </widget>

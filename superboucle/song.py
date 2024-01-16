@@ -9,7 +9,6 @@ import soundfile as sf
 from superboucle.clip import Clip, WaveForm
 from superboucle.clip_midi import MidiClip, MidiNote
 from superboucle.port import AudioPort, MidiPort
-from superboucle.jack_client import client
 
 class Song():
     CHANNEL_NAMES = ["L", "R"]
@@ -44,6 +43,10 @@ class Song():
                     self.volume = parser['DEFAULT'].getfloat('volume', 1.0)
                     self.bpm = parser['DEFAULT'].getfloat('bpm', 120.0)
                     self.beat_per_bar = parser['DEFAULT'].getint('beat_per_bar', 4)
+                    self.audioRecordRegexp = parser['DEFAULT'].get('audio_record_regexp', '')
+                    self.midiClockRegexp = parser['DEFAULT'].get('midi_clock_regexp', '')
+                    self.midiControlInputRegexp = parser['DEFAULT'].get('midi_control_intput_regexp', '')
+                    self.midiControlOutputRegexp = parser['DEFAULT'].get('midi_control_output_regexp', '')
                     outputs = json.loads(parser['DEFAULT'].get('outputs', '[{"name": "%s"}]' % Clip.DEFAULT_OUTPUT))
                     midiOutputs = json.loads(parser['DEFAULT'].get('midi_outputs', '[{"name": "%s"}]' % Clip.DEFAULT_OUTPUT))
 
@@ -113,6 +116,10 @@ class Song():
             self.outputsPorts.add(AudioPort(name=Clip.DEFAULT_OUTPUT))
             self.outputsMidiPorts = set()
             self.outputsMidiPorts.add(MidiPort(name=Clip.DEFAULT_OUTPUT))
+            self.audioRecordRegexp = ''
+            self.midiClockRegexp = ''
+            self.midiControlInputRegexp = ''
+            self.midiControlOutputRegexp = ''
             self.scenes = OrderedDict()
             self.initial_scene = None
 
@@ -208,7 +215,6 @@ class Song():
             for c in self.clips:
                 if isinstance(c, Clip) and c.output == port.name:
                     c.output = Clip.DEFAULT_OUTPUT
-            self.updateJackPorts()
 
     def removeMidiPort(self, port):
         if port.name != Clip.DEFAULT_OUTPUT:
@@ -216,50 +222,6 @@ class Song():
             for c in self.clips:
                 if isinstance(c, MidiClip) and c.output == port.name:
                     c.output = Clip.DEFAULT_OUTPUT
-            self.updateJackPorts()
-
-    def updateJackPorts(self, remove_ports=True):
-        '''Update jack port based on song outputs
-        * create missing port
-        * remove port not used by this song if remove_ports is True
-        * trigger auto-connect'''
-
-        # First manage Audio ports 
-        current_ports = set([p.shortname for p in client.outports])
-        wanted_ports = []
-        for p in self.outputsPorts:
-            wanted_ports.extend(p.getShortNames())
-        wanted_ports = set(wanted_ports)
-
-        if remove_ports:
-            for p in current_ports - wanted_ports:
-                for port in client.outports:
-                    if port.shortname == p:
-                        port.unregister() # Remove unwanted port
-
-        for p in self.outputsPorts:
-            p.register() # Create new port
-
-        # Manage Midi Ports
-        current_ports = set([p.shortname for p in client.midi_outports])
-        wanted_ports = []
-        for p in self.outputsMidiPorts:
-            wanted_ports.extend(p.getShortNames())
-        wanted_ports = set(wanted_ports)
-
-        if remove_ports:
-            for p in current_ports - wanted_ports:
-                for port in client.midi_outports:
-                    if port.shortname == p:
-                        port.unregister() # Remove unwanted port
-
-        for p in self.outputsMidiPorts:
-            p.register() # Create new port
-
-        # TODO: Connect outputs
-        # iterate over ports and connect with regexp
-        #client.connect(sb_out, pl_port)
-    
 
     def save(self):
         if self.file_name:
@@ -277,6 +239,10 @@ class Song():
                                     'height': self.height,
                                     'outputs': json.dumps([p.serialize() for p in self.outputsPorts]),
                                     'midi_outputs': json.dumps([p.serialize() for p in self.outputsMidiPorts]),
+                                    'audio_record_regexp': self.audioRecordRegexp,
+                                    'midi_clock_regexp': self.midiClockRegexp,
+                                    'midi_control_intput_regexp': self.midiControlInputRegexp,
+                                    'midi_control_output_regexp': self.midiControlOutputRegexp,
                                     'scenes': json.dumps(self.scenes)}
             if self.initial_scene is not None:
                 song_file['DEFAULT']['initial_scene'] = self.initial_scene

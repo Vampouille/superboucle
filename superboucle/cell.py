@@ -1,7 +1,7 @@
+import unicodedata
 from PyQt5.QtWidgets import QWidget
 from superboucle.cell_ui import Ui_Cell
 from superboucle.clip import WaveForm, Clip
-from superboucle.song import basename
 import numpy as np
 import soundfile as sf
 
@@ -117,3 +117,14 @@ class Cell(QWidget, Ui_Cell):
         self.setStyleSheet(Cell.STATE_COLORS[state])
         self.blink = Cell.STATE_BLINK[state]
         self.color = Cell.STATE_COLORS[state]
+
+def basename(s):
+    if s is None:
+        return None
+    else:
+        str = strip_accents(s)
+        return str.split('/')[-1]
+
+def strip_accents(s):
+    return ''.join(c for c in unicodedata.normalize('NFD', s)
+                   if unicodedata.category(c) != 'Mn')

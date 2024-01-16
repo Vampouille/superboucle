@@ -14,9 +14,9 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(662, 434)
+        Dialog.resize(1082, 465)
         self.verticalLayoutWidget = QtWidgets.QWidget(Dialog)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 10, 561, 361))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(10, 10, 1061, 441))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -31,6 +31,7 @@ class Ui_Dialog(object):
         self.ports = QtWidgets.QListWidget(self.verticalLayoutWidget)
         self.ports.setObjectName("ports")
         self.horizontalLayout.addWidget(self.ports)
+        self.horizontalLayout.setStretch(1, 2)
         self.verticalLayout.addLayout(self.horizontalLayout)
         self.buttonBox = QtWidgets.QDialogButtonBox(self.verticalLayoutWidget)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)

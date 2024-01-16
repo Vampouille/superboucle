@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import QDialog
 from superboucle.device_manager_ui import Ui_Dialog
 from superboucle.learn import LearnDialog
 from superboucle.device import Device
-from superboucle.song import verify_ext
 
 
 class ManageDialog(QDialog, Ui_Dialog):
@@ -63,3 +62,9 @@ class ManageDialog(QDialog, Ui_Dialog):
             self.list.addItem(device.name)
         self.gui.is_learn_device_mode = False
         self.gui.redraw()
+
+def verify_ext(file, ext):
+    if file[-4:] == (".%s" % ext):
+        return file
+    else:
+        return "%s.%s" % (file, ext)

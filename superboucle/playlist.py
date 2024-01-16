@@ -3,8 +3,6 @@ from superboucle.playlist_ui import Ui_Dialog
 import json
 from os.path import basename, splitext
 
-from superboucle.song import verify_ext
-
 
 class PlaylistDialog(QDialog, Ui_Dialog):
     def __init__(self, parent):
@@ -88,3 +86,9 @@ class PlaylistDialog(QDialog, Ui_Dialog):
             self.gui.openSongFromDisk(file_name)
         except Exception as e:
             print("could not load File {}.\nError: {}".format(file_name, e))
+
+def verify_ext(file, ext):
+    if file[-4:] == (".%s" % ext):
+        return file
+    else:
+        return "%s.%s" % (file, ext)
