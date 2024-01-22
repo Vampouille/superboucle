@@ -81,8 +81,8 @@ class Song():
                                             length=section.getint('length'),
                                             channel=section.getint('channel'),
                                             volume=section.getfloat('volume'),
-                                            output=section['output'],
-                                            mute_group=section['mute_group'])
+                                            output=section.get('output', Clip.DEFAULT_OUTPUT),
+                                            mute_group=section.getint('mute_group', 0))
                             for n in json.loads(section['notes']):
                                 clip.addNote(MidiNote(*n))
                             clip.computeEvents()
