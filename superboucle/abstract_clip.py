@@ -27,10 +27,11 @@ class AbstractClip:
                          4: "PREPARE_RECORD",
                          5: "RECORDING"}
 
-    def __init__(self, name='', volume=1, output=DEFAULT_OUTPUT, mute_group=0):
+    def __init__(self, name='', volume=1, length=8, output=DEFAULT_OUTPUT, mute_group=0):
         self.name = name
         self.volume = volume
         self.state = AbstractClip.STOP
+        self.length: int = length # in beats
         self.output = output
         self.mute_group = mute_group
 

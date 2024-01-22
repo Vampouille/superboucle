@@ -33,8 +33,8 @@ class EditClipDialog(QDialog, Ui_Dialog):
         self.clip_volume.setValue(int(self.clip.volume * 256))
         self.clip_volume.knobRadius = 3
         self.clip_volume.valueChanged.connect(self.onClipVolumeChange)
-        self.beat_diviser.valueChanged.connect(self.onBeatDiviserChange)
-        self.beat_diviser.setValue(self.clip.beat_diviser)
+        self.length.valueChanged.connect(self.onLengthChange)
+        self.length.setValue(self.clip.length)
         self.frame_offset.setValue(self.clip.frame_offset)
         self.frame_offset.valueChanged.connect(self.onFrameOffsetChange)
         self.beat_offset.setValue(self.clip.beat_offset)
@@ -99,8 +99,8 @@ class EditClipDialog(QDialog, Ui_Dialog):
     def onClipVolumeChange(self):
         self.clip.volume = self.clip_volume.value() / 256
 
-    def onBeatDiviserChange(self):
-        self.clip.beat_diviser = self.beat_diviser.value()
+    def onLengthChange(self):
+        self.clip.length = self.length.value()
 
     def onFrameOffsetChange(self):
         self.clip.frame_offset = self.frame_offset.value()

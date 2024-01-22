@@ -42,6 +42,17 @@ class Cell(QWidget, Ui_Cell):
                    Clip.PREPARE_RECORD: True,
                    Clip.RECORDING: False}
 
+    PROGRESS_COLOR = {4: "rgb(9, 216, 223)",
+                      8: "rgb(243, 233, 0)",
+                     16: "rgb(109, 217, 24)",
+                     32: "rgb(223, 27, 130)"}
+    
+    CSS_TEMPLATE = """
+            QProgressBar {
+                background: %s;
+            }
+        """
+
     def __init__(self, parent, clip, x, y):
         super(Cell, self).__init__(parent)
 
@@ -56,6 +67,8 @@ class Cell(QWidget, Ui_Cell):
             self.clip_name.setText(clip.name)
             self.start_stop.clicked.connect(parent.onStartStopClicked)
             self.edit.clicked.connect(parent.onEdit)
+            if self.clip.length in Cell.PROGRESS_COLOR.keys():
+                self.clip_position.setStyleSheet(Cell.CSS_TEMPLATE % Cell.PROGRESS_COLOR[self.clip.length])
         else:
             self.start_stop.setEnabled(False)
             self.clip_position.setEnabled(False)
@@ -83,6 +96,8 @@ class Cell(QWidget, Ui_Cell):
         self.edit.clicked.connect(self.gui.onEdit)
         self.start_stop.setEnabled(True)
         self.clip_position.setEnabled(True)
+        if self.clip.length in Cell.PROGRESS_COLOR.keys():
+            self.clip_position.setStyleSheet(Cell.CSS_TEMPLATE % Cell.PROGRESS_COLOR[self.clip.length])
         self.setAcceptDrops(False)
         self.gui.song.addClip(new_clip, self.pos_x, self.pos_y)
         self.gui.update()

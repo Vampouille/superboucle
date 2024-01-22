@@ -103,7 +103,7 @@ class Song():
                                         volume=section.getfloat('volume', 1.0),
                                         frame_offset=section.getint('frame_offset', 0),
                                         beat_offset=section.getfloat('beat_offset', 0.0),
-                                        beat_diviser=section.getint('beat_diviser'),
+                                        length=section.getint('length'),
                                         stretch_mode=section.get('stretch_mode','disable'),
                                         output=section.get('output', Clip.DEFAULT_OUTPUT),
                                         mute_group=section.getint('mute_group', 0))

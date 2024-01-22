@@ -82,12 +82,11 @@ class WaveForm():
 
 class Clip(AbstractClip):
     def __init__(self, audio_file=None, name='',
-                 volume=1, frame_offset=0, beat_offset=0.0, beat_diviser=8,
+                 volume=1, frame_offset=0, beat_offset=0.0, length=8,
                  stretch_mode='disable', output=AbstractClip.DEFAULT_OUTPUT, mute_group=0):
-        super().__init__(name, volume, output, mute_group)
+        super().__init__(name, volume, length, output, mute_group)
         self.frame_offset = frame_offset
         self.beat_offset = beat_offset
-        self.beat_diviser = beat_diviser
         # Original audio file
         self.audio_file = audio_file
         # set the audio_file attribute to use :
@@ -114,7 +113,7 @@ class Clip(AbstractClip):
                 'volume': str(self.volume),
                 'frame_offset': str(self.frame_offset),
                 'beat_offset': str(self.beat_offset),
-                'beat_diviser': str(self.beat_diviser),
+                'length': str(self.length),
                 'beat_sample': str(self.audio_file.beat_sample),
                 'output': self.output,
                 'mute_group': str(self.mute_group)

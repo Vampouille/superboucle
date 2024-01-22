@@ -426,7 +426,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                 bpm = self.bpm.value()
             beat_sample = self.bpm_to_beat_period(bpm)
             #print("FPS: %s BPM: %s BS: %s" % (self.sr, bpm, beat_sample))
-            size = int((60 / bpm) * clip.beat_diviser * self.sr)
+            size = int((60 / bpm) * clip.length * self.sr)
             self.song.init_record_buffer(clip, 2, size, self.sr, beat_sample)
             # set frame offset based on jack block size
             #clip.frame_offset = self._jack_client.blocksize

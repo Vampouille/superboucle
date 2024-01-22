@@ -129,13 +129,13 @@ color: black;</string>
      </font>
     </property>
     <property name="text">
-     <string>Beat Amount</string>
+     <string>Length</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QSpinBox" name="beat_diviser">
+   <widget class="QSpinBox" name="length">
     <property name="geometry">
      <rect>
       <x>120</x>

@@ -105,6 +105,7 @@ def super_callback(frames):
                                         clip.pendingNoteOff.remove(ev)
                                     except jack.JackErrorCode as e:
                                         print(e)
+                                clip.rewind()
 
                         # Make transition
                         if ticks == 0 and beat == 0:
@@ -135,7 +136,7 @@ def super_callback(frames):
                 clip_loop = None
                 if beat is not None:
                     # Check if the beat trigger a clip play
-                    if (beat - clip.beat_offset) % clip.beat_diviser == 0:
+                    if (beat - clip.beat_offset) % clip.length == 0:
                         clip_loop = beat_offset
 
                 # Add sample from already playing clip
@@ -198,13 +199,13 @@ def super_callback(frames):
                 clip_buffers = [p.get_array() for p in gui.port_by_name[clip.output]]
 
                 clip_period = (
-                    fpm * clip.beat_diviser) / bpm  # length of the clip in frames
+                    fpm * clip.length) / bpm  # length of the clip in frames
                 total_frame_offset = clip.frame_offset + (
                     clip.beat_offset * frame_per_beat)
                 # frame_beat: how many times the clip hast been played already
                 # clip_offset: position in the clip about to be played
                 frame_beat, clip_offset = divmod(
-                    (frame - total_frame_offset) * bpm, fpm * clip.beat_diviser)
+                    (frame - total_frame_offset) * bpm, fpm * clip.length)
                 clip_offset = round(clip_offset / bpm)
 
                 # buffer is larger than remaining sample from clip

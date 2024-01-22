@@ -66,14 +66,14 @@ class Ui_Dialog(object):
         self.label_4.setFont(font)
         self.label_4.setAlignment(QtCore.Qt.AlignCenter)
         self.label_4.setObjectName("label_4")
-        self.beat_diviser = QtWidgets.QSpinBox(self.frame_clip)
-        self.beat_diviser.setGeometry(QtCore.QRect(120, 60, 71, 41))
-        self.beat_diviser.setStyleSheet("QSpinBox::up-button { width: 40px; }\n"
+        self.length = QtWidgets.QSpinBox(self.frame_clip)
+        self.length.setGeometry(QtCore.QRect(120, 60, 71, 41))
+        self.length.setStyleSheet("QSpinBox::up-button { width: 40px; }\n"
 "QSpinBox::down-button { width: 40px; }\n"
 "QSpinBox { border : 0px; border-radius: 2px}")
-        self.beat_diviser.setMinimum(1)
-        self.beat_diviser.setMaximum(999)
-        self.beat_diviser.setObjectName("beat_diviser")
+        self.length.setMinimum(1)
+        self.length.setMaximum(999)
+        self.length.setObjectName("length")
         self.deleteButton = QtWidgets.QPushButton(self.frame_clip)
         self.deleteButton.setGeometry(QtCore.QRect(99, 500, 101, 23))
         self.deleteButton.setAutoDefault(False)
@@ -277,7 +277,7 @@ class Ui_Dialog(object):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
         self.label_5.setText(_translate("Dialog", "Volume"))
-        self.label_4.setText(_translate("Dialog", "Beat Amount"))
+        self.label_4.setText(_translate("Dialog", "Length"))
         self.deleteButton.setText(_translate("Dialog", "Delete Clip"))
         self.exportButton.setText(_translate("Dialog", "Export Sample"))
         self.normalizeButton.setText(_translate("Dialog", "Normalize"))

@@ -105,7 +105,7 @@ class MidiTransport(QObject):
                     clp = line[y]
                     if clp is not None and not isinstance(clp, MidiClip) and clp.stretch_mode != 'disable':
                         # only trigger resample on beat just before clip start
-                        if (beat + 1) % clp.beat_diviser == 0:
+                        if (beat + 1) % clp.length == 0:
                             diff = clp.getNextBeatSample() - beat_sample
                             # 40 is sample diff of beat period between 250 and 251 BPM
                             if abs(diff) > 40 or clp.stretch_mode != clp.getAudio().effect:

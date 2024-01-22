@@ -77,8 +77,7 @@ TICK_PER_BEAT = 24
 class MidiClip(AbstractClip):
 
     def __init__(self, name: str, length: int, channel: int, volume=1, output=AbstractClip.DEFAULT_OUTPUT, mute_group=0) -> None:
-        super().__init__(name, volume, output, mute_group)
-        self.length: int = length # in beats
+        super().__init__(name, volume, length, output, mute_group)
         self.channel: int = channel # 0-15
         self.notes: list[MidiNote] = list()
         self.events: MidiEvents = MidiEvents()
@@ -124,6 +123,7 @@ class MidiClip(AbstractClip):
             elif note[0] == 0x80: # Note OFF
                 if note_off in self.pendingNoteOff:
                     self.pendingNoteOff.remove(note_off)
+        self.last_tick = tick
         return res
 
     def rewind(self):
@@ -133,6 +133,7 @@ class MidiClip(AbstractClip):
     def getPos(self):
         return (self.last_tick / TICK_PER_BEAT) / self.length
         
+    
     def __str__(self) -> str:
         res = "MIDI Events:"
         res += self.events
