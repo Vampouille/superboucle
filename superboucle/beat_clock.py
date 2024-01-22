@@ -11,7 +11,7 @@ class BeatClockWidget(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
         self.tick = 0
-        self.colors = {4: QColor(9, 216, 223), 8: QColor(243, 233, 0), 16: QColor(109, 217, 24)}
+        self.colors = {4: QColor(9, 216, 223), 8: QColor(243, 233, 0), 16: QColor(109, 217, 24), 32: QColor(223, 27, 130)}
 
     def paintEvent(self, event):
         self.center = self.rect().center()
@@ -24,7 +24,7 @@ class BeatClockWidget(QWidget):
         painter.drawEllipse(self.center, self.radius, self.radius)
 
         # Draw first line
-        for divider in [4, 8, 16]:
+        for divider in self.colors.keys():
             self.drawLine(painter, self.tick, divider, self.colors[divider])
         painter.end()
     
