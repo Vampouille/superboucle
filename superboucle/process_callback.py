@@ -13,6 +13,8 @@ CLIP_TRANSITION = {Clip.STARTING: Clip.START,
                    Clip.PREPARE_RECORD: Clip.RECORDING,
                    Clip.RECORDING: Clip.START}
 
+TICKS_PER_BEAT = 24
+
 def super_callback(frames):
     song = gui.song
     state, position = client.transport_query()
@@ -50,6 +52,8 @@ def super_callback(frames):
             tick[offset] = res
 
     gui.cmd_midi_out.clear_buffer()
+    for p in client.midi_outports:
+        p.clear_buffer()
 
     # Démarrage:
     # 0xfa Start
@@ -64,13 +68,35 @@ def super_callback(frames):
     if gui.sync_source == 1: # MIDI
 
         for clip in song.clips:
+            
             if isinstance(clip, MidiClip):
                 if len(tick):
                     for offset in tick.keys():
-                        events = clip.getMidiEvents(tick[offset])
-                        for ev in events:
-                           port = gui.midi_port_by_name[clip.output]
-                           port.write_midi_event(offset, ev)
+                        beat, ticks = divmod(tick[offset], 24)
+                        beat %= clip.length
+                        port = gui.midi_port_by_name[clip.output]
+
+                        # play events of the end of clip
+                        # TODO replace with "close all note on"
+                        if clip.state == Clip.START or clip.state == Clip.STOPPING:
+                            if ticks == 0 and beat == 0:
+                                events = clip.getEvents(clip.length * TICKS_PER_BEAT)
+                                for ev in events:
+                                    print(f"E {clip.length * TICKS_PER_BEAT} Sending : {ev}")
+                                    port.write_midi_event(offset, ev)
+
+                        # Make transition
+                        if ticks == 0 and beat == 0:
+                            clip.state = CLIP_TRANSITION[clip.state]
+                            if clip.state == Clip.START or clip.state == Clip.STOPPING:
+                                print(clip.events)
+
+                        # Play note of the clip
+                        if clip.state == Clip.START or clip.state == Clip.STOPPING:
+                            events = clip.getEvents(beat * TICKS_PER_BEAT + ticks)
+                            for ev in events:
+                                print(f"B {beat * TICKS_PER_BEAT + ticks} Sending : {ev}")
+                                port.write_midi_event(offset, ev)
 
             else:
                 # Skip clip with no audio
@@ -103,6 +129,7 @@ def super_callback(frames):
                 # * switch clip audio a/b
                 # * play beginning of the clip
                 if clip_loop is not None:
+                    #print(f"Transition : {clip.state} --> {CLIP_TRANSITION[clip.state]}")
                     clip.state = CLIP_TRANSITION[clip.state]
                     if clip.audio_file_next_id != clip.audio_file_id:
                         if clip.edit_clip:

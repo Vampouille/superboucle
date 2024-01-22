@@ -311,7 +311,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                 # if auto-connect is enable
                 if p.regexp:
                     # Search for jack ports using regexp
-                    jack_ports = self._find_input_audio_ports(p.regexp)
+                    jack_ports = self._find_ports(p.regexp, 'audio', 'input')
                     # Check if we have enough ports
                     if len(jack_ports) == 2:
                         # fetch pointer to superboucle ports
@@ -324,7 +324,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                 # if auto-connect is enable
                 if p.regexp:
                     # Search for jack ports using regexp
-                    jack_ports = self._find_input_midi_ports(p.regexp)
+                    jack_ports = self._find_ports(p.regexp, 'midi', 'input')
                     # Check if we have enough ports
                     if len(jack_ports) == 1:
                         jack_port = jack_ports[0]
@@ -336,7 +336,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             # Connect Default ports
             if self.song.audioRecordRegexp:
                 # Search for jack ports using regexp
-                jack_ports = self._find_output_audio_ports(self.song.audioRecordRegexp)
+                jack_ports = self._find_ports(self.song.audioRecordRegexp, 'audio', 'output')
                 # Check if we have enough ports
                 if len(jack_ports) in [1,2]:
                     # fetch pointer to superboucle ports
@@ -347,7 +347,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
             if self.song.midiClockRegexp:
                 # Search for jack ports using regexp
-                jack_ports = self._find_output_midi_ports(self.song.midiClockRegexp)
+                jack_ports = self._find_ports(self.song.midiClockRegexp, 'midi', 'output')
                 # Check if we have enough ports
                 if len(jack_ports) == 1:
                     jack_port = jack_ports[0]
@@ -356,7 +356,7 @@ class Gui(QMainWindow, Ui_MainWindow):
 
             if self.song.midiControlInputRegexp:
                 # Search for jack ports using regexp
-                jack_ports = self._find_output_midi_ports(self.song.midiControlInputRegexp)
+                jack_ports = self._find_ports(self.song.midiControlInputRegexp, 'midi', 'output')
                 # Check if we have enough ports
                 if len(jack_ports) == 1:
                     jack_port = jack_ports[0]
@@ -365,28 +365,25 @@ class Gui(QMainWindow, Ui_MainWindow):
 
             if self.song.midiControlOutputRegexp:
                 # Search for jack ports using regexp
-                jack_ports = self._find_input_midi_ports(self.song.midiControlOutputRegexp)
+                jack_ports = self._find_ports(self.song.midiControlOutputRegexp, 'midi', 'input')
                 # Check if we have enough ports
                 if len(jack_ports) == 1:
                     jack_port = jack_ports[0]
                     if not self.cmd_midi_out.is_connected_to(jack_port):
                         self._jack_client.connect(self.cmd_midi_out, jack_port)
 
-
-    def _find_input_audio_ports(self, regexp):
-        jack_ports = self._jack_client.get_ports(name_pattern=regexp, is_physical=True, is_input=True, is_audio=True, is_midi=False)
-        return sorted(jack_ports, key=lambda x: x.name)
-
-    def _find_input_midi_ports(self, regexp):
-        jack_ports = self._jack_client.get_ports(name_pattern=regexp, is_physical=True, is_input=True, is_audio=False, is_midi=True)
-        return sorted(jack_ports, key=lambda x: x.name)
-    
-    def _find_output_audio_ports(self, regexp):
-        jack_ports = self._jack_client.get_ports(name_pattern=regexp, is_physical=True, is_output=True, is_audio=True, is_midi=False)
-        return sorted(jack_ports, key=lambda x: x.name)
-
-    def _find_output_midi_ports(self, regexp):
-        jack_ports = self._jack_client.get_ports(name_pattern=regexp, is_physical=True, is_output=True, is_audio=False, is_midi=True)
+    def _find_ports(self, regexp, type, way):
+        jack_ports = [
+            p
+            for p in self._jack_client.get_ports(
+                regexp,
+                is_input=True if way == "input" else False,
+                is_output=True if way == "output" else False,
+                is_midi=type == "midi",
+                is_audio=type == "audio",
+            )
+            if not self._jack_client.owns(p)
+        ]
         return sorted(jack_ports, key=lambda x: x.name)
 
     def openSongFromDisk(self, file_name):
@@ -409,7 +406,6 @@ class Gui(QMainWindow, Ui_MainWindow):
                                   for x in self.devices])
         self.settings.setValue('playlist', self.playlist)
         self.settings.setValue('paths_used', self.paths_used)
-        self.settings.setValue('auto_connect', self.auto_connect)
 
     def onStartStopClicked(self):
         clip = self.sender().parent().parent().clip
@@ -429,7 +425,7 @@ class Gui(QMainWindow, Ui_MainWindow):
             elif self.sync_source == SYNC_SOURCE_MIDI:
                 bpm = self.bpm.value()
             beat_sample = self.bpm_to_beat_period(bpm)
-            print("FPS: %s BPM: %s BS: %s" % (self.sr, bpm, beat_sample))
+            #print("FPS: %s BPM: %s BS: %s" % (self.sr, bpm, beat_sample))
             size = int((60 / bpm) * clip.beat_diviser * self.sr)
             self.song.init_record_buffer(clip, 2, size, self.sr, beat_sample)
             # set frame offset based on jack block size
@@ -756,5 +752,5 @@ class Gui(QMainWindow, Ui_MainWindow):
     def bpm_to_beat_period(self, bpm):
         return (60 * self.sr) / (bpm)
 
-    #def beat_period_to_bpm(self, beat_period):
-    #    return (60 * self.sr) / (beat_period)
+    def beat_period_to_bpm(self, beat_period):
+        return (60 * self.sr) / (beat_period)

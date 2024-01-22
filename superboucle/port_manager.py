@@ -1,4 +1,10 @@
-from PyQt5.QtWidgets import QDialog, QListWidgetItem, QAbstractItemView, QTableWidgetItem, QInputDialog
+from PyQt5.QtWidgets import (
+    QDialog,
+    QListWidgetItem,
+    QAbstractItemView,
+    QTableWidgetItem,
+    QInputDialog,
+)
 from PyQt5.QtGui import QColor, QPainter
 from PyQt5.QtCore import Qt, QSize, QRect
 from superboucle.port import AudioPort, MidiPort
@@ -15,14 +21,18 @@ class PortManager(QDialog, Ui_Dialog):
         self.setupUi(self)
         self.setWindowTitle("Port Manager")
 
-        #self.loadPortlistBtn.clicked.connect(self.onLoadPortlist)
+        # self.loadPortlistBtn.clicked.connect(self.onLoadPortlist)
 
         self.audioPorts.setColumnCount(3)
-        self.audioPorts.setHorizontalHeaderLabels(['Name', 'Auto Connect Regexp', 'Status'])
+        self.audioPorts.setHorizontalHeaderLabels(
+            ["Name", "Auto Connect Regexp", "Status"]
+        )
         self.audioPorts.itemClicked.connect(self.onEditAudioRegexp)
 
         self.midiPorts.setColumnCount(3)
-        self.midiPorts.setHorizontalHeaderLabels(['Name', 'Auto Connect Regexp', 'Status'])
+        self.midiPorts.setHorizontalHeaderLabels(
+            ["Name", "Auto Connect Regexp", "Status"]
+        )
         self.midiPorts.itemClicked.connect(self.onEditMidiRegexp)
 
         self.addAudioPort.clicked.connect(self.onAddAudioPort)
@@ -34,7 +44,7 @@ class PortManager(QDialog, Ui_Dialog):
         self.editMidiClock.clicked.connect(self.onEditMidiClock)
         self.editMidiControlInput.clicked.connect(self.onEditMidiControlInput)
         self.editMidiControlOutput.clicked.connect(self.onEditMidiControlOutput)
-        
+
         self.audioRecord.textChanged.connect(self.onChangedAudioRecord)
         self.midiClock.textChanged.connect(self.onChangedMidiClock)
         self.midiControlInput.textChanged.connect(self.onChangedMidiControlInput)
@@ -45,7 +55,6 @@ class PortManager(QDialog, Ui_Dialog):
         self.update()
 
         self.show()
-
 
     def update(self):
         # Audio
@@ -91,14 +100,14 @@ class PortManager(QDialog, Ui_Dialog):
         for p in self.gui.song.outputsPorts:
             # Search for port row
             for row in range(self.audioPorts.rowCount()):
-                if self.audioPorts.item(row,0).text() == p.name:
+                if self.audioPorts.item(row, 0).text() == p.name:
                     self.audioPorts.setItem(row, 2, self.generateConnectionsStatus(p))
         self.audioPorts.resizeColumnsToContents()
 
         # MIDI
         for p in self.gui.song.outputsMidiPorts:
             for row in range(self.midiPorts.rowCount()):
-                if self.midiPorts.item(row,0).text() == p.name:
+                if self.midiPorts.item(row, 0).text() == p.name:
                     self.midiPorts.setItem(row, 2, self.generateConnectionsStatus(p))
         self.midiPorts.resizeColumnsToContents()
 
@@ -137,7 +146,11 @@ class PortManager(QDialog, Ui_Dialog):
         return item
 
     def generateStatus(self, port):
-        jack_ports = [p for p in self.gui._jack_client.outports if p.shortname in port.getShortNames()]
+        jack_ports = [
+            p
+            for p in self.gui._jack_client.outports
+            if p.shortname in port.getShortNames()
+        ]
         res = []
         for jack_port in jack_ports:
             for other_port in jack_port.connections:
@@ -146,7 +159,9 @@ class PortManager(QDialog, Ui_Dialog):
 
     def onEditAudioRegexp(self, item):
         if item.column() == 1:
-            regexp = self._onEditRegexp(item, "audio", 'input', f'{item.port.name} Edit Auto Connect Regexp')
+            regexp = self._onEditRegexp(
+                item, "audio", "input", f"{item.port.name} Edit Auto Connect Regexp"
+            )
             if regexp is not None:
                 item.port.regexp = regexp
                 self.gui.autoConnectPorts()
@@ -156,7 +171,9 @@ class PortManager(QDialog, Ui_Dialog):
 
     def onEditMidiRegexp(self, item):
         if item.column() == 1:
-            regexp = self._onEditRegexp(item, "midi", 'input', f'{item.port.name} Edit Auto Connect Regexp')
+            regexp = self._onEditRegexp(
+                item, "midi", "input", f"{item.port.name} Edit Auto Connect Regexp"
+            )
             if regexp is not None:
                 item.port.regexp = regexp
                 self.gui.autoConnectPorts()
@@ -174,16 +191,15 @@ class PortManager(QDialog, Ui_Dialog):
         else:
             return None
 
-
     def onAddAudioPort(self):
-        text, ok_pressed = QInputDialog.getText(self, 'Add New Audio Port', 'Name:')
+        text, ok_pressed = QInputDialog.getText(self, "Add New Audio Port", "Name:")
 
         if ok_pressed:
             self.gui.addAudioPort(text)
             self.update()
 
     def onAddMidiPort(self):
-        text, ok_pressed = QInputDialog.getText(self, 'Add New Midi Port', 'Name:')
+        text, ok_pressed = QInputDialog.getText(self, "Add New Midi Port", "Name:")
 
         if ok_pressed:
             self.gui.addMidiPort(text)
@@ -206,29 +222,49 @@ class PortManager(QDialog, Ui_Dialog):
             self.update()
 
     def onEditAudioRecord(self):
-        regexp = self._onEditRegexp(self.audioRecord, "audio", 'output', 'Audio Record Input Edit Auto Connect Regexp')
+        regexp = self._onEditRegexp(
+            self.audioRecord,
+            "audio",
+            "output",
+            "Audio Record Input Edit Auto Connect Regexp",
+        )
         if regexp is not None:
             self.gui.song.audioRecordRegexp = regexp
             self.gui.autoConnectPorts()
 
     def onEditMidiClock(self):
-        regexp = self._onEditRegexp(self.midiClock, "midi", 'output', 'Midi Clock Input Edit Auto Connect Regexp')
+        regexp = self._onEditRegexp(
+            self.midiClock,
+            "midi",
+            "output",
+            "Midi Clock Input Edit Auto Connect Regexp",
+        )
         if regexp is not None:
             self.gui.song.midiClockRegexp = regexp
             self.gui.autoConnectPorts()
 
     def onEditMidiControlInput(self):
-        regexp = self._onEditRegexp(self.midiControlInput, "midi", 'output', 'Midi Control Input Edit Auto Connect Regexp')
+        regexp = self._onEditRegexp(
+            self.midiControlInput,
+            "midi",
+            "output",
+            "Midi Control Input Edit Auto Connect Regexp",
+        )
         if regexp is not None:
             self.gui.song.midiControlInputRegexp = regexp
             self.gui.autoConnectPorts()
 
     def onEditMidiControlOutput(self):
-        regexp = self._onEditRegexp(self.midiControlOutput, "midi", 'input', 'Midi Control Output Edit Auto Connect Regexp')
+        regexp = self._onEditRegexp(
+            self.midiControlOutput,
+            "midi",
+            "input",
+            "Midi Control Output Edit Auto Connect Regexp",
+        )
         if regexp is not None:
             self.gui.song.midiControlOutputRegexp = regexp
             self.gui.autoConnectPorts()
-    
+
     def onChangedAudioRecord(self):
         self.gui.song.audioRecordRegexp = self.audioRecord.text()
         self.gui.autoConnectPorts()
@@ -240,14 +276,12 @@ class PortManager(QDialog, Ui_Dialog):
     def onChangedMidiControlInput(self):
         self.gui.song.midiControlInputRegexp = self.midiControlInput.text()
         self.gui.autoConnectPorts()
-    
+
     def onChangedMidiControlOutput(self):
         self.gui.song.midiControlOutputRegexp = self.midiControlOutput.text()
         self.gui.autoConnectPorts()
-    
 
-
-    #def onLoadPortlist(self):
+    # def onLoadPortlist(self):
     #    file_name, a = (
     #        self.gui.getOpenFileName('Open Portlist',
     #                                 'Super Boucle Portlist (*.sbl)',
@@ -264,7 +298,7 @@ class PortManager(QDialog, Ui_Dialog):
     #                clip.output = out
     #    self.gui.updatePorts.emit()
 
-    #def onSavePortlist(self):
+    # def onSavePortlist(self):
     #    file_name, a = (
     #        self.gui.getSaveFileName('Save Portlist',
     #                                 'Super Boucle Portlist (*.sbl)',
@@ -280,13 +314,14 @@ class PortManager(QDialog, Ui_Dialog):
     #                    "outputs": self.gui.song.outputs}
     #            f.write(json.dumps(data))
 
+
 class EditPortRegexpDialog(QDialog, Ui_Dialog_Regexp):
     def __init__(self, parent, type, way, item, title):
         super(EditPortRegexpDialog, self).__init__(parent)
         self.client = parent.gui._jack_client
         self.type = type
         self.way = way
-        self.item: QTableWidgetItem = item 
+        self.item: QTableWidgetItem = item
         self.setupUi(self)
         self.setWindowTitle(title)
 
@@ -301,12 +336,17 @@ class EditPortRegexpDialog(QDialog, Ui_Dialog_Regexp):
         self.updatePorts()
 
     def getPorts(self, regexp):
-        return self.client.get_ports(regexp,
-                                is_input=True if self.way == 'input' else False,
-                                is_output=True if self.way == 'output' else False,
-                                is_physical=True,
-                                is_midi=self.type == 'midi',
-                                is_audio=self.type == 'audio')
+        return [
+            p
+            for p in self.client.get_ports(
+                regexp,
+                is_input=True if self.way == "input" else False,
+                is_output=True if self.way == "output" else False,
+                is_midi=self.type == "midi",
+                is_audio=self.type == "audio",
+            )
+            if not self.client.owns(p)
+        ]
 
     def updatePorts(self):
         self.ports.clear()
@@ -315,7 +355,6 @@ class EditPortRegexpDialog(QDialog, Ui_Dialog_Regexp):
         self.updatePortSelection()
 
     def updatePortSelection(self):
-
         regexp = self.regexp.text()
         if len(regexp):
             match_ports = [p.name for p in self.getPorts(self.regexp.text())]
@@ -324,7 +363,7 @@ class EditPortRegexpDialog(QDialog, Ui_Dialog_Regexp):
         for i in range(self.ports.count()):
             item = self.ports.item(i)
             if item.text() in match_ports:
-                #item.setBackground(QColor(9, 212, 219))
+                # item.setBackground(QColor(9, 212, 219))
                 item.setBackground(QColor(6, 147, 152))
             else:
                 item.setData(Qt.BackgroundRole, None)

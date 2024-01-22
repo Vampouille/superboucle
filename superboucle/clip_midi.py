@@ -52,10 +52,9 @@ class MidiEvents:
         self.events: dict[int, set] = {}
     
     def addEvent(self, tick: int, event: bytes):
-        if tick in self.events.keys():
-            self.events[tick].add(event)
-        else:
-            self.events[tick] = set(event)
+        if tick not in self.events.keys():
+            self.events[tick] = set()
+        self.events[tick].add(event)
 
     def get(self, tick: int):
         if tick in self.events.keys():
@@ -64,8 +63,13 @@ class MidiEvents:
             return set()
 
     def __str__(self) -> str:
+        res = ""
         for tick in self.events.keys():
-            print("tick %s: %s" % (tick, self.get(tick).join(", ")))
+            res += "tick %s: " % tick
+            for ev in self.get(tick):
+                res += "%s, " % ev
+            res += "\n"
+        return res
         
 
 TICK_PER_BEAT = 24
@@ -79,6 +83,7 @@ class MidiClip(AbstractClip):
         self.notes: list[MidiNote] = list()
         self.events: MidiEvents = MidiEvents()
         self.last_tick: int = 0
+        self.openNote: set[MidiNote] = set()
 
     def serialize(self):
         return {'type': 'midi',
@@ -103,19 +108,21 @@ class MidiClip(AbstractClip):
     def computeEvents(self) -> None:
         events = MidiEvents()
         for note in self.notes:
-            events.addEvent(note.start_tick, bytes([0x90, note.pitch, note.velocity]))
-            events.addEvent(note.start_tick + note.length, bytes([0x80, note.pitch, 0]))
+            events.addEvent(note.start_tick, bytes([0x90 + self.channel, note.pitch, note.velocity]))
+            events.addEvent(note.start_tick + note.length, bytes([0x80 + self.channel, note.pitch, 0]))
         self.events = events
 
     # tick: clip relative tick count 
-    def getEvent(self, tick: int):
-        res = self.events.get(tick)
-        for note in res:
-            if note[0] == 0x90: # Note ON
-                self.openNote.add(note[1]) # Add pitch 
-            elif note[0] == 0x80: # Note OFF
-                self.openNote.remove(note[1])
-        return res
+    def getEvents(self, tick: int):
+        return self.events.get(tick)
+        #res = self.events.get(tick)
+        #print(res)
+        #for note in res:
+        #    if note[0] == 0x90: # Note ON
+        #        self.openNote.add(note[1]) # Add pitch 
+        #    elif note[0] == 0x80: # Note OFF
+        #        self.openNote.remove(note[1])
+        #return res
 
     # tick: absolute tick count 
     def getMidiEvents(self, tick: int):
@@ -125,12 +132,14 @@ class MidiClip(AbstractClip):
         # we need to close every note with Note On but no Note Off
         if tick == 0:
             res.extend(self.closeOpenNote())
-        res.extend(self.getEvent(tick))
+        res.extend(self.getEvents(tick))
+        return res
     
     def closeOpenNote(self):
         res = []
-        for pitch in self.self.openNote:
+        for pitch in self.openNote:
             res.append(bytes([0x80, pitch, 0]))
+        return res
     
     def rewind(self):
         self.last_tick = 0

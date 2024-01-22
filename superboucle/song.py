@@ -85,6 +85,7 @@ class Song():
                                             mute_group=section['mute_group'])
                             for n in json.loads(section['notes']):
                                 clip.addNote(MidiNote(*n))
+                            clip.computeEvents()
                         elif type == 'audio':
                             # Extract soundfile from archive
                             wav_res = zip.open("%s.wav" % section_label)
