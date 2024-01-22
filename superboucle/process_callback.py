@@ -14,6 +14,7 @@ CLIP_TRANSITION = {Clip.STARTING: Clip.START,
                    Clip.RECORDING: Clip.START}
 
 TICKS_PER_BEAT = 24
+MIDI_STOP = b"\xfc"
 
 def super_callback(frames):
     song = gui.song
@@ -34,6 +35,7 @@ def super_callback(frames):
     # None for no beat in buffer
     beat = None
     beat_offset = None
+    stopped = False
     tick = {}
     if gui.is_learn_device_mode:
         for offset, indata in gui.cmd_midi_in.incoming_midi_events():
@@ -44,6 +46,8 @@ def super_callback(frames):
             gui.queue_in.put(indata)
         gui.readQueueIn.emit()
     for offset, indata in gui.sync_midi_in.incoming_midi_events():
+        if indata == MIDI_STOP:
+            stopped = True
         res = gui.midi_transport.notify(client.last_frame_time + offset, bytes(indata))
         if res is not None:
             if res % 24 == 0:
@@ -61,10 +65,25 @@ def super_callback(frames):
     # ...
     # 0xb27b00: All Sound Off
     # 0xfc: Song Position Pointer
-    p = gui.midi_transport.position_beats(client.last_frame_time)
-    if p:
-        #print("POS: %s" % round(p, 2))
-        pass
+    #p = gui.midi_transport.position_beats(client.last_frame_time)
+    #if p:
+    #    #print("POS: %s" % round(p, 2))
+    #    pass
+
+    # Handle Stop event First (MIDI Clock Stop received)
+    if stopped:
+        print("Stopped")
+        for clip in song.clips:
+            if isinstance(clip, MidiClip):
+                port = gui.midi_port_by_name[clip.output]
+                for ev in list(clip.pendingNoteOff):
+                    print(f"S Sending : {ev}")
+                    try:
+                        port.write_midi_event(0, ev)
+                        clip.pendingNoteOff.remove(ev)
+                    except jack.JackErrorCode as e:
+                        print(e)
+
     if gui.sync_source == 1: # MIDI
 
         for clip in song.clips:
@@ -76,14 +95,16 @@ def super_callback(frames):
                         beat %= clip.length
                         port = gui.midi_port_by_name[clip.output]
 
-                        # play events of the end of clip
-                        # TODO replace with "close all note on"
+                        # play events of the end of the clip
                         if clip.state == Clip.START or clip.state == Clip.STOPPING:
                             if ticks == 0 and beat == 0:
-                                events = clip.getEvents(clip.length * TICKS_PER_BEAT)
-                                for ev in events:
+                                for ev in list(clip.pendingNoteOff):
                                     print(f"E {clip.length * TICKS_PER_BEAT} Sending : {ev}")
-                                    port.write_midi_event(offset, ev)
+                                    try:
+                                        port.write_midi_event(offset, ev)
+                                        clip.pendingNoteOff.remove(ev)
+                                    except jack.JackErrorCode as e:
+                                        print(e)
 
                         # Make transition
                         if ticks == 0 and beat == 0:
@@ -96,7 +117,10 @@ def super_callback(frames):
                             events = clip.getEvents(beat * TICKS_PER_BEAT + ticks)
                             for ev in events:
                                 print(f"B {beat * TICKS_PER_BEAT + ticks} Sending : {ev}")
-                                port.write_midi_event(offset, ev)
+                                try:
+                                    port.write_midi_event(offset, ev)
+                                except jack.JackErrorCode as e:
+                                    print(e)
 
             else:
                 # Skip clip with no audio

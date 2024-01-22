@@ -137,18 +137,20 @@ class MidiTransport(QObject):
             self.gui.sync_source = 0
 
     def updatePos(self):
-        beat, tick = divmod(self.ticks, 24)
-        bar = beat / self.gui.beat_per_bar.value()
-        beat %= self.gui.beat_per_bar.value()
-        bbt = "%d|%d|%03d" % (bar + 1, beat + 1, tick)
-        ft = self.gui._jack_client.frame_time
-        seconds = int((ft - self.first_tick) / self.gui.sr)
-        (minutes, second) = divmod(seconds, 60)
-        (hour, minute) = divmod(minutes, 60)
-        time = "%d:%02d:%02d" % (hour, minute, second)
-        self.gui.bbtLabel.setText("%s\n%s" % (bbt, time))
-        self.gui.bpm.setValue(self.getBPM())
+        if self.state == RUNNING:
+            beat, tick = divmod(self.ticks, 24)
+            bar = beat / self.gui.beat_per_bar.value()
+            beat %= self.gui.beat_per_bar.value()
+            bbt = "%d|%d|%03d" % (bar + 1, beat + 1, tick)
+            ft = self.gui._jack_client.frame_time
+            seconds = int((ft - self.first_tick) / self.gui.sr)
+            (minutes, second) = divmod(seconds, 60)
+            (hour, minute) = divmod(minutes, 60)
+            time = "%d:%02d:%02d" % (hour, minute, second)
+            self.gui.bbtLabel.setText("%s\n%s" % (bbt, time))
+            self.gui.bpm.setValue(self.getBPM())
 
     def updateClock(self):
-        self.gui.clock.tick = self.ticks
-        self.gui.clock.update()
+        if self.state == RUNNING:
+            self.gui.clock.tick = self.ticks
+            self.gui.clock.update()

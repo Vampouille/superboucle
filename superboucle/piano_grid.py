@@ -72,6 +72,7 @@ class PianoGridScene(QGraphicsScene):
         noteItem = MidiNoteItem(self, self.parent().velocityScene, self.clip, note, self.octaves)
         self.clip.addNote(note)
         self.addItem(noteItem)
+        self.clip.computeEvents()
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
