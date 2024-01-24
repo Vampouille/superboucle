@@ -81,6 +81,7 @@ class Song():
                                             length=section.getint('length'),
                                             channel=section.getint('channel'),
                                             volume=section.getfloat('volume'),
+                                            quantize=section.getint('quantize', 24),
                                             output=section.get('output', Clip.DEFAULT_OUTPUT),
                                             mute_group=section.getint('mute_group', 0))
                             for n in json.loads(section['notes']):

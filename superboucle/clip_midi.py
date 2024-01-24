@@ -76,9 +76,10 @@ TICK_PER_BEAT = 24
 
 class MidiClip(AbstractClip):
 
-    def __init__(self, name: str, length: int, channel: int, volume=1, output=AbstractClip.DEFAULT_OUTPUT, mute_group=0) -> None:
+    def __init__(self, name: str, length: int, channel: int, volume=1, quantize=TICK_PER_BEAT, output=AbstractClip.DEFAULT_OUTPUT, mute_group=0) -> None:
         super().__init__(name, volume, length, output, mute_group)
         self.channel: int = channel # 0-15
+        self.quantize = quantize
         self.notes: list[MidiNote] = list()
         self.events: MidiEvents = MidiEvents()
         self.last_tick: int = 0
@@ -90,6 +91,7 @@ class MidiClip(AbstractClip):
                 'length': self.length,
                 'volume': str(self.volume),
                 'channel': str(self.channel),
+                'quantize': str(self.quantize),
                 'output': self.output,
                 'mute_group': str(self.mute_group),
                 'notes': json.dumps(self.serializeNotes())

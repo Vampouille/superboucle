@@ -27,10 +27,12 @@ TICK_PER_BEAT = 24
 
 
 class EditMidiDialog(QDialog):
-    def __init__(self, parent, clip: MidiClip):
-        super().__init__(parent)
+    def __init__(self, gui, song, cell):
+        super().__init__(gui)
 
-        self.clip: MidiClip = clip
+        self.song = song
+        self.clip: MidiClip = cell.clip
+        self.cell = cell
         self.beat_legend_height = 20
         keyboard_width = 40
         self.keyboard_octaves = 7
@@ -51,7 +53,7 @@ class EditMidiDialog(QDialog):
         root_layout = QVBoxLayout(self)
         root_layout.setSpacing(0)
         root_layout.setContentsMargins(0,0,0,0)
-        self.buttons = EditMidiButton(self)
+        self.buttons = EditMidiButton(self, gui)
         root_layout.addWidget(self.buttons)
 
         # Body Widget:
@@ -85,7 +87,7 @@ class EditMidiDialog(QDialog):
 
         self.setWindowTitle("Edit MIDI Notes")
          # Positionner le dialogue sur le même écran que la fenêtre principale
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1200, 600)
         if self.parent():
             parent_geometry = self.parent().geometry()
             desktop = QApplication.desktop()

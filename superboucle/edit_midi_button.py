@@ -1,17 +1,17 @@
 from PyQt5.QtCore import Qt, QSize, QRect
-from PyQt5.QtGui import QFont, QIcon, QPixmap
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import QWidget, QLabel, QSpinBox, QComboBox, QAbstractSpinBox, QGraphicsScene, QToolButton, QHBoxLayout
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QWidget, QLabel, QSpinBox, QComboBox, QAbstractSpinBox, QGraphicsScene, QHBoxLayout, QLineEdit
 from superboucle.midi_note_graphics import MidiNoteItem
  
 QUANTIZE_DIVISERS = [24, 2, 4, 3, 6, 12]
 
 class EditMidiButton(QWidget):
         
-    def __init__(self, parent):
+    def __init__(self, parent, gui):
         super().__init__()
 
         self.parent = parent
+        self.gui = gui
 
         # set font
         font = QFont()
@@ -24,10 +24,19 @@ class EditMidiButton(QWidget):
         css = "color: rgb(160, 6, 89);"
 
         self.setMinimumSize(QSize(530, 35))
-        self.setObjectName("buttons")
 
         layout = QHBoxLayout(self)
         layout.setAlignment(Qt.AlignLeft)
+
+        # Clip Name
+        name = QLineEdit()
+        name.setFixedSize(215, 30)
+        name.setFont(font)
+        name.setStyleSheet("QLineEdit {background-color: black; color: rgb(255, 253, 24);}")
+        name.setAlignment(Qt.AlignCenter)
+        name.setText(self.parent.clip.name)
+        name.textChanged.connect(self.onNameChanged)
+        layout.addWidget(name)
 
         # Midi Channel
         midiChannelLabel = QLabel()
@@ -35,7 +44,6 @@ class EditMidiButton(QWidget):
         midiChannelLabel.setFont(font)
         midiChannelLabel.setStyleSheet(css)
         midiChannelLabel.setAlignment(Qt.AlignCenter)
-        midiChannelLabel.setObjectName("midiChannelLabel")
         midiChannelLabel.setText("MIDI Channel")
         midiChannel = QSpinBox()
         midiChannel.setGeometry(QRect(0, 0, 42, 26))
@@ -43,34 +51,57 @@ class EditMidiButton(QWidget):
         midiChannel.setButtonSymbols(QAbstractSpinBox.PlusMinus)
         midiChannel.setMinimum(1)
         midiChannel.setMaximum(16)
-        midiChannel.setObjectName("midiChannel")
         midiChannel.setValue(self.parent.clip.channel + 1)
-        midiChannel.valueChanged.connect(self.onMidiChannelChange)
+        midiChannel.valueChanged.connect(self.onMidiChannelChanged)
         layout.addWidget(midiChannelLabel)
         layout.addWidget(midiChannel)
         layout.addSpacing(20)
 
         # Quantize
         quantizeLabel = QLabel()
-        #quantizeLabel.setGeometry(QRect(0, 0, 92, 25))
         quantizeLabel.setFont(font)
         quantizeLabel.setStyleSheet(css)
         quantizeLabel.setAlignment(Qt.AlignCenter)
-        quantizeLabel.setObjectName("quantizeLabel")
         quantizeLabel.setText("Quantize")
         self.quantize: QComboBox = QComboBox()
         self.quantize.setGeometry(QRect(0, 0, 72, 25))
         self.quantize.setFont(font)
         self.quantize.setCurrentText("")
-        self.quantize.setObjectName("quantize")
-        for div in QUANTIZE_DIVISERS:
+        qi=None
+        for i, div in enumerate(QUANTIZE_DIVISERS):
+            if self.parent.clip.quantize == div:
+                qi = i
             if div == 24:
                 self.quantize.addItem("Off")
             else:
                 self.quantize.addItem("1/%s" % div)
-        self.quantize.currentIndexChanged.connect(self.onQuantizeChange)
+        self.quantize.setCurrentIndex(qi)
+        self.quantize.currentIndexChanged.connect(self.onQuantizeChanged)
         layout.addWidget(quantizeLabel)
         layout.addWidget(self.quantize)
+        layout.addSpacing(20)
+
+        # Mute Group
+        muteGroupLabel = QLabel()
+        muteGroupLabel.setFont(font)
+        muteGroupLabel.setStyleSheet(css)
+        muteGroupLabel.setAlignment(Qt.AlignCenter)
+        muteGroupLabel.setText("Mute Group")
+        self.muteGroup: QComboBox = QComboBox()
+        self.muteGroup.setGeometry(QRect(0, 0, 72, 25))
+        self.muteGroup.setFont(font)
+        for i in range(10):
+            if i == 0:
+                self.muteGroup.addItem("Off")
+            else:
+                self.muteGroup.addItem(str(i))
+        if not self.parent.clip.mute_group:
+            self.muteGroup.setCurrentText("Off")
+        else:
+            self.muteGroup.setCurrentText(str(self.parent.clip.mute_group))
+        self.muteGroup.activated.connect(self.onMuteGroupChanged)
+        layout.addWidget(muteGroupLabel)
+        layout.addWidget(self.muteGroup)
         layout.addSpacing(20)
 
         # Length
@@ -79,7 +110,6 @@ class EditMidiButton(QWidget):
         lengthLabel.setFont(font)
         lengthLabel.setStyleSheet(css)
         lengthLabel.setAlignment(Qt.AlignCenter)
-        lengthLabel.setObjectName("label_14")
         lengthLabel.setText("Length")
         length = QSpinBox()
         length.setGeometry(QRect(0, 0, 60, 26))
@@ -87,23 +117,47 @@ class EditMidiButton(QWidget):
         length.setFont(font)
         length.setMinimum(1)
         length.setMaximum(99)
-        length.setObjectName("length")
         length.setValue(self.parent.clip.length)
-        length.valueChanged.connect(self.onLengthChange)
+        length.valueChanged.connect(self.onLengthChanged)
         layout.addWidget(lengthLabel)
         layout.addWidget(length)
         layout.addSpacing(20)
 
-    def onMidiChannelChange(self, channel):
+        # Output
+        outputLabel = QLabel()
+        outputLabel.setFont(font)
+        outputLabel.setStyleSheet(css)
+        outputLabel.setAlignment(Qt.AlignCenter)
+        outputLabel.setText("Output")
+        self.output: QComboBox = QComboBox()
+        self.output.setGeometry(QRect(0, 0, 72, 25))
+        self.output.setFont(font)
+        self.output.activated.connect(self.onOutputChanged)
+        self.gui.portChangeSignal.connect(self.updatePorts)
+        self.updatePorts()
+        layout.addWidget(outputLabel)
+        layout.addWidget(self.output)
+
+    def updatePorts(self):
+        self.output.clear()
+        for p in self.gui.song.outputsMidiPorts:
+            self.output.addItem(p.name)
+        self.output.setCurrentIndex(self.output.findText(self.parent.clip.output))
+
+    def onNameChanged(self, name):
+        self.parent.clip.name = name
+        self.parent.cell.clip_name.setText(name)
+
+    def onMidiChannelChanged(self, channel):
         self.parent.clip.channel = channel - 1
 
-    def onLengthChange(self, length):
+    def onLengthChanged(self, length):
         # Set new length in the clip
         self.parent.clip.length = length
         # Re-generate piano grid widget
         self.parent.updateUI()
     
-    def onQuantizeChange(self, quantize):
+    def onQuantizeChanged(self, quantize):
         #tick_round_counts = [1, 24/2, 24/4, 24/3, 24/6, 24/12]
         tick_round = int(24/QUANTIZE_DIVISERS[quantize])
         for note in self.parent.clip.notes:
@@ -113,9 +167,15 @@ class EditMidiButton(QWidget):
         for item in grid.items():
             if isinstance(item, MidiNoteItem):
                 item.reDraw()
+        self.parent.clip.quantize = QUANTIZE_DIVISERS[quantize]
     
+    def onMuteGroupChanged(self, index):
+        self.parent.clip.mute_group = index
+
+    def onOutputChanged(self, i):
+        self.parent.clip.output = self.output.itemText(i)
+
     # Return Quantization step in tick
     def getTickSnap(self):
-        #tick_round_counts = [1, 24/2, 24/4, 24/3, 24/6, 24/12]
         tick_round_counts = [int(24/i) for i in QUANTIZE_DIVISERS]
         return tick_round_counts[self.quantize.currentIndex()]

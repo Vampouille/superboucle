@@ -112,6 +112,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.cmd_midi_out = self._jack_client.midi_outports.register("cmd_feedback")
         self.inL = self._jack_client.inports.register("input_L")
         self.inR = self._jack_client.inports.register("input_R")
+        self.note_midi_in = self._jack_client.midi_inports.register("note")
 
         # Load devices
         self.deviceGroup = QActionGroup(self.menuDevice)
@@ -440,7 +441,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         cell = self.sender().parent().parent()
         if cell.clip:
             if isinstance(cell.clip, MidiClip):
-                EditMidiDialog(self, cell.clip)
+                EditMidiDialog(self, self.song, cell)
             else:
                 EditClipDialog(self, self.song, cell)
 
