@@ -137,5 +137,11 @@ class MidiClip(AbstractClip):
         
     
     def __str__(self) -> str:
-        res = "MIDI Events:"
-        res += self.events
+        res = f"Clip {self.name}\n"
+        res += "Notes:\n"
+        for note in self.notes:
+            res += f"{note}\n"
+
+        res += "MIDI Events:\n"
+        res += self.events.__str__()
+        return res

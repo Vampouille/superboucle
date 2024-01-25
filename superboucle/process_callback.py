@@ -83,6 +83,8 @@ def super_callback(frames):
                         clip.pendingNoteOff.remove(ev)
                     except jack.JackErrorCode as e:
                         print(e)
+                if clip.state == Clip.RECORDING:
+                    gui.midi_transport.stopRecord(client.last_frame_time + offset, clip)
 
     if gui.sync_source == 1: # MIDI
 
@@ -109,6 +111,8 @@ def super_callback(frames):
 
                         # Make transition
                         if ticks == 0 and beat == 0:
+                            if clip.state == Clip.RECORDING:
+                                gui.midi_transport.stopRecord(client.last_frame_time + offset, clip)
                             clip.state = CLIP_TRANSITION[clip.state]
                             if clip.state == Clip.START or clip.state == Clip.STOPPING:
                                 print(clip.events)
@@ -122,6 +126,9 @@ def super_callback(frames):
                                     port.write_midi_event(offset, ev)
                                 except jack.JackErrorCode as e:
                                     print(e)
+                if clip.state == Clip.RECORDING or clip.state == Clip.PREPARE_RECORD:
+                    for offset, indata in gui.note_midi_in.incoming_midi_events():
+                        gui.midi_transport.record(client.last_frame_time + offset, indata, clip)
 
             else:
                 # Skip clip with no audio

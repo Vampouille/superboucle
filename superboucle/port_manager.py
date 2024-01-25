@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QTableWidgetItem,
     QInputDialog,
 )
-from PyQt5.QtGui import QColor, QPainter
+from PyQt5.QtGui import QColor, QBrush
 from PyQt5.QtCore import Qt, QSize, QRect
 from superboucle.port import AudioPort, MidiPort
 from superboucle.port_manager_ui import Ui_Dialog
@@ -13,7 +13,12 @@ from superboucle.edit_port_regexp_ui import Ui_Dialog as Ui_Dialog_Regexp
 
 from superboucle.song import verify_ext
 
-
+TOOLTIP_STYLE = """
+    QToolTip {
+        background-color: rgb(6, 147, 152);
+        padding: 5px;
+    }
+"""
 class PortManager(QDialog, Ui_Dialog):
     def __init__(self, parent):
         super(PortManager, self).__init__(parent)
@@ -27,12 +32,14 @@ class PortManager(QDialog, Ui_Dialog):
         self.audioPorts.setHorizontalHeaderLabels(
             ["Name", "Auto Connect Regexp", "Status"]
         )
+        self.audioPorts.setStyleSheet(TOOLTIP_STYLE)
         self.audioPorts.itemClicked.connect(self.onEditAudioRegexp)
 
         self.midiPorts.setColumnCount(3)
         self.midiPorts.setHorizontalHeaderLabels(
             ["Name", "Auto Connect Regexp", "Status"]
         )
+        self.midiPorts.setStyleSheet(TOOLTIP_STYLE)
         self.midiPorts.itemClicked.connect(self.onEditMidiRegexp)
 
         self.addAudioPort.clicked.connect(self.onAddAudioPort)
@@ -41,16 +48,20 @@ class PortManager(QDialog, Ui_Dialog):
         self.removeMidiPort.clicked.connect(self.onRemoveMidiPort)
 
         self.editAudioRecord.clicked.connect(self.onEditAudioRecord)
+        self.editMidiRecord.clicked.connect(self.onEditMidiRecord)
         self.editMidiClock.clicked.connect(self.onEditMidiClock)
         self.editMidiControlInput.clicked.connect(self.onEditMidiControlInput)
         self.editMidiControlOutput.clicked.connect(self.onEditMidiControlOutput)
 
         self.audioRecord.textChanged.connect(self.onChangedAudioRecord)
+        self.midiRecord.textChanged.connect(self.onChangedMidiRecord)
         self.midiClock.textChanged.connect(self.onChangedMidiClock)
         self.midiControlInput.textChanged.connect(self.onChangedMidiControlInput)
         self.midiControlOutput.textChanged.connect(self.onChangedMidiControlOutput)
 
         self.gui.superboucleConnectionChangeSignal.connect(self.updateStatus)
+        self.connected = QBrush(QColor(6, 147, 152))
+        self.not_connected = Qt.NoBrush
 
         self.update()
 
@@ -112,45 +123,46 @@ class PortManager(QDialog, Ui_Dialog):
         self.midiPorts.resizeColumnsToContents()
 
         # Default Ports
-        #  Audio IN
+        self.updateConnectionWidget(self.audioRecordConnections, [self.gui.inL, self.gui.inR])
+        self.updateConnectionWidget(self.midiRecordConnections, [self.gui.note_midi_in])
+        self.updateConnectionWidget(self.midiClockConnections, [self.gui.sync_midi_in])
+        self.updateConnectionWidget(self.midiControlInputConnections, [self.gui.cmd_midi_in])
+        self.updateConnectionWidget(self.midiControlOutputConnections, [self.gui.cmd_midi_out])
+
+    def updateConnectionWidget(self, widget, ports):
         res = []
-        for other_port in self.gui.inL.connections:
-            res.append(other_port.name)
-        for other_port in self.gui.inR.connections:
-            res.append(other_port.name)
-        self.audioRecordConnections.setText("%s connection(s)" % len(res))
-        self.audioRecordConnections.setToolTip("\n".join(res))
-        #  Midi Clock
-        res = []
-        for other_port in self.gui.sync_midi_in.connections:
-            res.append(other_port.name)
-        self.midiClockConnections.setText("%s connection(s)" % len(res))
-        self.midiClockConnections.setToolTip("\n".join(res))
-        #  Midi Control Input
-        res = []
-        for other_port in self.gui.cmd_midi_in.connections:
-            res.append(other_port.name)
-        self.midiControlInputConnections.setText("%s connection(s)" % len(res))
-        self.midiControlInputConnections.setToolTip("\n".join(res))
-        #  Midi Control Output
-        res = []
-        for other_port in self.gui.cmd_midi_out.connections:
-            res.append(other_port.name)
-        self.midiControlOutputConnections.setText("%s connection(s)" % len(res))
-        self.midiControlOutputConnections.setToolTip("\n".join(res))
+        for p in ports:
+            for other_port in p.connections:
+                res.append(other_port.name)
+        widget.setText("%s connection(s)" % len(res))
+        widget.setToolTip("\n".join(res))
+        if len(res):
+            widget.setStyleSheet("background-color: rgb(6, 147, 152); padding: 5px;")
+        else:
+            widget.setStyleSheet("padding: 5px;")
 
     def generateConnectionsStatus(self, port):
         desc = self.generateStatus(port)
         item = QTableWidgetItem("%s connection(s)" % len(desc))
         item.setToolTip("\n".join(desc))
+        if len(desc):
+            item.setBackground(self.connected)
         return item
 
     def generateStatus(self, port):
-        jack_ports = [
-            p
-            for p in self.gui._jack_client.outports
-            if p.shortname in port.getShortNames()
-        ]
+        if isinstance(port, AudioPort):
+            jack_ports = [
+                p
+                for p in self.gui._jack_client.outports
+                if p.shortname in port.getShortNames()
+            ]
+        else:
+            jack_ports = [
+                p
+                for p in self.gui._jack_client.midi_outports
+                if p.shortname in port.getShortNames()
+            ]
+
         res = []
         for jack_port in jack_ports:
             for other_port in jack_port.connections:
@@ -232,6 +244,17 @@ class PortManager(QDialog, Ui_Dialog):
             self.gui.song.audioRecordRegexp = regexp
             self.gui.autoConnectPorts()
 
+    def onEditMidiRecord(self):
+        regexp = self._onEditRegexp(
+            self.midiRecord,
+            "midi",
+            "output",
+            "Midi Record Input Edit Auto Connect Regexp",
+        )
+        if regexp is not None:
+            self.gui.song.midiRecordRegexp = regexp
+            self.gui.autoConnectPorts()
+
     def onEditMidiClock(self):
         regexp = self._onEditRegexp(
             self.midiClock,
@@ -267,6 +290,10 @@ class PortManager(QDialog, Ui_Dialog):
 
     def onChangedAudioRecord(self):
         self.gui.song.audioRecordRegexp = self.audioRecord.text()
+        self.gui.autoConnectPorts()
+
+    def onChangedMidiRecord(self):
+        self.gui.song.midiRecordRegexp = self.midiRecord.text()
         self.gui.autoConnectPorts()
 
     def onChangedMidiClock(self):

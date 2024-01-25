@@ -44,6 +44,7 @@ class Song():
                     self.bpm = parser['DEFAULT'].getfloat('bpm', 120.0)
                     self.beat_per_bar = parser['DEFAULT'].getint('beat_per_bar', 4)
                     self.audioRecordRegexp = parser['DEFAULT'].get('audio_record_regexp', '')
+                    self.midiRecordRegexp = parser['DEFAULT'].get('midi_record_regexp', '')
                     self.midiClockRegexp = parser['DEFAULT'].get('midi_clock_regexp', '')
                     self.midiControlInputRegexp = parser['DEFAULT'].get('midi_control_intput_regexp', '')
                     self.midiControlOutputRegexp = parser['DEFAULT'].get('midi_control_output_regexp', '')
@@ -119,6 +120,7 @@ class Song():
             self.outputsMidiPorts = set()
             self.outputsMidiPorts.add(MidiPort(name=Clip.DEFAULT_OUTPUT))
             self.audioRecordRegexp = ''
+            self.midiRecordRegexp = ''
             self.midiClockRegexp = ''
             self.midiControlInputRegexp = ''
             self.midiControlOutputRegexp = ''
@@ -242,6 +244,7 @@ class Song():
                                     'outputs': json.dumps([p.serialize() for p in self.outputsPorts]),
                                     'midi_outputs': json.dumps([p.serialize() for p in self.outputsMidiPorts]),
                                     'audio_record_regexp': self.audioRecordRegexp,
+                                    'midi_record_regexp': self.midiRecordRegexp,
                                     'midi_clock_regexp': self.midiClockRegexp,
                                     'midi_control_intput_regexp': self.midiControlInputRegexp,
                                     'midi_control_output_regexp': self.midiControlOutputRegexp,

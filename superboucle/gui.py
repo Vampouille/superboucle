@@ -346,6 +346,15 @@ class Gui(QMainWindow, Ui_MainWindow):
                     if not self.inR.is_connected_to(jack_ports[1 % len(jack_ports)]):
                         self._jack_client.connect(jack_ports[1 % len(jack_ports)], self.inR)
 
+            if self.song.midiRecordRegexp:
+                # Search for jack ports using regexp
+                jack_ports = self._find_ports(self.song.midiRecordRegexp, 'midi', 'output')
+                # Check if we have enough ports
+                if len(jack_ports):
+                    # fetch pointer to superboucle ports
+                    if not self.note_midi_in.is_connected_to(jack_ports[0]):
+                        self._jack_client.connect(jack_ports[0], self.note_midi_in)
+
             if self.song.midiClockRegexp:
                 # Search for jack ports using regexp
                 jack_ports = self._find_ports(self.song.midiClockRegexp, 'midi', 'output')

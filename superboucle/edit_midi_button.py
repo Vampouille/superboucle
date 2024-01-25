@@ -177,5 +177,4 @@ class EditMidiButton(QWidget):
 
     # Return Quantization step in tick
     def getTickSnap(self):
-        tick_round_counts = [int(24/i) for i in QUANTIZE_DIVISERS]
-        return tick_round_counts[self.quantize.currentIndex()]
+        return int(24/QUANTIZE_DIVISERS[self.quantize.currentIndex()])

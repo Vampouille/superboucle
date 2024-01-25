@@ -1,10 +1,11 @@
 import time
 import threading
+import struct
 from threading import Thread
 from collections import deque
 from PyQt5.QtCore import pyqtSignal, QObject
 
-from superboucle.clip_midi import MidiClip
+from superboucle.clip_midi import MidiClip, MidiNote
 
 STOPPED = 0
 RUNNING = 1
@@ -12,6 +13,9 @@ MIDI_START = b"\xfa"
 MIDI_ALL_SOUND_OFF = b"\xb27b00"
 MIDI_STOP = b"\xfc"
 MIDI_TICK = b"\xf8"
+TICKS_PER_BEAT = 24
+MIDI_NOTE_ON = 0x9
+MIDI_NOTE_OFF = 0x8
 
 class MidiTransport(QObject):
 
@@ -34,6 +38,7 @@ class MidiTransport(QObject):
         self.updatePosSignal.connect(self.updatePos)
         self.updateClockSignal.connect(self.updateClock)
         self.wip = threading.Lock()
+        self.note_recorded: dict = {}
 
     def getBPM(self):
         return self.gui.tick_period_to_bpm(self.periodMean())
@@ -80,13 +85,22 @@ class MidiTransport(QObject):
             return self.ticks
         return None
 
+    # Return samples count since Midi clock start
+    # pos: position in samples absolute
     def position_sample(self, pos):
         return pos - self.first_tick
 
+    # Compute position of pos in the midi clock
+    # pos : absolute position in samples
+    # return position in beat with decimal
+    # accuracy is better with pos after last tick
     def position_beats(self, pos):
         if self.state == STOPPED or self.ticks is None or self.last_tick is None or len(self.periods) == 0:
             return None
-        return (float(pos - self.last_tick) / (24 * self.periodMean())) + (float(self.ticks) / 24)
+        # Compute offset since last tick
+        pos_offset_samples = pos - self.last_tick
+        pos_offset_beat = pos_offset_samples / (TICKS_PER_BEAT * self.periodMean())
+        return self.ticks / 24 + pos_offset_beat
 
     def prepareNextBeat(self, beat):
         if self.wip.acquire(blocking=False):
@@ -154,3 +168,44 @@ class MidiTransport(QObject):
         if self.state == RUNNING:
             self.gui.clock.tick = self.ticks
             self.gui.clock.update()
+
+    def record(self, pos, indata, clip):
+        if len(indata) == 3:
+            status, pitch, vel = struct.unpack('3B', indata)
+            msg_type = status >> 4
+
+            pos = self.position_beats(pos)
+            pos %= clip.length
+
+            # Convert from beat to tick
+            pos *= TICKS_PER_BEAT
+
+            # Apply quantization
+            tick_round = (24 / clip.quantize)
+            pos = round(pos / tick_round) * tick_round
+
+            if msg_type == MIDI_NOTE_ON:
+                self.note_recorded[pitch] = (pos, vel)
+                print(f"Record: Note On pitch={pitch} vel={vel} pos={pos}")
+            elif msg_type == MIDI_NOTE_OFF:
+                if pitch in self.note_recorded:
+                    start_pos, vel = self.note_recorded[pitch]
+                    del self.note_recorded[pitch]
+                    note = MidiNote(pitch, vel, start_pos, pos - start_pos)
+                    clip.addNote(note)
+                    print(f"Record: Note Off pitch={pitch} pos={pos}")
+                    print(f"Record adding Note: {note}")
+
+    def stopRecord(self, pos, clip):
+        pos = self.position_beats(pos)
+        pos %= clip.length
+
+        # Apply quantization
+        pos *= TICKS_PER_BEAT
+        pos = round(pos / clip.quantize) * clip.quantize
+
+        for pitch, (start_pos, vel) in self.note_recorded.items():
+            note = MidiNote(pitch, vel, start_pos, (pos - start_pos) % (clip.length * TICKS_PER_BEAT))
+            clip.addNote(note)
+            print(f"Record Stoped adding Note: {note}")
+        self.note_recorded.clear()
