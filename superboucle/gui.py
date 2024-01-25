@@ -295,13 +295,15 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def removeAudioPort(self, port):
         self.song.removeAudioPort(port)
-        self.port_by_name[port.name].unregister()   
+        for p in self.port_by_name[port.name]:
+            p.unregister()   
         del self.port_by_name[port.name]
         self.portChangeSignal.emit()
 
     def removeMidiPort(self, port):
         self.song.removeMidiPort(port)
-        self.midi_port_by_name[port.name].unregister()
+        for p in self.midi_port_by_name[port.name]:
+            p.unregister()
         del self.midi_port_by_name[port.name]
         self.portChangeSignal.emit()
 
@@ -330,7 +332,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                     if len(jack_ports) == 1:
                         jack_port = jack_ports[0]
                         # fetch pointer to superboucle ports
-                        own_port = self.midi_port_by_name[p.name]
+                        own_port = self.midi_port_by_name[p.name][0]
                         if not own_port.is_connected_to(jack_port):
                             own_port.connect(jack_port)
 
