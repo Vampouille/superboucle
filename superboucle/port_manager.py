@@ -101,6 +101,7 @@ class PortManager(QDialog, Ui_Dialog):
 
         # Default Port
         self.audioRecord.setText(self.gui.song.audioRecordRegexp)
+        self.midiRecord.setText(self.gui.song.midiRecordRegexp)
         self.midiClock.setText(self.gui.song.midiClockRegexp)
         self.midiControlInput.setText(self.gui.song.midiControlInputRegexp)
         self.midiControlOutput.setText(self.gui.song.midiControlOutputRegexp)
