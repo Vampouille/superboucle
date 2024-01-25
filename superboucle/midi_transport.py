@@ -96,7 +96,7 @@ class MidiTransport(QObject):
     # accuracy is better with pos after last tick
     def position_beats(self, pos):
         if self.state == STOPPED or self.ticks is None or self.last_tick is None or len(self.periods) == 0:
-            return None
+            return 0
         # Compute offset since last tick
         pos_offset_samples = pos - self.last_tick
         pos_offset_beat = pos_offset_samples / (TICKS_PER_BEAT * self.periodMean())
