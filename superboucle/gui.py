@@ -201,7 +201,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         for p in self.song.outputsMidiPorts:
             for j in self._jack_client.midi_outports:
                 if j.shortname == p.name:
-                    self.midi_port_by_name[p.name] = j
+                    self.midi_port_by_name[p.name] = [j]
                     break
 
         # Trigger auto connect
