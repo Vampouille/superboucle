@@ -75,7 +75,7 @@ def super_callback(frames):
         print("Stopped")
         for clip in song.clips:
             if isinstance(clip, MidiClip):
-                port = gui.midi_port_by_name[clip.output]
+                port = gui.midi_port_by_name[clip.output][0]
                 for ev in list(clip.pendingNoteOff):
                     print(f"S Sending : {ev}")
                     try:
@@ -95,7 +95,7 @@ def super_callback(frames):
                     for offset in tick.keys():
                         beat, ticks = divmod(tick[offset], 24)
                         beat %= clip.length
-                        port = gui.midi_port_by_name[clip.output]
+                        port = gui.midi_port_by_name[clip.output][0]
 
                         # play events of the end of the clip
                         if clip.state == Clip.START or clip.state == Clip.STOPPING:
