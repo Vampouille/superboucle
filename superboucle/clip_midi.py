@@ -110,7 +110,7 @@ class MidiClip(AbstractClip):
         events = MidiEvents()
         for note in self.notes:
             events.addEvent(note.start_tick, bytes([0x90 + self.channel, note.pitch, note.velocity]))
-            events.addEvent(note.start_tick + note.length, bytes([0x80 + self.channel, note.pitch, 0]))
+            events.addEvent(note.start_tick + note.length - 1, bytes([0x80 + self.channel, note.pitch, 0]))
         self.events = events
 
     # tick: clip relative tick count 
