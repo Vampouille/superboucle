@@ -103,7 +103,9 @@ def super_callback(frames):
                                 for ev in list(clip.pendingNoteOff):
                                     print(f"E {clip.length * TICKS_PER_BEAT} Sending : {ev}")
                                     try:
-                                        port.write_midi_event(offset, ev)
+                                        # Put Note Off at the beginning of the buffer
+                                        off = 0 if ev[0] >> 4 == 0x8 else offset
+                                        port.write_midi_event(off, ev)
                                         clip.pendingNoteOff.remove(ev)
                                     except jack.JackErrorCode as e:
                                         print(e)
