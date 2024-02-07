@@ -73,18 +73,26 @@ def super_callback(frames):
     # Handle Stop event First (MIDI Clock Stop received)
     if stopped:
         print("Stopped")
-        for clip in song.clips:
-            if isinstance(clip, MidiClip):
-                port = gui.midi_port_by_name[clip.output][0]
-                for ev in list(clip.pendingNoteOff):
-                    print(f"S Sending : {ev}")
-                    try:
-                        port.write_midi_event(0, ev)
-                        clip.pendingNoteOff.remove(ev)
-                    except jack.JackErrorCode as e:
-                        print(e)
-                if clip.state == Clip.RECORDING:
-                    gui.midi_transport.stopRecord(client.last_frame_time + offset, clip)
+        port_channel: {str: list(int)} = {}
+        for clip in gui.song.clips:
+            if not isinstance(clip, MidiClip):
+                continue
+            if clip.state == Clip.RECORDING:
+                gui.midi_transport.stopRecord(client.last_frame_time + offset, clip)
+            if clip.output in port_channel:
+                port_channel[clip.output].append(clip.channel)
+            else:
+                port_channel[clip.output] = [clip.channel]
+
+        port_channel = { k: set(v) for k, v in enumerate(port_channel)}
+
+        for port, channels in enumerate(port_channel):
+            jack_port = gui.midi_port_by_name[port]
+            for channel in channels:
+                for pitch in range(128):
+                    note_off = bytes([0x80 + channel, pitch, 0])
+                    jack_port.write_midi_event(0, note_off)
+            print(f"Midi Stop : {port}/{channels}") 
 
     if gui.sync_source == 1: # MIDI
 

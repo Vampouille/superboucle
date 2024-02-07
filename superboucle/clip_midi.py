@@ -83,7 +83,6 @@ class MidiClip(AbstractClip):
         self.notes: list[MidiNote] = list()
         self.events: MidiEvents = MidiEvents()
         self.last_tick: int = 0
-        self.pendingNoteOff: set[bytes] = set()
 
     def serialize(self):
         return {'type': 'midi',
@@ -117,14 +116,6 @@ class MidiClip(AbstractClip):
     def getEvents(self, tick: int):
         res = self.events.get(tick)
         #print(res)
-        for note in res:
-            channel = note[0] & 0x0F
-            note_off = bytes([0x80 + channel, note[1], 0])
-            if note[0] == 0x90: # Note ON
-                self.pendingNoteOff.add(note_off)
-            elif note[0] == 0x80: # Note OFF
-                if note_off in self.pendingNoteOff:
-                    self.pendingNoteOff.remove(note_off)
         self.last_tick = tick
         return res
 
