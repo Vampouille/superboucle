@@ -150,6 +150,7 @@ class EditMidiButton(QWidget):
 
     def onMidiChannelChanged(self, channel):
         self.parent.clip.channel = channel - 1
+        self.parent.clip.computeEvents()
 
     def onLengthChanged(self, length):
         # Set new length in the clip
