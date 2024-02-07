@@ -84,9 +84,9 @@ def super_callback(frames):
             else:
                 port_channel[clip.output] = [clip.channel]
 
-        port_channel = { k: set(v) for k, v in enumerate(port_channel)}
+        port_channel = { k: set(v) for k, v in port_channel.items()}
 
-        for port, channels in enumerate(port_channel):
+        for port, channels in port_channel.items():
             jack_port = gui.midi_port_by_name[port]
             for channel in channels:
                 for pitch in range(128):
