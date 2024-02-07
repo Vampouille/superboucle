@@ -105,27 +105,14 @@ def super_callback(frames):
                         beat %= clip.length
                         port = gui.midi_port_by_name[clip.output][0]
 
-                        # play events of the end of the clip
-                        if clip.state == Clip.START or clip.state == Clip.STOPPING:
-                            if ticks == 0 and beat == 0:
-                                for ev in list(clip.pendingNoteOff):
-                                    print(f"E {clip.length * TICKS_PER_BEAT} Sending : {ev}")
-                                    try:
-                                        # Put Note Off at the beginning of the buffer
-                                        off = 0 if ev[0] >> 4 == 0x8 else offset
-                                        port.write_midi_event(off, ev)
-                                        clip.pendingNoteOff.remove(ev)
-                                    except jack.JackErrorCode as e:
-                                        print(e)
-                                clip.rewind()
-
                         # Make transition
                         if ticks == 0 and beat == 0:
+                            clip.rewind()
                             if clip.state == Clip.RECORDING:
                                 gui.midi_transport.stopRecord(client.last_frame_time + offset, clip)
                             clip.state = CLIP_TRANSITION[clip.state]
-                            if clip.state == Clip.START or clip.state == Clip.STOPPING:
-                                print(clip.events)
+                            #if clip.state == Clip.START or clip.state == Clip.STOPPING:
+                            #    print(clip.events)
 
                         # Play note of the clip
                         if clip.state == Clip.START or clip.state == Clip.STOPPING:
