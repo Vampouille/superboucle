@@ -152,9 +152,8 @@ class MidiTransport(QObject):
 
     def updatePos(self):
         if self.state == RUNNING:
-            beat, tick = divmod(self.ticks, 24)
-            bar = beat / self.gui.beat_per_bar.value()
-            beat %= self.gui.beat_per_bar.value()
+            beats, tick = divmod(self.ticks, 24)
+            bar, beat = divmod(beats, self.gui.beat_per_bar.value())
             bbt = "%d|%d|%03d" % (bar + 1, beat + 1, tick)
             ft = self.gui._jack_client.frame_time
             seconds = int((ft - self.first_tick) / self.gui.sr)
@@ -163,6 +162,16 @@ class MidiTransport(QObject):
             time = "%d:%02d:%02d" % (hour, minute, second)
             self.gui.bbtLabel.setText("%s\n%s" % (bbt, time))
             self.gui.bpm.setValue(self.getBPM())
+            self.updateMidiPos(bar, beat, tick)
+    
+    def updateMidiPos(self, bar, beat, tick):
+        if tick == 0: # 4/8/16/32
+          g_pos, r_pos = divmod((self.gui.beat_per_bar.value() * bar + beat) % 32, 8)
+          g_pos = g_pos * 2 + (r_pos // 4)
+          colors = [self.gui.device.black_vel if i > g_pos else self.gui.device.green_vel for i in range(8)]
+          colors[r_pos] = self.gui.device.red_vel
+          for i, color in enumerate(colors):
+            self.gui.queue_out.put((0xB0, 0x68 + i , color))
 
     def updateClock(self):
         if self.state == RUNNING:
