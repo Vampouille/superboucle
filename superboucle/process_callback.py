@@ -87,7 +87,7 @@ def super_callback(frames):
         port_channel = { k: set(v) for k, v in port_channel.items()}
 
         for port, channels in port_channel.items():
-            jack_port = gui.midi_port_by_name[port]
+            jack_port = gui.midi_port_by_name[port][0]
             for channel in channels:
                 for pitch in range(128):
                     note_off = bytes([0x80 + channel, pitch, 0])
