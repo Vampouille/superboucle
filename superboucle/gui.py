@@ -329,8 +329,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                     # Search for jack ports using regexp
                     jack_ports = self._find_ports(p.regexp, 'midi', 'input')
                     # Check if we have enough ports
-                    if len(jack_ports) == 1:
-                        jack_port = jack_ports[0]
+                    for jack_port in jack_ports:
                         # fetch pointer to superboucle ports
                         own_port = self.midi_port_by_name[p.name][0]
                         if not own_port.is_connected_to(jack_port):

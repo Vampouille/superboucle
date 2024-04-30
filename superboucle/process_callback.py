@@ -33,10 +33,7 @@ def super_callback(frames):
     # beat count since playing (midi start)
     # beat_offset: number of sample since beginning of buffer to the beat
     # None for no beat in buffer
-    beat = None
-    beat_offset = None
     stopped = False
-    tick = {}
     if gui.is_learn_device_mode:
         for offset, indata in gui.cmd_midi_in.incoming_midi_events():
             gui.learn_device.queue.put(indata)
@@ -49,11 +46,7 @@ def super_callback(frames):
         if indata == MIDI_STOP:
             stopped = True
         res = gui.midi_transport.notify(client.last_frame_time + offset, bytes(indata))
-        if res is not None:
-            if res % 24 == 0:
-                beat = res // 24
-                beat_offset = offset
-            tick[offset] = res
+    tick = gui.midi_transport.pullTicks(client.last_frame_time, client.blocksize)
 
     gui.cmd_midi_out.clear_buffer()
     for p in client.midi_outports:
@@ -100,8 +93,9 @@ def super_callback(frames):
             
             if isinstance(clip, MidiClip):
                 if len(tick):
-                    for offset in tick.keys():
-                        beat, ticks = divmod(tick[offset], 24)
+                    for (offset, raw_ticks) in tick:
+                        beat, ticks = divmod(raw_ticks, TICKS_PER_BEAT)
+                        #print(f"offset={offset} raw_ticks={raw_ticks} beat={beat} ticks={ticks}")
                         beat %= clip.length
                         port = gui.midi_port_by_name[clip.output][0]
 
@@ -118,7 +112,7 @@ def super_callback(frames):
                         if clip.state == Clip.START or clip.state == Clip.STOPPING:
                             events = clip.getEvents(beat * TICKS_PER_BEAT + ticks)
                             for ev in events:
-                                print(f"B {beat * TICKS_PER_BEAT + ticks} Sending : {ev}")
+                                print(f"B {beat * TICKS_PER_BEAT + ticks}/{offset} Sending : {ev}")
                                 try:
                                     port.write_midi_event(offset, ev)
                                 except jack.JackErrorCode as e:
@@ -138,10 +132,11 @@ def super_callback(frames):
                 # Check if end of clip is in the buffer
                 # check if a beat is in the buffer
                 clip_loop = None
-                if beat is not None:
+                for (offset, raw_ticks) in tick:
                     # Check if the beat trigger a clip play
+                    beat, ticks = divmod(raw_ticks, TICKS_PER_BEAT)
                     if (beat - clip.beat_offset) % clip.length == 0:
-                        clip_loop = beat_offset
+                        clip_loop = offset
 
                 # Add sample from already playing clip
                 # Write samples until end of buffer or available sample from clip

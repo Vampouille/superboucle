@@ -1,6 +1,7 @@
 import time
 import threading
 import struct
+from math import ceil, floor
 from threading import Thread
 from collections import deque
 from PyQt5.QtCore import pyqtSignal, QObject
@@ -32,6 +33,7 @@ class MidiTransport(QObject):
         self.periods = deque(maxlen=10)
         self.first_tick = None
         self.last_tick = None
+        self._period_mean = 0
         self.state = STOPPED
         self.prepareNextBeatSignal.connect(self.prepareNextBeat)
         self.updateSyncSignal.connect(self.updateSync)
@@ -44,10 +46,13 @@ class MidiTransport(QObject):
         return self.gui.tick_period_to_bpm(self.periodMean())
 
     def periodMean(self):
+        return self._period_mean
+    
+    def computePeriodMean(self):
         if self.gui.force_integer_bpm.isChecked():
-            return self.gui.bpm_to_tick_period(round(self.gui.tick_period_to_bpm(sum(self.periods)/len(self.periods))))
+            self._period_mean = self.gui.bpm_to_tick_period(round(self.gui.tick_period_to_bpm(sum(self.periods)/len(self.periods))))
         else:
-            return sum(self.periods)/len(self.periods)
+            self._period_mean = sum(self.periods)/len(self.periods)
 
     def notify(self, frame_time, in_data):
         # Call in a realtime context
@@ -61,6 +66,8 @@ class MidiTransport(QObject):
             self.state = RUNNING
             self.ticks = -1
             self.last_tick = None
+            self.last_tick_pull = -1
+            self._period_mean = 0
             self.periods.clear()
             self.bpm = None
             self.first_tick = None
@@ -71,6 +78,7 @@ class MidiTransport(QObject):
         elif in_data == MIDI_TICK:
             if self.last_tick:
                 self.periods.append(frame_time - self.last_tick)
+                self.computePeriodMean()
             self.last_tick = frame_time
             if self.first_tick is None:
                 self.first_tick = frame_time
@@ -85,6 +93,36 @@ class MidiTransport(QObject):
             return self.ticks
         return None
 
+    def pullTicks(self, last_frame_time, blocksize):
+        #print(f"Pulling tick for [{last_frame_time}, {last_frame_time} + {blocksize} = {last_frame_time + blocksize}]")
+        # Stopped or started with no tick
+        if self.state == STOPPED or self.last_tick is None:
+            return []
+        # First tick
+        if len(self.periods) == 0:
+            self.last_tick_pull == 0
+            return [(last_frame_time, 0)]
+        res = []
+        #for tick in range(self.last_tick_pull + 1, ceil(self.position_beats(last_frame_time + blocksize) * TICKS_PER_BEAT)):
+        #print(f"{self.last_tick_pull + 1} --> {self.ticks} + floor({self.gui.globalOffset.value()} / {self.periodMean()}) + 1 = {self.ticks + floor(self.gui.globalOffset.value() / self.periodMean()) + 1}")
+        for tick in range(self.last_tick_pull + 1, self.ticks + floor(self.gui.globalOffset.value() / self.periodMean()) + 1):
+            tick_position = int(max(0, self.last_tick \
+                                       + round(self.periodMean() * (tick - self.ticks)) \
+                                       - last_frame_time \
+                                       - self.gui.globalOffset.value()))
+            # Check if tick position is after the buffer
+            if tick_position >= blocksize:
+                print(f"tick={tick}: {tick_position} >= {blocksize}")
+                continue
+            res.append((tick_position, tick))
+            print(f"+++> ({tick_position}, {tick})")
+            # Check if some tick was not forget/drop
+            if self.last_tick_pull + 1 != tick:
+                print(f"{self.last_tick_pull} - 1 != {tick}")
+            # Mark tick as done
+            self.last_tick_pull = tick
+        return res
+
     # Return samples count since Midi clock start
     # pos: position in samples absolute
     def position_sample(self, pos):
@@ -98,7 +136,7 @@ class MidiTransport(QObject):
         if self.state == STOPPED or self.ticks is None or self.last_tick is None or len(self.periods) == 0:
             return 0
         # Compute offset since last tick
-        pos_offset_samples = pos - self.last_tick
+        pos_offset_samples = pos - self.last_tick - self.gui.globalOffset.value()
         pos_offset_beat = pos_offset_samples / (TICKS_PER_BEAT * self.periodMean())
         return self.ticks / 24 + pos_offset_beat
 
