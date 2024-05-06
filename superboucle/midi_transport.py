@@ -119,7 +119,7 @@ class MidiTransport(QObject):
                 print(f"tick={tick}: {tick_position} >= {blocksize}")
                 continue
             res.append((tick_position, tick))
-            print(f"+++> ({tick_position}, {tick})")
+            #print(f"+++> ({tick_position}, {tick})")
             # Check if some tick was not forget/drop
             if self.last_tick_pull + 1 != tick:
                 print(f"{self.last_tick_pull} - 1 != {tick}")
