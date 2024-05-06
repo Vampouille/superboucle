@@ -155,6 +155,7 @@ class EditMidiButton(QWidget):
     def onLengthChanged(self, length):
         # Set new length in the clip
         self.parent.clip.length = length
+        self.parent.cell.updateProgressColor()
         # Re-generate piano grid widget
         self.parent.updateUI()
     

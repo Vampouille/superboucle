@@ -67,13 +67,19 @@ class Cell(QWidget, Ui_Cell):
             self.clip_name.setText(clip.name)
             self.start_stop.clicked.connect(parent.onStartStopClicked)
             self.edit.clicked.connect(parent.onEdit)
-            if self.clip.length in Cell.PROGRESS_COLOR.keys():
-                self.clip_position.setStyleSheet(Cell.CSS_TEMPLATE % Cell.PROGRESS_COLOR[self.clip.length])
+            self.updateProgressColor()
         else:
             self.start_stop.setEnabled(False)
             self.clip_position.setEnabled(False)
             self.edit.setText("Add Clip...")
             self.edit.clicked.connect(parent.onAddClipClicked)
+
+    def updateProgressColor(self):
+        if self.clip.length in Cell.PROGRESS_COLOR.keys():
+            self.clip_position.setStyleSheet(Cell.CSS_TEMPLATE % Cell.PROGRESS_COLOR[self.clip.length])
+        else:
+            self.clip_position.setStyleSheet("")
+
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -96,8 +102,7 @@ class Cell(QWidget, Ui_Cell):
         self.edit.clicked.connect(self.gui.onEdit)
         self.start_stop.setEnabled(True)
         self.clip_position.setEnabled(True)
-        if self.clip.length in Cell.PROGRESS_COLOR.keys():
-            self.clip_position.setStyleSheet(Cell.CSS_TEMPLATE % Cell.PROGRESS_COLOR[self.clip.length])
+        self.updateProgressColor()
         self.setAcceptDrops(False)
         self.gui.song.addClip(new_clip, self.pos_x, self.pos_y)
         self.gui.update()
