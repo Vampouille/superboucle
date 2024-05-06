@@ -45,7 +45,7 @@ def super_callback(frames):
     for offset, indata in gui.sync_midi_in.incoming_midi_events():
         if indata == MIDI_STOP:
             stopped = True
-        res = gui.midi_transport.notify(client.last_frame_time + offset, bytes(indata))
+        gui.midi_transport.notify(client.last_frame_time + offset, bytes(indata))
     tick = gui.midi_transport.pullTicks(client.last_frame_time, client.blocksize)
 
     gui.cmd_midi_out.clear_buffer()
@@ -94,6 +94,7 @@ def super_callback(frames):
             if isinstance(clip, MidiClip):
                 if len(tick):
                     for (offset, raw_ticks) in tick:
+                        #raw_ticks += gui.clip.tickOffset
                         beat, ticks = divmod(raw_ticks, TICKS_PER_BEAT)
                         #print(f"offset={offset} raw_ticks={raw_ticks} beat={beat} ticks={ticks}")
                         beat %= clip.length
@@ -119,7 +120,7 @@ def super_callback(frames):
                                     print(e)
                 if clip.state == Clip.RECORDING or clip.state == Clip.PREPARE_RECORD:
                     for offset, indata in gui.note_midi_in.incoming_midi_events():
-                        gui.midi_transport.record(client.last_frame_time + offset, indata, clip)
+                        gui.midi_transport.record(client.last_frame_time + offset, indata, clip) # global offset should be used here
 
             else:
                 # Skip clip with no audio

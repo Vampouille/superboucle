@@ -49,10 +49,13 @@ class MidiTransport(QObject):
         return self._period_mean
     
     def computePeriodMean(self):
-        if self.gui.force_integer_bpm.isChecked():
-            self._period_mean = self.gui.bpm_to_tick_period(round(self.gui.tick_period_to_bpm(sum(self.periods)/len(self.periods))))
-        else:
-            self._period_mean = sum(self.periods)/len(self.periods)
+        try:
+            if self.gui.force_integer_bpm.isChecked():
+                self._period_mean = self.gui.bpm_to_tick_period(round(self.gui.tick_period_to_bpm(sum(self.periods)/len(self.periods))))
+            else:
+                self._period_mean = sum(self.periods)/len(self.periods)
+        except ZeroDivisionError:
+            pass
 
     def notify(self, frame_time, in_data):
         # Call in a realtime context
@@ -63,6 +66,7 @@ class MidiTransport(QObject):
         # client.last_frame_time: The precise time at the start of the current process cycle.
         # frame_time = client.last_frame_time + offset
         if in_data == MIDI_START:
+            print("Start")
             self.state = RUNNING
             self.ticks = -1
             self.last_tick = None

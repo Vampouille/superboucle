@@ -135,6 +135,8 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.playlist = self.settings.value('playlist', []) or []
         # Load paths
         self.paths_used = self.settings.value('paths_used', {})
+        # Load global offset
+        self.globalOffset.setValue(self.settings.value('global_offset', 0))
 
         self.actionNew.triggered.connect(self.onActionNew)
         self.actionOpen.triggered.connect(self.onActionOpen)
@@ -417,6 +419,7 @@ class Gui(QMainWindow, Ui_MainWindow):
                                   for x in self.devices])
         self.settings.setValue('playlist', self.playlist)
         self.settings.setValue('paths_used', self.paths_used)
+        self.settings.setValue('global_offset', self.globalOffset.value())
 
     def onStartStopClicked(self):
         clip = self.sender().parent().parent().clip
