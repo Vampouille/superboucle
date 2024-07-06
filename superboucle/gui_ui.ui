@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>917</height>
+    <height>918</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -510,9 +510,9 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>390</y>
+            <y>370</y>
             <width>181</width>
-            <height>81</height>
+            <height>71</height>
            </rect>
           </property>
           <property name="frameShape">
@@ -529,7 +529,7 @@ QPushButton:pressed {background-color: rgb(98, 98, 98);}
             <rect>
              <x>10</x>
              <y>10</y>
-             <width>90</width>
+             <width>101</width>
              <height>21</height>
             </rect>
            </property>
@@ -636,6 +636,62 @@ QProgressBar {
           </property>
           <property name="invertedAppearance">
            <bool>false</bool>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="sceneManagerButton">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>450</y>
+            <width>101</width>
+            <height>41</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Scene
+Manager</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="playlistEditorButton">
+          <property name="geometry">
+           <rect>
+            <x>120</x>
+            <y>450</y>
+            <width>101</width>
+            <height>41</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Playlist
+Manager</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="portManagerButton">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>500</y>
+            <width>101</width>
+            <height>41</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Port
+Manager</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="magneticTapeManagerButton">
+          <property name="geometry">
+           <rect>
+            <x>120</x>
+            <y>500</y>
+            <width>101</width>
+            <height>41</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Magnetic Tape
+Manager</string>
           </property>
          </widget>
         </widget>
@@ -749,7 +805,7 @@ QProgressBar {
      <x>0</x>
      <y>0</y>
      <width>400</width>
-     <height>22</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -779,6 +835,7 @@ QProgressBar {
     <addaction name="actionScene_Manager"/>
     <addaction name="actionPlaylist_Editor"/>
     <addaction name="actionPort_Manager"/>
+    <addaction name="actionMagnetic_Tape_Manager"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuDevice"/>
@@ -870,6 +927,11 @@ QProgressBar {
    </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
+   </property>
+  </action>
+  <action name="actionMagnetic_Tape_Manager">
+   <property name="text">
+    <string>Magnetic Tape Manager</string>
    </property>
   </action>
  </widget>

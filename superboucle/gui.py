@@ -17,6 +17,7 @@ from superboucle.playlist import PlaylistDialog
 from superboucle.port import AudioPort, MidiPort
 from superboucle.scene_manager import SceneManager
 from superboucle.port_manager import PortManager
+from superboucle.tape_manager import TapeManager
 from superboucle.new_song import NewSongDialog
 from superboucle.add_clip import AddClipDialog
 from superboucle.device import Device
@@ -136,7 +137,7 @@ class Gui(QMainWindow, Ui_MainWindow):
         # Load paths
         self.paths_used = self.settings.value('paths_used', {})
         # Load global offset
-        self.globalOffset.setValue(self.settings.value('global_offset', 0))
+        self.globalOffset.setValue(int(self.settings.value('global_offset', 0)))
 
         self.actionNew.triggered.connect(self.onActionNew)
         self.actionOpen.triggered.connect(self.onActionOpen)
@@ -146,8 +147,13 @@ class Gui(QMainWindow, Ui_MainWindow):
         self.actionAdd_Device.triggered.connect(self.onAddDevice)
         self.actionManage_Devices.triggered.connect(self.onManageDevice)
         self.actionPlaylist_Editor.triggered.connect(self.onPlaylistEditor)
+        self.playlistEditorButton.clicked.connect(self.onPlaylistEditor)
         self.actionScene_Manager.triggered.connect(self.onSceneManager)
+        self.sceneManagerButton.clicked.connect(self.onSceneManager)
         self.actionPort_Manager.triggered.connect(self.onPortManager)
+        self.portManagerButton.clicked.connect(self.onPortManager)
+        self.actionMagnetic_Tape_Manager.triggered.connect(self.onTapeManager)
+        self.magneticTapeManagerButton.clicked.connect(self.onTapeManager)
         self.actionFullScreen.triggered.connect(self.onActionFullScreen)
         self.master_volume.valueChanged.connect(self.onMasterVolumeChange)
         self.bpm.valueChanged.connect(self.onBpmChange)
@@ -563,6 +569,9 @@ class Gui(QMainWindow, Ui_MainWindow):
 
     def onPortManager(self):
         PortManager(self)
+
+    def onTapeManager(self):
+        TapeManager(self)
 
     def onActionFullScreen(self):
         if self.isFullScreen():
