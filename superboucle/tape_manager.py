@@ -1,14 +1,13 @@
+from time import time_ns
+from math import pi
 from PyQt5.QtWidgets import (
     QDialog,
-    QListWidgetItem,
-    QAbstractItemView,
-    QTableWidgetItem,
-    QInputDialog,
 )
-from PyQt5.QtGui import QColor, QBrush
-from PyQt5.QtCore import Qt, QTimer, QRect
+from PyQt5.QtCore import QTimer, QRect
 from superboucle.tape_manager_ui import Ui_Dialog
 from superboucle.tape_visual import LoopPathWidget
+from superboucle.tape_speed_visual import TapeSpeedVisualWidget
+from superboucle.tape import HardwareTapeLoop, NoDeviceConnected
 from superboucle.song import verify_ext
 
 TOOLTIP_STYLE = """
@@ -27,12 +26,19 @@ class TapeManager(QDialog, Ui_Dialog):
         self.tape_visual = LoopPathWidget(self, "tape_path.svg")
         self.tape_visual.setGeometry(QRect(220, 90, 600, 200))
 
+        self.tape_speed_visual = TapeSpeedVisualWidget(self)
+        self.tape_speed_visual.setGeometry(QRect(220, 300, 600, 50))
+
         self.startButton.clicked.connect(self.onStart)
         self.stopButton.clicked.connect(self.onStop)
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.updatePosition)
-        self.timer.start(50)  # Update every 50 ms
+        self.tape: HardwareTapeLoop = self.gui.hardwaretapeloop
+        self.tape_size = self.tape.getTapeSizeIncm()
+        self.refresh_timer = QTimer(self)
+        self.refresh_timer.timeout.connect(self.updateDisplay)
+        self.refresh_timer.start(50)  # Update every 50 ms
+        self.last_pos = None
+        self.last_time = None
 
         self.started = False
         self.current_position = 0
@@ -48,13 +54,23 @@ class TapeManager(QDialog, Ui_Dialog):
 
     def onStart(self):
         self.started = True
-        self.timer.start()
     
     def onStop(self):
         self.started = False
-        self.timer.stop()
 
-    def updatePosition(self):
-        if self.started:
-            self.current_position += 1
-            self.tape_visual.set_position(self.current_position / 100)
+    def updateDisplay(self):
+        try:
+            self.tape_visual.set_position(self.tape.getRelativePositionIncm() / self.tape_size)
+            cur_pos = self.tape.getAbsolutePositionIncm() 
+            cur_time = time_ns()
+            if self.last_pos is not None:
+                # speed in cm per nano second
+                speed = (cur_pos - self.last_pos) / (cur_time - self.last_time)
+                speed *= 1e9
+                speed_text = "%.2f" % speed
+                self.speedValue.setText(f"{speed_text} cm/s")
+                self.tape_speed_visual.set_speed(speed)
+            self.last_pos = cur_pos
+            self.last_time = cur_time
+        except NoDeviceConnected:
+            pass

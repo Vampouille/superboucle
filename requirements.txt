@@ -7,3 +7,4 @@ pyrubberband
 resampy
 pyudev
 svgpathtools
+LabJackPython

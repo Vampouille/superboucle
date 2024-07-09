@@ -2,7 +2,6 @@
 
 """JACK client that prints all received MIDI events."""
 
-import re
 import jack
 import sys, os.path
 import numpy as np
@@ -10,8 +9,6 @@ import resampy
 from superboucle import client, gui, app
 from superboucle.song import Song
 from superboucle.process_callback import super_callback, timebase_callback
-from superboucle.tape import HardwareTapeLoop
-from PyQt5.QtCore import QTimer
 import argparse
 
 # Force load of the resampy dependencies to avoid xruns on first usage
@@ -52,9 +49,6 @@ client.set_process_callback(super_callback)
 client.set_port_registration_callback(onPortRegistration)
 client.set_port_connect_callback(onPortConnect)
 # set_graph_order_callback ?
-
-# Setup Hardware for tape
-hardwaretapeloop = HardwareTapeLoop()
 
 with client: # call client.activate()
     client.set_timebase_callback(timebase_callback)

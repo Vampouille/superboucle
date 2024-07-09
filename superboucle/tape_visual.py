@@ -1,7 +1,6 @@
-import sys
-from PyQt5.QtCore import Qt, QTimer, QPointF
+from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QPainterPath, QPixmap
-from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QPushButton, QWidget
+from PyQt5.QtWidgets import QWidget
 from svgpathtools import svg2paths, Path, Line, QuadraticBezier, CubicBezier
 
 class LoopPathWidget(QWidget):

@@ -25,6 +25,7 @@ from superboucle.edit_midi import EditMidiDialog
 from superboucle.clip_midi import MidiClip
 from superboucle.midi_transport import MidiTransport
 from superboucle.beat_clock import BeatClockWidget
+from superboucle.tape import HardwareTapeLoop
 
 import struct
 from queue import Queue, Empty
@@ -104,6 +105,9 @@ class Gui(QMainWindow, Ui_MainWindow):
         #self.portListCallback = set()
         self.sync_source = SYNC_SOURCE_JACK
         self.midi_transport = MidiTransport(self)
+        # Setup Hardware for tape
+        self.hardwaretapeloop = HardwareTapeLoop(self.midi_transport)
+
         self.port_by_name = {}
         self.midi_port_by_name = {}
 
